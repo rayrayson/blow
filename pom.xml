@@ -1,0 +1,73 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>blow</groupId>
+  <artifactId>blow</artifactId>
+  <version>0.4.1</version>
+  <dependencies>
+  	<dependency>
+  		<groupId>org.jclouds.provider</groupId>
+  		<artifactId>aws-s3</artifactId>
+  		<version>1.3.2</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.jclouds.provider</groupId>
+  		<artifactId>aws-ec2</artifactId>
+  		<version>1.3.2</version>
+  	</dependency>
+
+  	<dependency>
+  		<groupId>org.jclouds.driver</groupId>
+  		<artifactId>jclouds-log4j</artifactId>
+  		<version>1.3.2</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.jclouds.driver</groupId>
+  		<artifactId>jclouds-sshj</artifactId>
+  		<version>1.3.2</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.jclouds.driver</groupId>
+  		<artifactId>jclouds-enterprise</artifactId>
+  		<version>1.3.2</version>
+  	</dependency>
+
+
+  	<dependency>
+  		<groupId>org.skife.com.typesafe.config</groupId>
+  		<artifactId>typesafe-config</artifactId>
+  		<version>0.3.0</version>
+  	</dependency>
+
+
+  	<dependency>
+  		<groupId>org.slf4j</groupId>
+  		<artifactId>slf4j-api</artifactId>
+  		<version>1.6.4</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.slf4j</groupId>
+  		<artifactId>slf4j-log4j12</artifactId>
+  		<version>1.6.4</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.slf4j</groupId>
+  		<artifactId>jcl-over-slf4j</artifactId>
+  		<version>1.6.4</version>
+  	</dependency>
+
+	<!-- required by sshj - scp compression  -->  	
+	<dependency>
+		<groupId>com.jcraft</groupId>
+		<artifactId>jzlib</artifactId>
+		<version>1.1.1</version>
+	</dependency> 	
+  	
+    <dependency>
+      <groupId>org.spockframework</groupId>
+      <artifactId>spock-core</artifactId>
+      <version>0.6-groovy-1.8</version>
+      <scope>test</scope>
+    </dependency>    
+
+  </dependencies>
+</project>

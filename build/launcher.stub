@@ -1,0 +1,50 @@
+#!/bin/sh
+#
+#  Copyright (c) 2012. Paolo Di Tommaso <paolo.ditommaso@gmail.com>
+#
+#  This file is part of Blow.
+#
+#  Blow is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Blow is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Blow.  If not, see <http://www.gnu.org/licenses/>.
+
+MYSELF=`which "$0" 2>/dev/null`
+[ $? -gt 0 -a -f "$0" ] && MYSELF="./$0"
+
+#
+# Cleanup paths for Cygwin.
+#
+case "`uname`" in
+CYGWIN*)
+	MYSELF=`cygpath --windows --mixed --path "$MYSELF"`
+	;;
+Darwin)
+	if test -e /System/Library/Frameworks/JavaVM.framework
+	then
+		java_args='
+			-Dcom.apple.mrj.application.apple.menu.about.name=Blow
+			-Dcom.apple.mrj.application.growbox.intrudes=false
+			-Dapple.laf.useScreenMenuBar=true
+			-Xdock:name=Blow
+		'
+	fi
+	;;
+esac
+
+java=java
+if test -n "$JAVA_HOME"
+then
+	java="$JAVA_HOME/bin/java"
+fi
+
+exec "$java" $java_args -jar $MYSELF "$@"
+exit 1
