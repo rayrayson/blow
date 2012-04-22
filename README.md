@@ -10,14 +10,14 @@ provides an open and easily extensible framework to implement custom configurati
 The problem
 -----------
 Create a cluster in a cloud environment is a terrible burden that requires many different
-repetitive tasks to setup all the required files and components. Also a small error can affect
-the operation of the whole system, forcing you to repeat the entire configuration and wasting
+repetitive tasks to setup all required files and components. Also a small error can affect
+the operation of the whole system, forcing to repeat the entire configuration and wasting
 resources (and money).
 
 What Blow does
 --------------
-Blow aims to simply the cluster configuration and deployment process in the cloud using a simple
-configuration file in which you declare the configuration properties and the required components.
+Blow aims to simplify the cluster configuration and deployment process in the cloud using a simple
+configuration file in which declares the configuration properties and the required components.
 
 It manages automatically the various installation tasks, making the overall procedure faster,
 safer and replicable.
