@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>blow</groupId>
   <artifactId>blow</artifactId>
-  <version>0.4.1</version>
+  <version>0.4.2</version>
   <dependencies>
   	<dependency>
   		<groupId>org.jclouds.provider</groupId>
@@ -55,7 +55,7 @@
   		<version>1.6.4</version>
   	</dependency>
 
-	<!-- required by sshj - scp compression  -->  	
+	<!-- required by sshj - scp/ssh compression  -->
 	<dependency>
 		<groupId>com.jcraft</groupId>
 		<artifactId>jzlib</artifactId>

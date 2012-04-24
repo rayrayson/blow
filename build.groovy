@@ -137,6 +137,7 @@ class Build {
 	
 	def compile() {
 		if( emptyPath(pathCompileLibs) ) copyCompileDeps()
+        if( emptyPath(pathEmbedLibs) ) copyGroovyDeps()
 		
 		ant.taskdef ( name: "groovyc", classname: "org.codehaus.groovy.ant.Groovyc" )
 		ant.sequential {
