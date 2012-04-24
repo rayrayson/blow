@@ -29,7 +29,7 @@ import net.schmizz.sshj.connection.channel.direct.PTYMode
 /**
  * Implement a terminal redirecting remote host i/o to the system current system i/o
  *
- * Author: Paolo Di Tommaso
+ * @author Paolo Di Tommaso
  * Date: 4/23/12
  *
  */
@@ -54,16 +54,16 @@ class SshConsole {
     boolean useCompression = true;
 
     /** The terminal type to use e.g {@code ansi}, {@code vt100}, {@code vt220}, {@code vt320} */
-    String tern = "vt100"
+    String term = "vt100"
 
 
     private SSHClient ssh;
     private Session session;
 
 
-    public void start() throws IOException {
+    public void launch() throws IOException {
 
-        final jline.ConsoleReader console = new jline.ConsoleReaderInputStream()
+        final jline.ConsoleReader console = new jline.ConsoleReader();
         int rows = console.getTermheight();
         int cols = console.getTermwidth();
 
@@ -117,9 +117,29 @@ class SshConsole {
                     .bufSize(shell.getLocalMaxPacketSize())
                     .spawn("stderr");
 
-            new StreamPump(System.in, shell.getOutputStream()) {  public boolean abort() { !shell.isOpen() }}
-                    .bufSize(shell.getRemoteMaxPacketSize())
-                    .spawn("stdin");
+            // provides the console input (keyboard) to the shell
+            // note: it uses a custom loop instead of the stream pump because the latter
+            // was blocking on the read method and so the underlying thread won't terminate
+            // as the user logout from the remote shell
+            new Thread() {
+
+                @Override
+                public void run() {
+                    OutputStream out = shell.getOutputStream()
+                    byte[] buf = new byte[shell.getRemoteMaxPacketSize()];
+                    while( shell.isOpen() ) {
+                        if( System.in.available() ) {
+                            int len = System.in.read(buf)
+                            out.write(buf,0,len)
+                            out.flush()
+                        }
+                        else {
+                            Thread.sleep(50)
+                        }
+                    }
+                }
+
+            }.start()
 
 
             /*
@@ -138,6 +158,7 @@ class SshConsole {
 
                 Thread.sleep(500);
             }
+
         }
         finally {
             if( session && session.isOpen() ) { session.close() }
@@ -153,6 +174,7 @@ class SshConsole {
     public static void main(String[] args) {
 
         String param = args.length > 0 ? args[0] :  "localhost";
+        String key = System.getProperty("user.home") + "/.ssh/id_rsa"
 
         int p = param.indexOf('@');
         String host;
@@ -166,9 +188,10 @@ class SshConsole {
         }
 
         println "Connecting to $host as $user"
-        SshConsole term = new SshConsole(user: user, host: host)
-        term.start()
+        SshConsole term = new SshConsole(user: user, host: host, key: key)
+        term.launch()
 
+        //System.exit(0)
     }
 
 }

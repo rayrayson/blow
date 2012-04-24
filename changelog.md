@@ -1,3 +1,7 @@
+2012-04-25, version 0.4.3
+- Integrated SSH pseudo-terminal
+- Fixed issue on NFS volume delete
+
 2012-04-19, version 0.4.2
 - Refactored directory structure
 - Detach EBS volumes moved after cluster termination

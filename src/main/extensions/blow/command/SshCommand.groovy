@@ -24,13 +24,13 @@ import org.jclouds.compute.domain.NodeMetadata
 import org.jclouds.compute.domain.ExecResponse
 import blow.shell.CommandCompletor
 import groovy.util.logging.Log4j
+import blow.ssh.SshConsole
 
 /**
  * Run SSH commands on the remote nodes
  *
- * User: Paolo Di Tommaso
+ * @author Paolo Di Tommaso
  * Date: 4/11/12
- * Time: 12:52 PM
  */
 @Log4j
 class SshCommand extends AbstractShellCommand implements CommandCompletor {
@@ -180,13 +180,6 @@ class SshCommand extends AbstractShellCommand implements CommandCompletor {
         // normalize to the IP address
         targetHost = node.getPublicAddresses() ?. find() ?: targetHost
 
-        // find the xterm path
-        def xterm = "which xterm".execute()?.text?.trim();
-        if( !xterm ) {
-            println "Launching SSH requires 'xterm' on your system, but it cannot be found."
-            return;
-        }
-
         /*
          * launch the terminal session
          */
@@ -194,10 +187,19 @@ class SshCommand extends AbstractShellCommand implements CommandCompletor {
         def user = session.conf.userName;
         def key = session.conf.privateKeyFile
 
-        String[] launch = [xterm, "-e", "ssh -i ${key} ${user}@${targetHost}; read -p 'Press enter to close window'"];
-        Runtime rt = Runtime.getRuntime();
-        Process pr = rt.exec(launch)
-        println "Launching SSH on $targetHost"
+//        // find the xterm path
+//        def xterm = "which xterm".execute()?.text?.trim();
+//        if( !xterm ) {
+//            println "Launching SSH requires 'xterm' on your system, but it cannot be found."
+//            return;
+//        }
+
+//        String[] launch = [xterm, "-e", "ssh -i ${key} ${user}@${targetHost}; read -p 'Press enter to close window'"];
+//        Runtime rt = Runtime.getRuntime();
+//        Process pr = rt.exec(launch)
+//        println "Launching SSH on $targetHost"
+
+        new SshConsole(host: targetHost, user: user, key: key).launch( )
     }
 
 }
