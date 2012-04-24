@@ -32,10 +32,8 @@ import org.jclouds.scriptbuilder.domain.AppendFile
  * or other system configuration files
  *
  *
- * User: Paolo Di Tommaso
- * Date: 4/4/12
- * Time: 11:08 AM
- * To change this template use File | Settings | File Templates.
+ * @author Paolo Di Tommaso
+ *
  */
 
 @Log4j

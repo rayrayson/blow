@@ -25,7 +25,7 @@ package blow.plugin
  *
  *
  * Created with IntelliJ IDEA.
- * User: ptommaso
+ * Author: ptommaso
  * Date: 4/3/12
  * Time: 4:38 PM
  * To change this template use File | Settings | File Templates.

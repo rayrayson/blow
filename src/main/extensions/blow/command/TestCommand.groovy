@@ -24,7 +24,7 @@ import blow.shell.AbstractShellCommand
 
 /**
  * Created with IntelliJ IDEA.
- * User: ptommaso
+ * Author: ptommaso
  * Date: 4/4/12
  * Time: 12:11 PM
  * To change this template use File | Settings | File Templates.

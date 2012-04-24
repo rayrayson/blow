@@ -29,10 +29,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME
  * Use this annotation to mark one (or more) method(s) as 'validation' method to be invoked during
  * the plugin sanity check phase, to avoid to start clusters in inconsistent state
  *
- * User: Paolo Di Tommaso
- * Date: 4/10/12
- * Time: 4:28 PM
- * To change this template use File | Settings | File Templates.
+ * @author Paolo Di Tommaso
  */
 
 

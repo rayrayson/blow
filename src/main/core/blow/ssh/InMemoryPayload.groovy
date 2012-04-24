@@ -17,7 +17,7 @@
  *   along with Blow.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package blow.scp
+package blow.ssh
 
 import net.schmizz.sshj.xfer.InMemorySourceFile
 

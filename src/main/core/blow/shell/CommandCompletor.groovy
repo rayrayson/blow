@@ -25,7 +25,7 @@ package blow.shell
  * A {@link ShellCommand} that wants to provide autocomplete feature
  * have to implement this interface
  *
- * User: Paolo Di Tommaso
+ * @author Paolo Di Tommaso
  * Date: 4/11/12
  * Time: 4:24 PM
  */

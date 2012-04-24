@@ -22,7 +22,7 @@ package blow.command
 import spock.lang.*
 
 /**
- * User: Paolo Di Tommaso
+ * @author Paolo Di Tommaso
  * Date: 4/11/12
  * Time: 1:06 PM
  */

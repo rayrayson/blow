@@ -40,7 +40,7 @@ import org.jclouds.logging.log4j.config.Log4JLoggingModule
 import org.jclouds.scriptbuilder.domain.Statement
 import org.jclouds.scriptbuilder.statements.login.AdminAccess
 import org.jclouds.sshj.config.SshjSshClientModule
-import blow.scp.ScpClient
+import blow.ssh.ScpClient
 import blow.events.*
 
 import java.util.concurrent.*

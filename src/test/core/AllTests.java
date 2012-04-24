@@ -26,7 +26,7 @@ import blow.plugin.*;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
-import blow.scp.ScpClientTest;
+import blow.ssh.ScpClientTest;
 import util.TypesafeConfigTest;
 
 

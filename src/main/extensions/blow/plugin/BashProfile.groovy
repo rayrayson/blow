@@ -32,7 +32,7 @@ import blow.events.OnAfterClusterCreateEvent
 
 /**
  * Created with IntelliJ IDEA.
- * User: Paolo Di Tommaso
+ * @author Paolo Di Tommaso
  * Date: 4/3/12
  * Time: 3:22 PM
  * To change this template use File | Settings | File Templates.

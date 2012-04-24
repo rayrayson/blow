@@ -22,11 +22,8 @@ package blow.plugin
 import spock.lang.Specification
 
 /**
- * Created with IntelliJ IDEA.
- * User: ptommaso
- * Date: 4/10/12
- * Time: 6:12 PM
- * To change this template use File | Settings | File Templates.
+ * @author Paolo Di Tommaso
+ *
  */
 class AppendTextTest extends Specification {
 
