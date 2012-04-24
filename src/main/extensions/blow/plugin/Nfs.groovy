@@ -141,7 +141,7 @@ class Nfs {
      * @param event
      */
     @Subscribe
-    protected void fetchMasterId( OnBeforeClusterTerminationEvent event ) {
+    public void fetchMasterId( OnBeforeClusterTerminationEvent event ) {
         if( !masterInstanceId ) {
             masterInstanceId = event.session.getMasterMetadata().getProviderId()
         }
