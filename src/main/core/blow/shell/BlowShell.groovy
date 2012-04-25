@@ -19,21 +19,15 @@
 
 package blow.shell
 
-import com.google.inject.*
-import com.typesafe.config.ConfigFactory
-
-import jline.ConsoleReader
-import jline.Completor
-
-import groovy.util.logging.Log4j
-
 import blow.exception.BlowConfigException
-
-import blow.BlowSession
-import blow.DynLoader
-import blow.DynLoaderFactory
-import blow.BlowConfig
-import blow.Project
+import com.google.inject.Guice
+import com.typesafe.config.ConfigFactory
+import jline.Completor
+import jline.ConsoleReader
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import blow.*
+import blow.util.CmdLine
 
 /**
  * The Pilot shell runner 
@@ -41,42 +35,57 @@ import blow.Project
  * @author Paolo Di Tommaso
  *
  */
-@Log4j
 class BlowShell {
-	
+
+    /**
+     * Note: create the logger lazily so it is possible to configure the logging
+     * subsystem dynamically
+     * <p>
+     * See script 'logback.groovy'
+     */
+    @Lazy
+    Logger log = { LoggerFactory.getLogger(BlowShell) }()
+
+
 	private BlowSession session;
 	
 	private ConsoleReader console 
 
-	final private DynLoader loader;
-	
-	/**
-	 * Define the standard 'run' shell command
-	 */
-	class RunAction extends AbstractShellCommand  {
+	private DynLoader loader;
 
-		@Override
-		public String getName() { "runplugin" }
+    /**
+     * The map of the {@link  ShellCommand} available in this shell instance
+     */
+    private Map<String,ShellCommand> availableCommands = [:];
 
-		@Override
-		public void invoke() {
-			if( !params ) { 
-				println "(no plugin specified)"
-				return
-			}
 
-			println "@@ $params"			
-			def args = params.split(" ")
-			def pluginName = args[0]
-			def pluginArgs = args.length>1 ? args[ 1.. args	-1 ].join(" ") : null
-			
-			session.runPlugin(pluginName, pluginArgs)
-		}
+    /**
+     * The main command to be executed by the program (if any).
+     * This map - if defined - holds the command {@code name} and
+     * the command {@code args} as an list of strings
+     */
+    private Map mainCommand
 
-		@Override
-		public String help() { "Execute the specified plugin" }
-	}
-	 
+    /**
+     * The main entry on the program command line. Usually it is the cluster configuration name.
+     * This value is define the by {@link #init} method and then read during the program @{link #run}
+     */
+    private String mainEntry
+
+    /**
+     * The program global options as returned by {@link CliBuilder#parse} method.
+     * In other words this object holds the global argument specified on program
+     * command line
+     * <p>
+     * See {@link #main} {@link CliBuilder}
+     */
+    static def options
+
+    /**
+     * The cluster name currently in use
+     */
+    def String currentCluster;
+
 	/**
 	 * Defines the 'help' command used by the shell
 	 * 
@@ -94,14 +103,14 @@ class BlowShell {
 		
 		def listCommands() {
 			// get the longest command string
-			def max = actions.keySet().max { it.length() }
+			def max = availableCommands.keySet().max { it.length() }
 			max = max.length() // <-- note: the above returns the longest item, so now we get the real max value
 			
 			// print the 'help' for each command			
 			println ""
-			actions.each {
+			availableCommands.each {
 				name, _action -> 
-				println "  ${name.padRight(max)} ${_action.help()}"	
+				println " ${name.padRight(max)} ${_action.help()?.trim() ?: ''}"
 			}
 		} 
 
@@ -115,13 +124,17 @@ class BlowShell {
 	 */
 	class UseAction extends AbstractShellCommand {
 
+        private String clusterName
+
 		@Override
 		public String getName() { "use" }
 
+        def void parse( def args ) {  clusterName = args?.size()>0 ? args.head() : currentCluster }
+
 		@Override
 		public void invoke() {
-			println "Switching > $params"
-			useCluster(params)
+			println "Switching > ${clusterName}"
+			useCluster(clusterName)
 		}
 
 		@Override
@@ -178,8 +191,8 @@ class BlowShell {
                  */
 				sCommand = buffer.substring(0,p);
                 def sOptions = buffer.substring(p).trim()
-                if( sCommand && actions[sCommand] instanceof CommandCompletor) {
-                    def options = (actions[sCommand] as CommandCompletor).findOptions( sOptions )
+                if( sCommand && availableCommands[sCommand] instanceof CommandCompletor) {
+                    def options = (availableCommands[sCommand] as CommandCompletor).findOptions( sOptions )
                     if( options ) {
                         candidates.addAll(options)
                         return cursor - sOptions.length()
@@ -196,29 +209,15 @@ class BlowShell {
 		
 		private findMatchingActions(String prefix, List candidates) { 
 		
-			BlowShell.this.actions.each {
+			BlowShell.this.availableCommands.each {
 				if( it.key.startsWith(prefix)  ) { 
 					candidates.add(it.key)
 				}
 			}
 				
 		}
-		
-		
-		  
 	}
-	
-	Map<String,ShellCommand>actions = [:];
-	
 
-	def action; 
-	def params;
-
-	/**
-	 * The cluster name currently in use 
-	 */
-	def String cluster; 
-	
 	
 	/**
 	 * The shell constructor
@@ -229,15 +228,14 @@ class BlowShell {
 		loader = DynLoaderFactory.get()
 		
 		/*
-		 * add the actions
+		 * add the availableCommands
 		 */
-		addAction( new HelpAction() )
-		addAction( new UseAction() )
-		addAction( new RunAction() )
-		addAction( new ExitAction() )
+		addCommand( new HelpAction() )
+		addCommand( new UseAction() )
+		addCommand( new ExitAction() )
 
 		loader.actionClasses.each { Class clazz ->
-			addAction(clazz) 
+			addCommand(clazz)
 		} 
 		
 		/*
@@ -248,38 +246,47 @@ class BlowShell {
 		console.addCompletor( new ShellCompletor() )
 		
 	}
-	
-	private void addAction( Class<ShellCommand> clazz ) {
+
+    /**
+     * Create an instance of the specified {@link ShellCommand} and add it to the list
+     * of the {@link #availableCommands}
+     *
+     * @param clazz
+     */
+	private void addCommand( Class<ShellCommand> clazz ) {
 		try {
-			addAction(clazz.newInstance())
+			addCommand(clazz.newInstance())
 		}
 		catch( Throwable e ) {
-			BlowShell.log.error("Cannot create instance for shell command class: '$clazz?.getName()'")
+			log.error("Cannot create instance for shell command class: '$clazz?.getName()'")
 		}
 	}
-	
-	private void addAction( ShellCommand theActionToAdd ) {
-		assert theActionToAdd != null
-        BlowShell.log.trace "addAction: $theActionToAdd"
+
+    /**
+     * Add the specified {@link ShellCommand} instance to the list of {@link #availableCommands}
+     */
+	private void addCommand( ShellCommand command ) {
+		assert command != null
+        log.trace "addAction: $command"
 		
-		if( !theActionToAdd.getName() ) {
-			println "The following shell command extension does not define any name, skipping it: '${theActionToAdd.getClass().getName()}'"
+		if( !command.getName() ) {
+			println "The following shell command extension does not define any name, skipping it: '${command.getClass().getName()}'"
 			return	
 		}
 		
-		if( actions.containsKey( theActionToAdd.getName() ) ) {
-			println "The command '${theActionToAdd.getName()}' is already defined, skipping class '${theActionToAdd.getClass().getName()}'"
+		if( availableCommands.containsKey( command.getName() ) ) {
+			println "The command '${command.getName()}' is already defined, skipping class '${command.getClass().getName()}'"
 			return
 		}	
 
-		if( theActionToAdd.hasProperty("shell") ) {
-			theActionToAdd.shell = this;	
+		if( command.hasProperty("shell") ) {
+			command.shell = this;	
 		}
 
 		/*
 		 * append the command to the global list
 		 */
-		actions.put( theActionToAdd.getName(), theActionToAdd )
+		availableCommands.put( command.getName(), command )
 	}
 	
 	/**
@@ -287,21 +294,24 @@ class BlowShell {
 	 * 
 	 * @param args
 	 */
-	def void init( String[] args ) {
-		BlowShell.log.debug("Initializating shell argments: ${args}")
-		
-		cluster = args.length>0 ? args[0] : null;
-		action = args.length>1 ? args[1] : null
-		params = args.length>2 ? args[ 2 .. args.length-1 ].join(" ") : ""
-		
-		if( !cluster ) {
-			System.err.println "Please specify the cluster name on your command"
-			printUsage()
-			System.exit (1)	
-		}
-		
-		// set the cluster as the current used one
-		useCluster( cluster )
+	def void init( List<String> args = [] ) {
+
+        /*
+         * parse the command arguments, they should on the following sequence
+         * 1 - cluster config name
+         * 2 - command to execute and its arguments (optional)
+         */
+        if( args.size()>0 ) {
+		    mainEntry = args.head()
+            args = args.tail()
+        }
+
+        if( args.size()>0 ) {
+            mainCommand = [:]
+            mainCommand.name = args.head()
+            mainCommand.args = args.tail()
+        }
+
 	}
 	
 	/**
@@ -359,8 +369,6 @@ class BlowShell {
 			return
 		}
 		
-		
-		
 		/*
 		 * if OK, close the previous instance 
 		 * and create a new one for this cluster instance
@@ -369,28 +377,25 @@ class BlowShell {
 		session = new BlowSession(config, clusterName)
 		
 		// set the current cluster name 
-		cluster = clusterName 
+		currentCluster = clusterName
 	} 
 	
 	/**
 	 * Execute the requested command
 	 * 
 	 */
-	def void execute() {
+	def void execute( String command, def args ) {
 
-        def command = actions[action]
-        if( command ) {
-            command.parse(params)
-            command.invoke()
+        def cmdObj = availableCommands[command]
+        if( cmdObj ) {
+            cmdObj.parse(args)
+            cmdObj.invoke()
         }
         else {
-            println "Uknown command"
+            println "Unknown command: ${command}"
         }
 
 	}
-	
-
-	
 	
 	/**
 	 * Main execution method 	
@@ -398,11 +403,46 @@ class BlowShell {
 	@Override
 	public void run() {
 
+        /*
+        * if not cluster has been specified, exit with an error
+        */
+        if( !mainEntry ) {
+            System.err.println "Please specify the cluster name on your command"
+            printUsage()
+            System.exit (1)
+        }
+
+        /*
+         * as special case, if the 'help' string is entered, the
+         * command usage string is printed
+         */
+        if( mainEntry == "help" ) {
+            if( !mainCommand ) {
+                printUsage()
+            }
+            else if( availableCommands.containsKey( mainCommand.name ) ) {
+                print "${mainCommand.name}: "
+                println availableCommands[mainCommand.name].help() ?: "(no help available)"
+            }
+            else {
+                println "Unknown command: '${mainCommand.name}'"
+            }
+            System.exit(0)
+        }
+
+
+        /*
+         * This should be the normal case
+         * Initialize the cluster configuration with the entered name
+         */
+        useCluster( mainEntry )
+
+
 		/*
 		 * if an command is provided, execute and return
 		 */
-		if( action ) {
-			execute()	
+		if( mainCommand ) {
+			execute( mainCommand.name, mainCommand.args )
 			return;
 		}
 		
@@ -411,19 +451,16 @@ class BlowShell {
 		 */
 		while( true ) {
 		
-			def line = prompt()
-			if( !line ) continue
+			def line = CmdLine.splitter( prompt() )
+			if( !line || line.size()==0 ) { continue }
 
-			String[] cmd = line.split(" ")
-			action = cmd[0]
-			params = cmd.length>1 ? cmd[ 1 .. cmd.length-1 ].join(" ") : ""
 			try {
-				execute();
+				execute( line.head(), line.tail() );
 			}
 			catch( ShellExit e ) { break }
 			catch( Throwable e ) {
-				System.err.println "Cannot execute: $line. Cause: ${e.getMessage()}"
-                BlowShell.log.error(e)
+				System.err.println "Cannot execute: '${line.join(' ')}'. Cause: ${e.getMessage()}"
+                log.debug("Error executing command: '${line.join(' ')}'", e)
 			}
 						
 		}
@@ -441,10 +478,22 @@ class BlowShell {
 	 * 
 	 * @return the entered text
 	 */
-	def prompt() { 
+	def prompt( String prompt = null, Closure<String> accept = null ) {
 		def cluster = session ? "[${session.clusterName}] " : ""
-		console.readLine("blow $cluster\$ ")
-	} 
+
+        // format the prompt nicely
+        prompt = (!prompt) ? "${Project.name} ${cluster}\$ " : prompt + " "
+
+        def line
+        while( true ) {
+            line = console.readLine(prompt)
+            if( !accept || accept.call(line) ) {
+                break
+            }
+        }
+
+        return line
+	}
 	
 	def void printUsage() {
 		println "usage: ${Project.name} <clustername> [command [..]]"
@@ -455,9 +504,13 @@ class BlowShell {
 	 * 
 	 * @param args
 	 */
+
 	public static void main( String[] args ) {
 
-        def logo =
+        /*
+         * print the logo
+         */
+        println \
         """\
            ___  __
           / _ )/ /__ _    __
@@ -466,11 +519,29 @@ class BlowShell {
         """
         .stripIndent()
 
-        println logo
-		Injector injector = Guice.createInjector();
-		BlowShell shell = injector.getInstance(BlowShell.class)
+        /*
+         * parse the command line options
+         */
+        CliBuilder cli = new CliBuilder()
+        cli.usage = "blow [options] cluster-config"
+        cli._( longOpt: "debug", "Print debug level information")
+        cli._( longOpt: "trace", "Print trace level information")
+        cli.h( longOpt: "help", "Show this help")
 
-		shell.init(args);
+        options = cli.parse(args)
+
+        /*
+         * Initialize Guice and create a shell instance
+         */
+        Guice.createInjector();
+		BlowShell shell = new BlowShell();
+        // trace the command line
+        shell.log.debug "~~~ ${Project.name} \"${args?.join(' ') ?: ''}\""
+
+        /*
+         * start the shell
+         */
+		shell.init(options.arguments());
 		shell.run( );
 		shell.close()
 	}

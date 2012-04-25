@@ -17,15 +17,12 @@
  *   along with Blow.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package blow.util;
+package blow.util
 
-
-import org.apache.log4j.Logger
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 public class TraceHelper {
-
-	static final Logger log = Logger.getLogger(TraceHelper)
-
 
 
 	/**
@@ -38,11 +35,16 @@ public class TraceHelper {
 	/**
 	 * Trace the execution time 
 	 * 
-	 * @parama message 
+	 * @param message
 	 * @param task
 	 */
 	static def void debugTime( String message, Closure task ) {
-		def startTime = System.currentTimeMillis()
+        assert task
+
+        // declare the log using the closure owner
+        Logger log = LoggerFactory.getLogger( task.owner.getClass() );
+
+        def startTime = System.currentTimeMillis()
 		if( message ) log.debug message
 		
 		try {

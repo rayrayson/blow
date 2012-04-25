@@ -27,7 +27,7 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigList
 import com.typesafe.config.ConfigValue
-import groovy.util.logging.Log4j
+import groovy.util.logging.Slf4j
 import org.jclouds.domain.LoginCredentials
 
 import java.lang.reflect.Method
@@ -41,7 +41,7 @@ import java.lang.reflect.InvocationTargetException
  *
  */
 
-@Log4j
+@Slf4j
 class BlowConfig {
 	
 	def accessKey
@@ -201,7 +201,6 @@ class BlowConfig {
              * and invoke them
              */
             def validators = plugin.getClass().getMethods() ?. findAll {  Method method -> method.getAnnotation(Validate) }
-            println validators
             try {
                 validators.each {
                     Method method -> invokeValidator(plugin,method)

@@ -19,7 +19,7 @@
 
 package blow
 
-import org.apache.log4j.Logger
+import groovy.util.logging.Slf4j
 
 /**
  * The default strategy to load external script and dependencies
@@ -28,10 +28,9 @@ import org.apache.log4j.Logger
  *
  */
 
+@Slf4j
 class DynLoaderFactory {
 
-	private static Logger log = Logger.getLogger(DynLoaderFactory.class)
-	
 	private static File extensionPath = new File("./src/main/extensions");
 
 	private static volatile DynLoader instance;

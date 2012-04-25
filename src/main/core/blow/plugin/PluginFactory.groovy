@@ -23,7 +23,7 @@ import com.typesafe.config.ConfigObject as ConfigObject
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValue
-import groovy.util.logging.Log4j
+import groovy.util.logging.Slf4j
 
 import blow.exception.BlowConfigException
 
@@ -38,11 +38,8 @@ import blow.DynLoader
  *
  */
 
-@Log4j
+@Slf4j
 class PluginFactory {
-	
-	//private Logger log = { Logger.getLogger(this.getClass()) }()
-	
 	
 	/**
 	 * The custom class loader used by the plugin factory
@@ -119,13 +116,10 @@ class PluginFactory {
                         result.setProperty( propertyName, propertyValue  )
                     }
                     else {
-                        log.warn "Missing property: '${configKey}' for plugin: '${name}'. This value will not be used."
+                        log.warn "Unknown attribute '${configKey}' for plugin '${name}'. This value will not be used."
                     }
                 }
-
             }
-
-
 		}
 		
 		return result

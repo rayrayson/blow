@@ -19,7 +19,7 @@
 
 package blow.storage
 
-import groovy.util.logging.Log4j
+import groovy.util.logging.Slf4j
 import org.jclouds.compute.ComputeServiceContext
 import org.jclouds.ec2.domain.Attachment
 import org.jclouds.ec2.domain.Volume
@@ -36,7 +36,7 @@ import blow.BlowConfig
  *
  */
 
-@Log4j
+@Slf4j
 class BlockStorage {
 	
 	final ComputeServiceContext context;
@@ -203,7 +203,7 @@ class BlockStorage {
 	   */
 	  def startTime = System.currentTimeMillis();
 	  while( vol.getStatus() != Volume.Status.AVAILABLE && (System.currentTimeMillis()-startTime < timeout) ) {
-		  blow.storage.BlockStorage.log.debug "Vol status: ${vol.getStatus()}"
+		  log.debug "Vol status: ${vol.getStatus()}"
 		  sleep(25000)
 		  vol = ebs.describeVolumesInRegion(conf.regionId, vol.getId()).find({true})
 	  }

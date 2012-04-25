@@ -18,15 +18,16 @@
  */
 
 import blow.BlowConfigTest;
-import blow.BlowShellTest;
 import blow.DynLoaderFactoryTest;
 import blow.DynLoaderTest;
 import blow.command.SshCommandTest;
 import blow.plugin.*;
+import blow.shell.BlowShellTest;
+import blow.ssh.ScpClientTest;
+import blow.util.CmdLineHelperTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
-import blow.ssh.ScpClientTest;
 import util.TypesafeConfigTest;
 
 
@@ -46,9 +47,10 @@ import util.TypesafeConfigTest;
 @SuiteClasses({ 
 	BlowConfigTest.class,
 	DynLoaderTest.class,
-	BlowShellTest.class,
 	DynLoaderTest.class,
     DynLoaderFactoryTest.class,
+    BlowShellTest.class,
+    CmdLineHelperTest.class,
 
     SshCommandTest.class,
 

@@ -21,6 +21,11 @@ package blow.command
 
 import blow.shell.AbstractShellCommand;
 
+/**
+ * Display the list hostname of the current running nodes
+ *
+ * @author Paolo Di Tommaso
+ */
 class ListClustersCommand extends AbstractShellCommand {
 
 	@Override

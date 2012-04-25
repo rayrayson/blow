@@ -23,16 +23,15 @@ import blow.shell.AbstractShellCommand
 import org.jclouds.compute.domain.NodeMetadata
 import org.jclouds.compute.domain.ExecResponse
 import blow.shell.CommandCompletor
-import groovy.util.logging.Log4j
+import groovy.util.logging.Slf4j
 import blow.ssh.SshConsole
 
 /**
  * Run SSH commands on the remote nodes
  *
  * @author Paolo Di Tommaso
- * Date: 4/11/12
  */
-@Log4j
+@Slf4j
 class SshCommand extends AbstractShellCommand implements CommandCompletor {
 
     /** The  targetHost node on which run the ssh command - or - connect to */
@@ -43,15 +42,21 @@ class SshCommand extends AbstractShellCommand implements CommandCompletor {
     @Override
     def String getName() { "ssh" }
 
-
+    /**
+     * Parse the list of arguments for the SSH command
+     * <p>
+     * It follows this syntax:
+     * <pre>
+     * host [command to execute on the remote host(s)]
+     * </pre>
+     *
+     * @param args
+     */
     @Override
-    def void parse( Object args ) {
+    def void parse( def args ) {
 
-        def cmdline = args?.toString().stripIndent() ?: "";
-
-        int p = cmdline.indexOf(' ');
-        targetHost = p == -1 ? cmdline : cmdline.substring(0,p);
-        targetCommand = p != -1 ? cmdline.substring(p+1).stripIndent() : null
+        targetHost = args.head()
+        targetCommand = args.size()>1 ? args.tail().join(' ') : null
 
     }
 

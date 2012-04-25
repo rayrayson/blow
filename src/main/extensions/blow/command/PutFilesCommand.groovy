@@ -23,29 +23,41 @@ import blow.shell.AbstractShellCommand;
 
 class PutFilesCommand extends AbstractShellCommand {
 
+    private def fLocal
+    private def fTarget
+
 	@Override
-	public String getName() {
-		return "put";
-	}
+	public String getName() { "put" }
+
+    public void parse(def args) {
+
+        if( !args || args.size()==0) {
+            fLocal = null
+            fTarget = null
+            return
+         }
+
+         fLocal = args.head()
+         fTarget = args.tail().join(' ')
+    }
 
 	@Override
 	public void invoke() {
 
-		def args = params.split(" ");
-		if( !args || !args[0] ) { 
+		if( !fLocal ) {
 			println "usage: put <local filename> [<targetHost path>]"
 			return 
 		}
 		
-		File source = new File(args[0])
-		String target = args.length>1 ? args[1] : source.getAbsolutePath() 
+		File sourcePath = new File(fLocal)
+		String targetPath = fTarget ?: sourcePath.getName()
 		
-		if( !source.exists() ) {
+		if( !sourcePath.exists() ) {
 			println "error: the specified file does not exist"	
 			return
 		}
 		
-		session.copyToNodes(source, target)
+		session.copyToNodes(sourcePath, targetPath)
 
 	}
 

@@ -29,8 +29,8 @@ class NodeInfoCommand extends AbstractShellCommand {
 	public String getName() { "nodeinfo" }
 
 	@Override
-	public void parse(def params) {
-		nodeId = params
+	public void parse(def args) {
+		nodeId = args.head()
 	}
 	
 	@Override

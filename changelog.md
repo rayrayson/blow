@@ -1,4 +1,9 @@
-2012-04-25, version 0.4.3
+2012-04-25, version 0.4.4
+- Switched to logback as logging subsistem
+- Logging to .blow.log file on current directory
+- Some fixes
+
+2012-04-24, version 0.4.3
 - Integrated SSH pseudo-terminal
 - Fixed issue on NFS volume delete
 

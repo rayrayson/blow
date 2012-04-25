@@ -19,7 +19,7 @@
 
 package blow.plugin
 
-import groovy.util.logging.Log4j
+import groovy.util.logging.Slf4j
 import com.google.common.eventbus.Subscribe
 
 import org.jclouds.scriptbuilder.domain.CreateRunScript
@@ -38,7 +38,7 @@ import blow.events.OnAfterClusterCreateEvent
  * To change this template use File | Settings | File Templates.
  */
 
-@Log4j
+@Slf4j
 @Plugin("bash_profile")
 class BashProfile implements ConfHolder {
 

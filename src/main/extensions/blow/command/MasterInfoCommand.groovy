@@ -21,6 +21,11 @@ package blow.command
 
 import blow.shell.AbstractShellCommand;
 
+/**
+ * Shows the details of the current running master node
+ *
+ * @author Paolo Di Tommaso
+ */
 class MasterInfoCommand extends AbstractShellCommand {
 
 	@Override

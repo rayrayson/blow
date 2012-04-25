@@ -20,7 +20,7 @@
 package blow.plugin
 
 import com.google.common.eventbus.Subscribe
-import groovy.util.logging.Log4j
+import groovy.util.logging.Slf4j
 import org.jclouds.compute.domain.NodeMetadata
 import org.jclouds.compute.options.TemplateOptions
 import org.jclouds.scriptbuilder.domain.AppendFile
@@ -35,16 +35,18 @@ import blow.BlowSession
  * @author Paolo Di Tommaso
  *
  */
-@Log4j
+@Slf4j
 @Plugin("hosts")
 class Hosts {
 
 	
 	@Subscribe
 	public void configureHostsFile( OnAfterClusterCreateEvent event ) {
+        log.info "Configuring hosts file"
 
-		TraceHelper.debugTime( "Configure '/etc/hosts' file", { configureHostsTask(event.session) } )
-		
+        TraceHelper.debugTime( "Configure '/etc/hosts' file") {
+            configureHostsTask(event.session)
+        }
 	}
 	
 	/**

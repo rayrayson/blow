@@ -20,8 +20,10 @@
 package blow.command;
 
 import blow.shell.AbstractShellCommand
-import org.jclouds.compute.domain.NodeMetadata;
+import org.jclouds.compute.domain.NodeMetadata
+import groovy.util.logging.Slf4j;
 
+@Slf4j
 public class ListNodesCommand extends AbstractShellCommand {
 
 	@Override
@@ -31,6 +33,7 @@ public class ListNodesCommand extends AbstractShellCommand {
 
 	@Override
 	public void invoke() {
+
 		def nodes = session.listNodes() ;
 		if( nodes ) {
 			nodes.each { NodeMetadata node ->

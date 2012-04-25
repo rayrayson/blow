@@ -21,6 +21,11 @@ package blow.command;
 
 import blow.shell.AbstractShellCommand;
 
+/**
+ * Terminate the current running cluster
+ *
+ * @author Paolo Di Tommaso
+ */
 public class TerminateCommand extends AbstractShellCommand {
 
 	@Override
@@ -28,7 +33,15 @@ public class TerminateCommand extends AbstractShellCommand {
 
 	@Override
 	public void invoke() {
-		session.terminateCluster()
+
+        def answer = shell.prompt("Please confirm that you want to termiante cluster named ${shell.session.clusterName} [y/n]") {
+            ['y','n'].contains(it)
+        }
+
+        if( answer == 'y' ) {
+            session.terminateCluster()
+        }
+
 	}
 
 	@Override

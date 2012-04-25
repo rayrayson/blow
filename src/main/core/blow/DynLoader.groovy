@@ -21,7 +21,7 @@ package blow;
 
 import blow.plugin.Plugin;
 
-import groovy.util.logging.Log4j
+import groovy.util.logging.Slf4j
 
 import java.lang.reflect.Modifier;
 
@@ -35,7 +35,7 @@ import blow.shell.ShellCommand
  * @author Paolo Di Tommaso
  *
  */
-@Log4j
+@Slf4j
 public class DynLoader {
 
 	/**

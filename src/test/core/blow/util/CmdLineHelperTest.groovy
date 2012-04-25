@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso
+ * Copyright (c) 2012. Paolo Di Tommaso.
  *
  *   This file is part of Blow.
  *
@@ -17,33 +17,37 @@
  *   along with Blow.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package blow
+package blow.util
 
-import spock.lang.*
-import blow.shell.AbstractShellCommand
+import spock.lang.Specification
 
-import blow.shell.BlowShell;
+/**
+ *
+ *  @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
+ */
+class CmdLineHelperTest extends Specification {
 
-class BlowShellTest extends Specification {
+    def "test splitter" () {
 
-	def "test addAction method"() {
+        expect:
+        args == CmdLine.splitter( cmdline  )
 
-		setup:
-			def shell = new BlowShell()
-			def action = new AbstractShellCommand() {
-					public String getName() { "hola" }
-					public void invoke() {}
-					public String help() {}
-				};
-		
-		when:
-			shell.addAction( action )
-		
-		then:
-			shell.actions.containsKey("hola")
-			shell.actions.containsValue(action)
+        where:
+        cmdline << [
+            "-a -b c",
+            "-a x    y  ",
+            ' a "bb ccc" d ',
+            " x 'pp qqq' z "
+        ]
 
+        args << [
+            ["-a", "-b", "c"],
+            ["-a", 'x', 'y'],
+            ['a', 'bb ccc', 'd'],
+            ['x', 'pp qqq', 'z']
 
-	}
-	
+        ]
+
+    }
+
 }

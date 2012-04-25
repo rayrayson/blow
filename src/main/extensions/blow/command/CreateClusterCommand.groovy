@@ -19,28 +19,32 @@
 
 package blow.command
 
-import blow.shell.AbstractShellCommand;
+import blow.shell.AbstractShellCommand
+import groovy.util.logging.Slf4j;
 
 /**
- * Createa a cluster using the underlying configuration
+ * Create a cluster using the underlying configuration
  * 
  * @author Paolo Di Tommaso
  *
  */
+@Slf4j
 class CreateClusterCommand extends AbstractShellCommand {
 
 	@Override
-	public String getName() {
-		return "create";
-	}
+	public String getName() { "create" }
 
 	@Override
-	public void parse(Object args) {
-	}
+	public void parse(def args) { }
 
 	@Override
 	public void invoke() {
-		session.createCluster();
+        def size = shell.session.conf.size
+        def answer = shell.prompt("Please confirm that you want to start ${size} node(s) [y/n]") { ['y','n'].contains(it) }
+
+        if( answer == 'y' ) {
+		    session.createCluster();
+        }
 	}
 
 	@Override

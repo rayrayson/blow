@@ -20,7 +20,7 @@
 package blow.plugin
 
 import com.google.common.eventbus.Subscribe
-import groovy.util.logging.Log4j
+import groovy.util.logging.Slf4j
 import blow.events.OnAfterClusterCreateEvent
 import blow.events.OnAfterClusterTerminationEvent
 import blow.events.OnBeforeClusterCreationEvent
@@ -29,7 +29,7 @@ import blow.events.OnAfterNodeStartEvent
 import blow.events.ONBeforeNodeStartEvent
 
 
-@Log4j
+@Slf4j
 @Plugin("trace")
 class TracePlugin {
 

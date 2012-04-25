@@ -24,7 +24,7 @@ import com.google.common.base.Predicates
 import com.google.common.collect.ImmutableSet
 import com.google.common.eventbus.EventBus
 import com.google.inject.Module
-import groovy.util.logging.Log4j
+import groovy.util.logging.Slf4j
 import org.jclouds.Constants
 import org.jclouds.compute.ComputeService
 import org.jclouds.compute.ComputeServiceContext
@@ -36,7 +36,6 @@ import org.jclouds.compute.domain.TemplateBuilder
 import org.jclouds.compute.options.TemplateOptions
 import org.jclouds.compute.reference.ComputeServiceConstants
 import org.jclouds.enterprise.config.EnterpriseConfigurationModule
-import org.jclouds.logging.log4j.config.Log4JLoggingModule
 import org.jclouds.scriptbuilder.domain.Statement
 import org.jclouds.scriptbuilder.statements.login.AdminAccess
 import org.jclouds.sshj.config.SshjSshClientModule
@@ -49,6 +48,7 @@ import static com.google.common.base.Predicates.not
 import static org.jclouds.compute.predicates.NodePredicates.TERMINATED
 import static org.jclouds.compute.predicates.NodePredicates.inGroup
 import blow.storage.BlockStorage
+import org.jclouds.logging.slf4j.config.SLF4JLoggingModule
 
 /**
  * Base session initializer
@@ -57,7 +57,7 @@ import blow.storage.BlockStorage
  *
  */
 
-@Log4j
+@Slf4j
 class BlowSession {
 
 	final ComputeServiceContext context;
@@ -132,7 +132,7 @@ class BlowSession {
 				  .createContext("aws-ec2",
 								  conf.accessKey,
 								  conf.secretKey,
-								  ImmutableSet.<Module> of(new Log4JLoggingModule(), new SshjSshClientModule(), new EnterpriseConfigurationModule()),
+								  ImmutableSet.<Module> of(new SLF4JLoggingModule(), new SshjSshClientModule(), new EnterpriseConfigurationModule()),
 								  props
 								  );
 							  
@@ -172,7 +172,7 @@ class BlowSession {
 		 * create the master node 
 		 */
 		def allNodes = new TreeSet()
-		log.debug("Creating the 'master' node")
+		log.info("Creating the 'master' node")
 		masterMetadata = startNodes(template, 1, "master").find()
 		allNodes.add(masterMetadata)
 		
@@ -181,13 +181,13 @@ class BlowSession {
 		 */
 		def workerCount = conf.size-1
 		if( workerCount ) {
-			log.debug("Creating ${workerCount} worker node(s)")
+			log.info("Creating ${workerCount} worker node(s)")
 			def nodes = startNodes( template, workerCount, "worker" )
 			
 			allNodes.addAll( nodes )
 		}
 		else {
-			log.debug("Node worker nodes required")
+			log.debug("(no worker nodes required)")
 		}
 		
 	
@@ -248,7 +248,7 @@ class BlowSession {
 	 * @param groupName
 	 */
 	def terminateCluster( String groupName = clusterName ) {
-		log.debug "Terminating nodes in cluster '$groupName'"
+		log.info "Terminating nodes in cluster '$groupName'"
 		
 		
 		/*
@@ -475,7 +475,10 @@ class BlowSession {
 	 * @return the list of current available cluster names
 	 */
 	def listClusters() {
-		compute.listNodes().collect { it.group } .unique()
+		compute.listNodes()
+                .findAll { NodeMetadata node -> node.group != null }
+                .collect { NodeMetadata node -> node.group }
+                .unique()
 	} 
 	
 	/**

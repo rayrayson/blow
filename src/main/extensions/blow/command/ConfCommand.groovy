@@ -21,6 +21,11 @@ package blow.command
 
 import blow.shell.AbstractShellCommand;
 
+/**
+ * Display the details of the current configuration
+ *
+ * @author Paolo Di Tommaso
+ */
 class ConfCommand extends AbstractShellCommand {
 
 	@Override

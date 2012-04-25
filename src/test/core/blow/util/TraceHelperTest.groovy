@@ -1,11 +1,22 @@
 package blow.util
 
-import spock.lang.Specification
+import org.junit.Test
 
 /**
  * @author Paolo Di Tommaso
  */
-class TraceHelperTest extends Specification {
+class TraceHelperTest  {
+
+    @Test
+    public void run() {
+
+        TraceHelper.debugTime("Hola") {
+
+            println "Ciao"
+
+        }
+
+    }
 
 
 }

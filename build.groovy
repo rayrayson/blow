@@ -147,6 +147,7 @@ class Build {
              */
 			copy( todir: pathClasses ) {
 				fileset( dir: pathSourceCore, includes: '*.properties'  )
+                fileset( dir: pathSourceCore, includes:  'logback.*' )
 				}
 
 			/*

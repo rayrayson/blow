@@ -47,14 +47,14 @@ abstract class AbstractShellCommand implements ShellCommand {
 	public String getName() { this.getClass().getSimpleName(); } 
 
 	@Override
-	public void parse(Object args) {
+	public void parse(def args) {
 		/* do nothing by default */
 	}
 
 	/**
 	 * The help string showed in the shell 
 	 */
-	public String help() { "" }
+	public String help() { null }
 	
 	
 }

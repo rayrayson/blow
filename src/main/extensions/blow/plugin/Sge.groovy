@@ -21,7 +21,7 @@ package blow.plugin
 
 import com.google.common.eventbus.Subscribe;
 
-import groovy.util.logging.Log4j
+import groovy.util.logging.Slf4j
 import blow.util.TraceHelper
 
 import blow.events.OnAfterClusterCreateEvent
@@ -33,7 +33,7 @@ import blow.BlowSession
  * @author Paolo Di Tommaso
  *
  */
-@Log4j
+@Slf4j
 @Plugin("sge")
 class Sge {
 
@@ -74,7 +74,7 @@ class Sge {
      * - config: just configure it, the binaries have to exist in the specified root folder
      */
 	@Conf("installation-mode")
-	String installationType = "deploy"
+	String installationMode = "deploy"
 	
 	@Conf("tmp")
 	String tempPath = "/tmp"
@@ -100,10 +100,13 @@ class Sge {
 
 	@Subscribe
 	public void configureSge( OnAfterClusterCreateEvent event ) {
+        log.info "Configuring OpenGridEngine (SGE)"
 
-		TraceHelper.debugTime("SGE configuration", { configureTask(event.session) } )
-		
-	}
+		TraceHelper.debugTime("SGE configuration") {
+            configureTask(event.session)
+        }
+
+    }
 	
 	protected void configureTask(BlowSession cloud) {
 
@@ -150,14 +153,14 @@ class Sge {
 		
 		def script = "";
 
-        if( installationType == "compile" ) {
+        if( installationMode == "compile" ) {
             script = scriptDownloadAndCompile()
         }
-        else if( installationType == "deploy" ) {
+        else if( installationMode == "deploy" ) {
             script = scriptDownloadBinaries()
         }
-        else if( installationType != "config" ) {
-            blow.plugin.Sge.log.warn "Unknown SGE installation type: '${installationType}'"
+        else if( installationMode != "config" ) {
+            blow.plugin.Sge.log.warn "Unknown SGE installation type: '${installationMode}'"
         }
 
         script += "\n" + scriptInstallMaster();

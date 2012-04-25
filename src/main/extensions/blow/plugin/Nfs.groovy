@@ -24,7 +24,7 @@ import blow.events.OnAfterClusterCreateEvent
 import blow.events.OnAfterClusterTerminationEvent
 import blow.util.TraceHelper
 import com.google.common.eventbus.Subscribe
-import groovy.util.logging.Log4j
+import groovy.util.logging.Slf4j
 import blow.events.OnBeforeClusterTerminationEvent
 
 /**
@@ -33,7 +33,7 @@ import blow.events.OnBeforeClusterTerminationEvent
  * @author Paolo Di Tommaso
  *
  */
-@Log4j
+@Slf4j
 @Plugin("nfs")
 class Nfs {
 
@@ -75,6 +75,7 @@ class Nfs {
 
     @Validate
     public void validate() {
+        log.debug "Validating NFS configuration"
 
         assert path, "You need to define the 'path' attribute in the NFS configuration"
         assert device, "You need to define the 'device' attribute in the NFS configuraton"
@@ -84,8 +85,11 @@ class Nfs {
 
 	@Subscribe
 	public void configureNFS( OnAfterClusterCreateEvent event ) {
-		
-		TraceHelper.debugTime( "Configure NFS",  { doConfigureNFS(event.session) } )
+		log.info "Configuring NFS file system"
+
+		TraceHelper.debugTime( "Configure NFS") {
+            doConfigureNFS(event.session)
+        }
 		
 	}
 
@@ -125,7 +129,7 @@ class Nfs {
          */
         def boolean needToDelete = deleteOnTermination == true && ( snapshotId || volumeId );
 
-        if( !needToDelete ) {  return }
+        if( !needToDelete ) { return }
 
         TraceHelper.debugTime( "Delete attached volume", {
 
@@ -173,7 +177,7 @@ class Nfs {
 			pilot.getBlockStore().attachVolume(masterInstanceId, volumeId, path, device )
 		}
 		else { 
-			blow.plugin.Nfs.log.debug("Nothing to attach")
+			log.debug("Nothing to attach")
 		}
 				
 	}

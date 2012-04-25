@@ -22,7 +22,7 @@ package blow.plugin
 import blow.events.OnAfterClusterCreateEvent
 import blow.util.TraceHelper
 import com.google.common.eventbus.Subscribe
-import groovy.util.logging.Log4j
+import groovy.util.logging.Slf4j
 import org.jclouds.scriptbuilder.domain.AppendFile
 
 /**
@@ -36,7 +36,7 @@ import org.jclouds.scriptbuilder.domain.AppendFile
  *
  */
 
-@Log4j
+@Slf4j
 @Plugin("append")
 class AppendText {
 

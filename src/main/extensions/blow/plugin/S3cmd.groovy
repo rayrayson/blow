@@ -23,7 +23,7 @@ import org.jclouds.scriptbuilder.domain.CreateFile
 import org.jclouds.scriptbuilder.domain.StatementList
 
 import org.jclouds.scriptbuilder.domain.Statements
-import groovy.util.logging.Log4j
+import groovy.util.logging.Slf4j
 import com.google.common.eventbus.Subscribe
 
 import blow.util.TraceHelper
@@ -40,7 +40,7 @@ import blow.BlowSession
  *
  */
 @Plugin("s3cmd")
-@Log4j
+@Slf4j
 class S3cmd {
 
     @Conf String accessKey
