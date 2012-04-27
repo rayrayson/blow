@@ -2,52 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="933b0d44-6ce3-4f6c-830f-cd02389d53cd" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/main/core/blow/util/CmdLine.groovy" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/main/core/blow/util/PrettyConsoleLayout.groovy" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/main/core/blow/util/QuoteStringTokenizer.groovy" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/main/core/logback.groovy" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/test/core/blow/shell/BlowShellTest.groovy" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/test/core/blow/util/CmdLineHelperTest.groovy" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/test/core/blow/util/QuoteStringTokenizerTest.groovy" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/core/log4j.properties" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/extensions/blow/command/DebugVolumesCommand.groovy" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/extensions/blow/command/TestCommand.groovy" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/test/core/blow/BlowShellTest.groovy" afterPath="" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/README.md" afterPath="$PROJECT_DIR$/README.md" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/blow.conf" afterPath="$PROJECT_DIR$/blow.conf" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/blow.iml" afterPath="$PROJECT_DIR$/blow.iml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/blow.ipr" afterPath="$PROJECT_DIR$/blow.ipr" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/blow.iws" afterPath="$PROJECT_DIR$/blow.iws" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/build.groovy" afterPath="$PROJECT_DIR$/build.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/changelog.md" afterPath="$PROJECT_DIR$/changelog.md" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pom.xml" afterPath="$PROJECT_DIR$/pom.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/core/blow/BlowConfig.groovy" afterPath="$PROJECT_DIR$/src/main/core/blow/BlowConfig.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/core/blow/BlowSession.groovy" afterPath="$PROJECT_DIR$/src/main/core/blow/BlowSession.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/core/blow/DynLoader.groovy" afterPath="$PROJECT_DIR$/src/main/core/blow/DynLoader.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/core/blow/DynLoaderFactory.groovy" afterPath="$PROJECT_DIR$/src/main/core/blow/DynLoaderFactory.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/core/blow/Project.groovy" afterPath="$PROJECT_DIR$/src/main/core/blow/Project.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/core/blow/plugin/PluginFactory.groovy" afterPath="$PROJECT_DIR$/src/main/core/blow/plugin/PluginFactory.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/core/blow/shell/AbstractShellCommand.groovy" afterPath="$PROJECT_DIR$/src/main/core/blow/shell/AbstractShellCommand.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/core/blow/shell/BlowShell.groovy" afterPath="$PROJECT_DIR$/src/main/core/blow/shell/BlowShell.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/core/blow/storage/BlockStorage.groovy" afterPath="$PROJECT_DIR$/src/main/core/blow/storage/BlockStorage.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/core/blow/util/TraceHelper.groovy" afterPath="$PROJECT_DIR$/src/main/core/blow/util/TraceHelper.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/extensions/blow/command/ConfCommand.groovy" afterPath="$PROJECT_DIR$/src/main/extensions/blow/command/ConfCommand.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/extensions/blow/command/CreateClusterCommand.groovy" afterPath="$PROJECT_DIR$/src/main/extensions/blow/command/CreateClusterCommand.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/extensions/blow/command/ListClustersCommand.groovy" afterPath="$PROJECT_DIR$/src/main/extensions/blow/command/ListClustersCommand.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/extensions/blow/command/ListNodesCommand.groovy" afterPath="$PROJECT_DIR$/src/main/extensions/blow/command/ListNodesCommand.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/extensions/blow/command/MasterInfoCommand.groovy" afterPath="$PROJECT_DIR$/src/main/extensions/blow/command/MasterInfoCommand.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/extensions/blow/command/NodeInfoCommand.groovy" afterPath="$PROJECT_DIR$/src/main/extensions/blow/command/NodeInfoCommand.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/extensions/blow/command/PutFilesCommand.groovy" afterPath="$PROJECT_DIR$/src/main/extensions/blow/command/PutFilesCommand.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/extensions/blow/command/SshCommand.groovy" afterPath="$PROJECT_DIR$/src/main/extensions/blow/command/SshCommand.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/extensions/blow/command/TerminateCommand.groovy" afterPath="$PROJECT_DIR$/src/main/extensions/blow/command/TerminateCommand.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/extensions/blow/plugin/AppendText.groovy" afterPath="$PROJECT_DIR$/src/main/extensions/blow/plugin/AppendText.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/extensions/blow/plugin/BashProfile.groovy" afterPath="$PROJECT_DIR$/src/main/extensions/blow/plugin/BashProfile.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/extensions/blow/plugin/Hosts.groovy" afterPath="$PROJECT_DIR$/src/main/extensions/blow/plugin/Hosts.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/extensions/blow/plugin/Nfs.groovy" afterPath="$PROJECT_DIR$/src/main/extensions/blow/plugin/Nfs.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/extensions/blow/plugin/S3cmd.groovy" afterPath="$PROJECT_DIR$/src/main/extensions/blow/plugin/S3cmd.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/extensions/blow/plugin/Sge.groovy" afterPath="$PROJECT_DIR$/src/main/extensions/blow/plugin/Sge.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/extensions/blow/plugin/TracePlugin.groovy" afterPath="$PROJECT_DIR$/src/main/extensions/blow/plugin/TracePlugin.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/test/core/AllTests.java" afterPath="$PROJECT_DIR$/src/test/core/AllTests.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/test/core/blow/util/TraceHelperTest.groovy" afterPath="$PROJECT_DIR$/src/test/core/blow/util/TraceHelperTest.groovy" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/test/core/blow/BlowConfigTest.groovy" afterPath="$PROJECT_DIR$/src/test/core/blow/BlowConfigTest.groovy" />
     </list>
     <ignored path="blow.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -106,7 +65,17 @@
     <favorites_list name="blow" />
   </component>
   <component name="FileEditorManager">
-    <leaf />
+    <leaf>
+      <file leaf-file-name="blow.conf" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/blow.conf">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="34" column="0" selection-start="646" selection-end="646" vertical-scroll-proportion="0.47619048">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
   </component>
   <component name="FindManager">
     <FindUsagesManager>
@@ -125,12 +94,6 @@
   <component name="IdeDocumentHistory">
     <option name="changedFiles">
       <list>
-        <option value="$PROJECT_DIR$/src/main/extensions/blow/command/SshCommand.groovy" />
-        <option value="$PROJECT_DIR$/src/main/extensions/blow/command/NodeInfoCommand.groovy" />
-        <option value="$PROJECT_DIR$/src/main/extensions/blow/command/PutFilesCommand.groovy" />
-        <option value="$PROJECT_DIR$/src/main/core/blow/shell/BlowShell.groovy" />
-        <option value="$PROJECT_DIR$/src/main/core/blow/BlowSession.groovy" />
-        <option value="$PROJECT_DIR$/src/main/extensions/blow/command/CreateClusterCommand.groovy" />
         <option value="$PROJECT_DIR$/src/main/extensions/blow/plugin/Hosts.groovy" />
         <option value="$PROJECT_DIR$/src/main/extensions/blow/plugin/Sge.groovy" />
         <option value="$PROJECT_DIR$/src/main/extensions/blow/command/TerminateCommand.groovy" />
@@ -141,6 +104,12 @@
         <option value="$PROJECT_DIR$/changelog.md" />
         <option value="$PROJECT_DIR$/src/main/extensions/blow/command/ListClustersCommand.groovy" />
         <option value="$PROJECT_DIR$/src/main/extensions/blow/command/MasterInfoCommand.groovy" />
+        <option value="$PROJECT_DIR$/README.md" />
+        <option value="$PROJECT_DIR$/src/main/core/blow/BlowConfig.groovy" />
+        <option value="$PROJECT_DIR$/src/test/core/blow/BlowConfigTest.groovy" />
+        <option value="$PROJECT_DIR$/src/main/extensions/blow/command/SshCommand.groovy" />
+        <option value="$PROJECT_DIR$/src/test/core/blow/command/SshCommandTest.groovy" />
+        <option value="$PROJECT_DIR$/blow.conf" />
       </list>
     </option>
   </component>
@@ -632,26 +601,26 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="16" y="32" width="1611" height="1007" extended-state="0" />
-    <editor active="false" />
+    <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="JetGradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.3295711" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3295711" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39954853" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="10" side_tool="true" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3295711" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="true" content_ui="tabs" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.24952015" sideWeight="0.6704289" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3295711" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.3295711" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3295711" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24952015" sideWeight="0.6704289" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
     </layout>
@@ -715,41 +684,6 @@
     <option name="FILTER_TARGETS" value="false" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/src/main/extensions/blow/plugin/AppendText.groovy">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="40" column="6" selection-start="1245" selection-end="1245" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/extensions/blow/plugin/Hosts.groovy">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="44" column="18" selection-start="1333" selection-end="1333" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/extensions/blow/plugin/RunScript.groovy">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="35" column="6" selection-start="1068" selection-end="1068" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/extensions/blow/plugin/Sge.groovy">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="106" column="8" selection-start="2674" selection-end="2674" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/extensions/blow/command/TerminateCommand.groovy">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="40" column="8" selection-start="1207" selection-end="1207" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/core/blow/shell/BlowShell.groovy">
       <provider selected="true" editor-type-id="text-editor">
         <state line="387" column="6" selection-start="10078" selection-end="10078" vertical-scroll-proportion="0.0">
@@ -787,23 +721,9 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/test/core/blow/BlowConfigTest.groovy">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="168" column="53" selection-start="3717" selection-end="3717" vertical-scroll-proportion="0.319224">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/extensions/blow/plugin/Nfs.groovy">
       <provider selected="true" editor-type-id="text-editor">
         <state line="167" column="20" selection-start="4212" selection-end="4220" vertical-scroll-proportion="-4.927273">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/blow.conf">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
@@ -825,6 +745,61 @@
     <entry file="file://$PROJECT_DIR$/src/main/extensions/blow/command/MasterInfoCommand.groovy">
       <provider selected="true" editor-type-id="text-editor">
         <state line="26" column="27" selection-start="881" selection-end="881" vertical-scroll-proportion="0.82539684">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="69" column="8" selection-start="2171" selection-end="2171" vertical-scroll-proportion="0.33212996">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/test/core/blow/BlowConfigTest.groovy">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="191" column="16" selection-start="4088" selection-end="4088" vertical-scroll-proportion="0.33333334">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/core/blow/BlowConfig.groovy">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="264" column="20" selection-start="7195" selection-end="7195" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$MAVEN_REPOSITORY$/org/spockframework/spock-core/0.6-groovy-1.8/spock-core-0.6-groovy-1.8-sources.jar!/org/spockframework/util/GroovyRuntimeUtil.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="99" column="0" selection-start="3257" selection-end="3257" vertical-scroll-proportion="0.319224">
+          <folding>
+            <element signature="e#0#7265#0" expanded="false" />
+            <element signature="imports" expanded="false" />
+            <element signature="e#4089#4119#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/extensions/blow/command/SshCommand.groovy">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="55" column="13" selection-start="1585" selection-end="1585" vertical-scroll-proportion="0.319224">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/test/core/blow/command/SshCommandTest.groovy">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="46" column="8" selection-start="1403" selection-end="1403" vertical-scroll-proportion="1.4603175">
+          <folding>
+            <element signature="e#750#781#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/blow.conf">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="34" column="0" selection-start="646" selection-end="646" vertical-scroll-proportion="0.47619048">
           <folding />
         </state>
       </provider>

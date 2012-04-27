@@ -91,7 +91,7 @@ class BlowConfigTest extends Specification {
 			region-id = def-region
 			zone-id = def-zone
 			image-id = def-image
-			istance-type = def-type
+			instance-type = def-type
 			
 			my-cluster {
 			  
@@ -99,7 +99,7 @@ class BlowConfigTest extends Specification {
 				region-id = alpha
 				zone-id = beta
 				image-id = 1234
-				istance-type = micro.1
+				instance-type = micro.1
 				user-name = illo
 
 				plugin = [ trace, nfs, sge ]
@@ -189,7 +189,7 @@ class BlowConfigTest extends Specification {
 				region-id = alpha
 				zone-id = beta
 				image-id = 1234
-				istance-type = micro.1
+				instance-type = micro.1
 				size = 99
 	
 				plugin = [ nfs, sge ]

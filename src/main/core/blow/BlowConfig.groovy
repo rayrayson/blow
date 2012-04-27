@@ -102,7 +102,7 @@ class BlowConfig {
 		 * VM properties
 		 */
 		imageId = getString(conf, "image-id", null)
-		instanceType = getString(conf, "istance-type", "t1.micro")	
+		instanceType = getString(conf, "instance-type", "t1.micro")
 		
 		/*
 		 * the cluster size
@@ -262,7 +262,7 @@ class BlowConfig {
 		result.put("region-id", regionId)
 		result.put("zone-id", zoneId)
 		result.put("image-id", imageId)
-		result.put("istance-type",instanceType)
+		result.put("instance-type",instanceType)
 		result.put("size", size)
 		
 		return result

@@ -67,7 +67,7 @@ to the path where you downloaded Blow.
         zone-id = us-east-1d
         image-id =  ami-e565ba8c
         size = 2
-        istance-type = t1.micro
+        instance-type = t1.micro
 
         plugin = [
             hosts
