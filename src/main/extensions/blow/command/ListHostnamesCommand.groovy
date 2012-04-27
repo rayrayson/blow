@@ -28,7 +28,9 @@ class ListHostnamesCommand extends AbstractShellCommand {
 
 	@Override
 	public void invoke() {
-		println session.listHostNames()
+		session.listHostNames().each {
+            println it
+        }
 	}
 
 	@Override

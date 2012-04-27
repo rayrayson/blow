@@ -20,11 +20,10 @@
 package blow.command
 
 import blow.shell.AbstractShellCommand
-import org.jclouds.compute.domain.NodeMetadata
-import org.jclouds.compute.domain.ExecResponse
 import blow.shell.CommandCompletor
-import groovy.util.logging.Slf4j
 import blow.ssh.SshConsole
+import groovy.util.logging.Slf4j
+import org.jclouds.compute.domain.ExecResponse
 
 /**
  * Run SSH commands on the remote nodes
@@ -65,40 +64,18 @@ class SshCommand extends AbstractShellCommand implements CommandCompletor {
         }
     }
 
+    /**
+     * Find out all the possible alternatives for the command list completion
+     *
+     * @param cmdline The entered string provided by the user
+     * @return The list of possible options that can be entered to complete the command
+     */
 
     @Override
     List<String> findOptions(String cmdline) {
 
-        /*
-        * Find all available IP addresses
-        */
-        def result
-        if( !cmdline ) {
-            result = getSession().listNodes() .collect { NodeMetadata node  ->
-                node.getPublicAddresses().find()
-            }
-        }
+        findMatchingAttributes(cmdline)
 
-        else {
-            result = getSession().listNodes() .collect { NodeMetadata node ->
-                def entries = []
-                def ip = node.getPublicAddresses()?.find();
-                if( ip?.startsWith(cmdline) ) entries.add(ip)
-
-                if( node.getProviderId()?.startsWith(cmdline) ) {
-                    entries?.add(node.getProviderId())
-                }
-
-                if( node.getHostname()?.startsWith(cmdline) ) {
-                    entries.add(node.getHostname())
-                }
-
-                return entries
-            }
-            result = result.flatten()
-        }
-
-        return result?.sort();
     }
 
     @Override
@@ -168,20 +145,7 @@ class SshCommand extends AbstractShellCommand implements CommandCompletor {
 
     private void launchTerm() {
 
-        /*
-         * the node can be specified either with the:
-         * - IP address
-         * - the Hostname
-         * - the InstanceID (providerID)
-         */
-        def node = getSession().listNodes().find { NodeMetadata node ->
-
-                    return node.getPublicAddresses()?.contains(targetHost) \
-                        || node.getHostname() == targetHost \
-                        || node.getProviderId() == targetHost
-
-        }
-
+        def node = findMatchingNode(targetHost)
 
         if( !node ) {
             println "There isn'y any running node with the provide name/ip: 'targetHost'"

@@ -180,6 +180,7 @@ class BlowShell {
 			 * (that is supposed to be the command entered by the user and the rest part 
 			 * the arguments relative to it)
 			 */
+            def result = cursor
 			def sCommand = ""
 			def p = buffer.indexOf(' ')
 			if( p >= 0 ) {
@@ -195,17 +196,22 @@ class BlowShell {
                     def options = (availableCommands[sCommand] as CommandCompletor).findOptions( sOptions )
                     if( options ) {
                         candidates.addAll(options)
-                        return cursor - sOptions.length()
+                        result =  cursor - sOptions.length()
                     }
                 }
-				return cursor;
 			}
 			else { 
 				findMatchingActions(buffer, candidates)
-				return cursor-buffer.length();
+				result = cursor-buffer.length() ;
 			}
-			
-		}
+
+            // trick to add a blank space when there is just one candidate, so the right one
+            if( candidates.size() == 1 ) {
+                candidates[0] = candidates[0]+" "
+            }
+            return result
+
+        }
 		
 		private findMatchingActions(String prefix, List candidates) { 
 		

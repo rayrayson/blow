@@ -19,10 +19,15 @@
 
 package blow.command
 
-import blow.shell.AbstractShellCommand;
+import blow.shell.AbstractShellCommand
+import blow.shell.CommandCompletor
 
-class NodeInfoCommand extends AbstractShellCommand {
-
+/**
+ * Print out information details for the specified node
+ *
+ * @author Paolo Di Tommaso
+ */
+class NodeInfoCommand extends AbstractShellCommand implements CommandCompletor {
 	def nodeId
 	
 	@Override
@@ -35,7 +40,14 @@ class NodeInfoCommand extends AbstractShellCommand {
 	
 	@Override
 	public void invoke() {
-		session.printNodeInfo( nodeId )
+
+        def node = findMatchingNode( nodeId )
+        if( !node ) {
+            println "(cannot find any information for node: '$nodeId')"
+            return
+        }
+
+		session.printNodeInfo( node.getProviderId() )
 	}
 
 	@Override
@@ -46,4 +58,10 @@ class NodeInfoCommand extends AbstractShellCommand {
 		.stripIndent()
 	}
 
+    @Override
+    List<String> findOptions(String cmdline) {
+
+        findMatchingAttributes( cmdline, "providerId" )
+
+    }
 }
