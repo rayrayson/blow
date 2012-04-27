@@ -19,7 +19,8 @@
 
 package blow.command
 
-import spock.lang.*
+import spock.lang.Specification
+import blow.util.CmdLine
 
 /**
  * @author Paolo Di Tommaso
@@ -33,14 +34,14 @@ class SshCommandTest extends Specification{
         def ssh = new SshCommand();
 
         expect:
-        ssh.parse( cmdline )
+        ssh.parse( CmdLine.splitter(cmdline) )
         ssh.targetHost == target
         ssh.targetCommand == targetCommand
 
         where:
         cmdline << [ "hostname", "host something more", "node.com     blanks", "  node   args  " ]
         target << [ "hostname",   "host", "node.com", "node" ]
-        targetCommand << [ null, "something more", "blanks", "args  " ]
+        targetCommand << [ null, "something more", "blanks", "args" ]
     }
 
     def "test make regexp" () {

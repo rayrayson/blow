@@ -55,9 +55,14 @@ class SshCommand extends AbstractShellCommand implements CommandCompletor {
     @Override
     def void parse( def args ) {
 
-        targetHost = args.head()
-        targetCommand = args.size()>1 ? args.tail().join(' ') : null
-
+        if( args ) {
+            targetHost = args.head()
+            targetCommand = args.size()>1 ? args.tail().join(' ') : null
+        }
+        else {
+            targetHost = null
+            targetCommand = null
+        }
     }
 
 
