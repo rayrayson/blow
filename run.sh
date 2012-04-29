@@ -22,5 +22,4 @@ done
 #
 # Invoke the main class 
 #
-java -cp "$CLASSPATH" blow.shell.BlowShell "$@"
-
+exec java -cp "$CLASSPATH" blow.shell.BlowShell "$@"

@@ -25,6 +25,10 @@ import net.schmizz.sshj.transport.verification.HostKeyVerifier
 
 import java.security.PublicKey
 import net.schmizz.sshj.connection.channel.direct.PTYMode
+import sun.misc.SignalHandler
+import sun.misc.Signal
+import net.schmizz.sshj.connection.channel.direct.Signal as SshSignal
+import net.schmizz.sshj.common.Buffer
 
 /**
  * Implement a terminal redirecting remote host i/o to the system current system i/o
@@ -85,6 +89,9 @@ class SshConsole {
         );
 
 
+        def prevSigStop
+        def prevSigInt
+
         ssh.connect( host );
         try {
             if( key ) {
@@ -105,6 +112,14 @@ class SshConsole {
             session. allocatePTY(term, cols, rows, 0, 0, Collections.<PTYMode, Integer>emptyMap());
 
             final Session.Shell shell = session.startShell();
+
+
+            /*
+             * installs signals handles
+             */
+            prevSigInt = Signal.handle(new Signal("INT"), new SignalHandler() { @Override void handle(Signal signal) { shell.signal(SshSignal.INT)  }} )
+            prevSigStop = sun.misc.Signal.handle(new Signal("TSTP"), new SignalHandler() { @Override void handle(Signal signal) { /* TODO */  }} )
+
 
             /*
              * redirect the remote shell i/o to the current system console
@@ -163,6 +178,9 @@ class SshConsole {
         finally {
             if( session && session.isOpen() ) { session.close() }
             ssh.disconnect();
+
+            if( prevSigStop ) Signal.handle(new Signal("TSTP"), prevSigStop )
+            if( prevSigInt ) Signal.handle(new Signal("INT"), prevSigInt )
         }
     }
 

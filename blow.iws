@@ -2,12 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="933b0d44-6ce3-4f6c-830f-cd02389d53cd" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/core/blow/BlowSession.groovy" afterPath="$PROJECT_DIR$/src/main/core/blow/BlowSession.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/core/blow/shell/AbstractShellCommand.groovy" afterPath="$PROJECT_DIR$/src/main/core/blow/shell/AbstractShellCommand.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/core/blow/shell/BlowShell.groovy" afterPath="$PROJECT_DIR$/src/main/core/blow/shell/BlowShell.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/extensions/blow/command/ListHostnamesCommand.groovy" afterPath="$PROJECT_DIR$/src/main/extensions/blow/command/ListHostnamesCommand.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/extensions/blow/command/NodeInfoCommand.groovy" afterPath="$PROJECT_DIR$/src/main/extensions/blow/command/NodeInfoCommand.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/extensions/blow/command/SshCommand.groovy" afterPath="$PROJECT_DIR$/src/main/extensions/blow/command/SshCommand.groovy" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/blow.iml" afterPath="$PROJECT_DIR$/blow.iml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/blow.ipr" afterPath="$PROJECT_DIR$/blow.ipr" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/blow.iws" afterPath="$PROJECT_DIR$/blow.iws" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/run.sh" afterPath="$PROJECT_DIR$/run.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/core/blow/ssh/SshConsole.groovy" afterPath="$PROJECT_DIR$/src/main/core/blow/ssh/SshConsole.groovy" />
     </list>
     <ignored path="blow.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -67,50 +66,90 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="blow.conf" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/blow.conf">
+      <file leaf-file-name="Completion.groovy" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/core/blow/shell/Completion.groovy">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="35" column="11" selection-start="647" selection-end="658" vertical-scroll-proportion="0.0">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="NodeInfoCommand.groovy" pinned="false" current="true" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/main/extensions/blow/command/NodeInfoCommand.groovy">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="29" column="38" selection-start="958" selection-end="958" vertical-scroll-proportion="0.47613505">
+            <state line="31" column="0" selection-start="1007" selection-end="1174" vertical-scroll-proportion="0.0">
               <folding>
-                <element signature="e#750#788#0" expanded="true" />
+                <element signature="e#749#786#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="AbstractShellCommand.groovy" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/core/blow/shell/AbstractShellCommand.groovy">
+      <file leaf-file-name="Opt.groovy" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/core/blow/shell/Opt.groovy">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="114" column="37" selection-start="3035" selection-end="3035" vertical-scroll-proportion="0.0">
+            <state line="35" column="58" selection-start="1149" selection-end="1149" vertical-scroll-proportion="0.0">
               <folding>
-                <element signature="e#748#771#0" expanded="true" />
+                <element signature="e#749#783#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="BlowSession.groovy" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/core/blow/BlowSession.groovy">
+      <file leaf-file-name="BlowShell.groovy" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/core/blow/shell/BlowShell.groovy">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="494" column="0" selection-start="14327" selection-end="14327" vertical-scroll-proportion="0.0">
+            <state line="539" column="0" selection-start="14032" selection-end="14032" vertical-scroll-proportion="-4.8461537">
+              <folding>
+                <marker date="1335741346000" expanded="true" signature="14030:15037" placeholder="{...}" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="SshConsole.groovy" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/main/core/blow/ssh/SshConsole.groovy">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="208" column="73" selection-start="6773" selection-end="6773" vertical-scroll-proportion="0.6768402">
+              <folding>
+                <element signature="e#747#780#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Session.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="jar://$MAVEN_REPOSITORY$/net/schmizz/sshj/0.7.0/sshj-0.7.0-sources.jar!/net/schmizz/sshj/connection/channel/direct/Session.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="119" column="0" selection-start="4113" selection-end="4113" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="NodeMetadata.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="jar://$MAVEN_REPOSITORY$/org/jclouds/jclouds-compute/1.3.2/jclouds-compute-1.3.2-sources.jar!/org/jclouds/compute/domain/NodeMetadata.java">
+      <file leaf-file-name="Signal.class" pinned="false" current="false" current-in-tab="false">
+        <entry file="jar:///Library/Java/JavaVirtualMachines/1.6.0_29-b11-402.jdk/Contents/Home/../Classes/classes.jar!/sun/misc/Signal.class">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="33" column="17" selection-start="1161" selection-end="1161" vertical-scroll-proportion="0.0">
+            <state line="5" column="19" selection-start="152" selection-end="152" vertical-scroll-proportion="0.0">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Signal.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="jar://$MAVEN_REPOSITORY$/net/schmizz/sshj/0.7.0/sshj-0.7.0-sources.jar!/net/schmizz/sshj/connection/channel/direct/Signal.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="19" column="12" selection-start="796" selection-end="796" vertical-scroll-proportion="0.0">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="SessionChannel.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="jar://$MAVEN_REPOSITORY$/net/schmizz/sshj/0.7.0/sshj-0.7.0-sources.jar!/net/schmizz/sshj/connection/channel/direct/SessionChannel.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="190" column="98" selection-start="6580" selection-end="6668" vertical-scroll-proportion="0.0">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="AbstractChannel.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="jar://$MAVEN_REPOSITORY$/net/schmizz/sshj/0.7.0/sshj-0.7.0-sources.jar!/net/schmizz/sshj/connection/channel/AbstractChannel.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="366" column="47" selection-start="11005" selection-end="11023" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -124,7 +163,8 @@
     </FindUsagesManager>
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="CHECKOUT_INCLUDE_TAGS" value="false" />
+    <option name="UPDATE_CHANGES_POLICY" value="STASH" />
   </component>
   <component name="GroovyCompilerConfiguration">
     <excludes>
@@ -135,22 +175,22 @@
   <component name="IdeDocumentHistory">
     <option name="changedFiles">
       <list>
-        <option value="$PROJECT_DIR$/src/main/core/blow/storage/BlockStorage.groovy" />
-        <option value="$PROJECT_DIR$/src/main/extensions/blow/plugin/Nfs.groovy" />
-        <option value="$PROJECT_DIR$/changelog.md" />
-        <option value="$PROJECT_DIR$/src/main/extensions/blow/command/ListClustersCommand.groovy" />
-        <option value="$PROJECT_DIR$/src/main/extensions/blow/command/MasterInfoCommand.groovy" />
-        <option value="$PROJECT_DIR$/README.md" />
-        <option value="$PROJECT_DIR$/src/main/core/blow/BlowConfig.groovy" />
-        <option value="$PROJECT_DIR$/src/test/core/blow/BlowConfigTest.groovy" />
-        <option value="$PROJECT_DIR$/src/test/core/blow/command/SshCommandTest.groovy" />
-        <option value="$PROJECT_DIR$/blow.conf" />
-        <option value="$PROJECT_DIR$/src/main/core/blow/shell/BlowShell.groovy" />
-        <option value="$PROJECT_DIR$/src/main/core/blow/BlowSession.groovy" />
-        <option value="$PROJECT_DIR$/src/main/core/blow/shell/AbstractShellCommand.groovy" />
-        <option value="$PROJECT_DIR$/src/main/extensions/blow/command/SshCommand.groovy" />
         <option value="$PROJECT_DIR$/src/main/extensions/blow/command/ListHostnamesCommand.groovy" />
-        <option value="$PROJECT_DIR$/src/main/extensions/blow/command/NodeInfoCommand.groovy" />
+        <option value="$PROJECT_DIR$/src/main/core/blow/DynLoader.groovy" />
+        <option value="$PROJECT_DIR$/src/main/core/blow/shell/GenericMethodShellCommand.groovy" />
+        <option value="$PROJECT_DIR$/src/main/extensions/blow/command/ClusterCommands.groovy" />
+        <option value="$PROJECT_DIR$/src/test/extensions/blow/TestShellMethods.groovy" />
+        <option value="$PROJECT_DIR$/src/test/core/blow/shell/ShellMethodAdapterTest.groovy" />
+        <option value="$PROJECT_DIR$/src/main/core/blow/shell/ShellMethodAdapter.groovy" />
+        <option value="$PROJECT_DIR$/src/main/extensions/blow/command/NodesInfoCommand.groovy" />
+        <option value="$PROJECT_DIR$/src/main/extensions/blow/command/PutFilesCommand.groovy" />
+        <option value="$PROJECT_DIR$/src/main/extensions/blow/command/SshCommand.groovy" />
+        <option value="$PROJECT_DIR$/src/main/core/blow/BlowSession.groovy" />
+        <option value="$PROJECT_DIR$/changelog.md" />
+        <option value="$PROJECT_DIR$/src/main/core/blow/shell/Completion.groovy" />
+        <option value="$PROJECT_DIR$/src/main/core/blow/shell/Opt.groovy" />
+        <option value="$PROJECT_DIR$/src/main/core/blow/shell/BlowShell.groovy" />
+        <option value="$PROJECT_DIR$/src/main/core/blow/ssh/SshConsole.groovy" />
       </list>
     </option>
   </component>
@@ -165,10 +205,10 @@
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="16" />
-    <option name="y" value="32" />
-    <option name="width" value="1611" />
-    <option name="height" value="1007" />
+    <option name="x" value="60" />
+    <option name="y" value="33" />
+    <option name="width" value="1691" />
+    <option name="height" value="1022" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <OptionsSetting value="true" id="Add" />
@@ -185,7 +225,7 @@
   </component>
   <component name="ProjectView">
     <navigator currentView="ProjectPane" proportions="" version="1" splitterProportion="0.5">
-      <flattenPackages ProjectPane="true" />
+      <flattenPackages PackagesPane="true" ProjectPane="true" />
       <showMembers />
       <showModules />
       <showLibraryContents />
@@ -196,30 +236,6 @@
       <sortByType />
     </navigator>
     <panes>
-      <pane id="PackagesPane">
-        <subPane>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="blow" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="blow" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewModuleNode" />
-            </PATH_ELEMENT>
-          </PATH>
-        </subPane>
-      </pane>
-      <pane id="Scope">
-        <subPane subId="Project Files">
-          <PATH>
-            <PATH_ELEMENT USER_OBJECT="Root">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-          </PATH>
-        </subPane>
-      </pane>
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -255,6 +271,14 @@
               <option name="myItemId" value="test" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="extensions" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="blow" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
           </PATH>
           <PATH>
             <PATH_ELEMENT>
@@ -300,7 +324,7 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="blow" />
+              <option name="myItemId" value="shell" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -322,6 +346,206 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="blow" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="blow" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="main" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="extensions" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="blow" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="blow" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="main" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="extensions" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="command" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="blow" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="blow" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="main" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="core" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="blow" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="blow" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="main" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="core" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ssh" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="blow" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="blow" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="main" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="core" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="shell" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="blow" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="blow" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="main" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="core" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="blow" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="blow" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="blow" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="build" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+        </subPane>
+      </pane>
+      <pane id="PackagesPane">
+        <subPane>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="blow" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="blow" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewModuleNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="blow" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="blow" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageViewModuleNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="blow.shell" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PackageElementNode" />
+            </PATH_ELEMENT>
+          </PATH>
+        </subPane>
+      </pane>
+      <pane id="Scope">
+        <subPane subId="Project Files">
+          <PATH>
+            <PATH_ELEMENT USER_OBJECT="Root">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+          </PATH>
         </subPane>
       </pane>
     </panes>
@@ -333,20 +557,31 @@
     <property name="OverrideImplement.combined" value="true" />
     <property name="project.structure.proportion" value="0.15" />
     <property name="options.splitter.main.proportions" value="0.3" />
+    <property name="Repository.Attach.JavaDocs" value="false" />
     <property name="recentsLimit" value="5" />
-    <property name="options.lastSelected" value="fileTemplates" />
+    <property name="options.lastSelected" value="Groovy compiler" />
     <property name="MemberChooser.sorted" value="false" />
     <property name="project.structure.side.proportion" value="0.2" />
     <property name="GoToClass.includeJavaFiles" value="false" />
     <property name="MemberChooser.copyJavadoc" value="false" />
     <property name="GoToClass.toSaveIncludeLibraries" value="false" />
+    <property name="Repository.Attach.Sources" value="false" />
     <property name="MemberChooser.showClasses" value="true" />
     <property name="GoToClass.includeLibraries" value="false" />
-    <property name="dynamic.classpath" value="false" />
-    <property name="options.searchVisible" value="true" />
+    <property name="Downloaded.Files.Path" value="$PROJECT_DIR$/lib" />
     <property name="options.splitter.details.proportions" value="0.2" />
+    <property name="options.searchVisible" value="true" />
+    <property name="dynamic.classpath" value="false" />
   </component>
   <component name="RecentsManager">
+    <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="blow.shell" />
+    </key>
+    <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="blow.plugin" />
+      <recent name="blow.scp" />
+      <recent name="blow" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/src/test/extension" />
       <recent name="$PROJECT_DIR$/src/test/groovy" />
@@ -354,57 +589,8 @@
       <recent name="$PROJECT_DIR$/src/main/groovy/blow/plugin" />
       <recent name="$PROJECT_DIR$/src/main/groovy/blow" />
     </key>
-    <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
-      <recent name="blow.plugin" />
-      <recent name="blow.scp" />
-      <recent name="blow" />
-    </key>
   </component>
-  <component name="RunManager" selected="JUnit.AllTests">
-    <configuration default="false" name="QuoteStringTokenizerTest.test nested quotes" type="JUnit" factoryName="JUnit" temporary="true">
-      <module name="blow" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
-      <option name="ALTERNATIVE_JRE_PATH" />
-      <option name="PACKAGE_NAME" value="blow.util" />
-      <option name="MAIN_CLASS_NAME" value="blow.util.QuoteStringTokenizerTest" />
-      <option name="METHOD_NAME" value="test nested quotes" />
-      <option name="TEST_OBJECT" value="method" />
-      <option name="VM_PARAMETERS" value="-ea" />
-      <option name="PARAMETERS" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="ENV_VARIABLES" />
-      <option name="PASS_PARENT_ENVS" value="true" />
-      <option name="TEST_SEARCH_SCOPE">
-        <value defaultName="moduleWithDependencies" />
-      </option>
-      <envs />
-      <patterns />
-      <RunnerSettings RunnerId="Run" />
-      <ConfigurationWrapper RunnerId="Run" />
-      <method />
-    </configuration>
-    <configuration default="false" name="CmdLineHelperTest.test splitter" type="JUnit" factoryName="JUnit" temporary="true">
-      <module name="blow" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
-      <option name="ALTERNATIVE_JRE_PATH" />
-      <option name="PACKAGE_NAME" value="blow.util" />
-      <option name="MAIN_CLASS_NAME" value="blow.util.CmdLineHelperTest" />
-      <option name="METHOD_NAME" value="test splitter" />
-      <option name="TEST_OBJECT" value="method" />
-      <option name="VM_PARAMETERS" value="-ea" />
-      <option name="PARAMETERS" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="ENV_VARIABLES" />
-      <option name="PASS_PARENT_ENVS" value="true" />
-      <option name="TEST_SEARCH_SCOPE">
-        <value defaultName="moduleWithDependencies" />
-      </option>
-      <envs />
-      <patterns />
-      <RunnerSettings RunnerId="Run" />
-      <ConfigurationWrapper RunnerId="Run" />
-      <method />
-    </configuration>
+  <component name="RunManager" selected="JUnit.DynLoaderTest.load all classes">
     <configuration default="false" name="BlowShellTest.test init method" type="JUnit" factoryName="JUnit" temporary="true">
       <module name="blow" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
@@ -471,19 +657,49 @@
       <ConfigurationWrapper RunnerId="Run" />
       <method />
     </configuration>
-    <configuration default="true" type="GroovyScriptRunConfiguration" factoryName="Groovy">
-      <module name="" />
-      <setting name="path" value="" />
-      <setting name="vmparams" value="" />
-      <setting name="params" value="" />
-      <setting name="workDir" value="$PROJECT_DIR$" />
-      <setting name="debug" value="false" />
-      <method>
-        <option name="AntTarget" enabled="false" />
-        <option name="BuildArtifacts" enabled="false" />
-        <option name="Make" enabled="true" />
-        <option name="Maven.BeforeRunTask" enabled="false" />
-      </method>
+    <configuration default="false" name="DynLoaderTest" type="JUnit" factoryName="JUnit" temporary="true">
+      <module name="blow" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
+      <option name="PACKAGE_NAME" value="blow" />
+      <option name="MAIN_CLASS_NAME" value="blow.DynLoaderTest" />
+      <option name="METHOD_NAME" />
+      <option name="TEST_OBJECT" value="class" />
+      <option name="VM_PARAMETERS" value="-ea" />
+      <option name="PARAMETERS" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <option name="TEST_SEARCH_SCOPE">
+        <value defaultName="moduleWithDependencies" />
+      </option>
+      <envs />
+      <patterns />
+      <RunnerSettings RunnerId="Run" />
+      <ConfigurationWrapper RunnerId="Run" />
+      <method />
+    </configuration>
+    <configuration default="false" name="DynLoaderTest.load all classes" type="JUnit" factoryName="JUnit" temporary="true">
+      <module name="blow" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
+      <option name="PACKAGE_NAME" value="blow" />
+      <option name="MAIN_CLASS_NAME" value="blow.DynLoaderTest" />
+      <option name="METHOD_NAME" value="load all classes" />
+      <option name="TEST_OBJECT" value="method" />
+      <option name="VM_PARAMETERS" value="-ea" />
+      <option name="PARAMETERS" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <option name="TEST_SEARCH_SCOPE">
+        <value defaultName="moduleWithDependencies" />
+      </option>
+      <envs />
+      <patterns />
+      <RunnerSettings RunnerId="Run" />
+      <ConfigurationWrapper RunnerId="Run" />
+      <method />
     </configuration>
     <configuration default="true" type="#org.jetbrains.idea.devkit.run.PluginConfigurationType" factoryName="Plugin">
       <module name="" />
@@ -505,6 +721,24 @@
       <method>
         <option name="AntTarget" enabled="false" />
         <option name="BuildArtifacts" enabled="false" />
+        <option name="Maven.BeforeRunTask" enabled="false" />
+      </method>
+    </configuration>
+    <configuration default="true" type="Applet" factoryName="Applet">
+      <module name="" />
+      <option name="MAIN_CLASS_NAME" />
+      <option name="HTML_FILE_NAME" />
+      <option name="HTML_USED" value="false" />
+      <option name="WIDTH" value="400" />
+      <option name="HEIGHT" value="300" />
+      <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
+      <option name="VM_PARAMETERS" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
+      <method>
+        <option name="AntTarget" enabled="false" />
+        <option name="BuildArtifacts" enabled="false" />
+        <option name="Make" enabled="true" />
         <option name="Maven.BeforeRunTask" enabled="false" />
       </method>
     </configuration>
@@ -533,24 +767,6 @@
       <envs />
       <properties />
       <listeners />
-      <method>
-        <option name="AntTarget" enabled="false" />
-        <option name="BuildArtifacts" enabled="false" />
-        <option name="Make" enabled="true" />
-        <option name="Maven.BeforeRunTask" enabled="false" />
-      </method>
-    </configuration>
-    <configuration default="true" type="Applet" factoryName="Applet">
-      <module name="" />
-      <option name="MAIN_CLASS_NAME" />
-      <option name="HTML_FILE_NAME" />
-      <option name="HTML_USED" value="false" />
-      <option name="WIDTH" value="400" />
-      <option name="HEIGHT" value="300" />
-      <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
-      <option name="VM_PARAMETERS" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
-      <option name="ALTERNATIVE_JRE_PATH" />
       <method>
         <option name="AntTarget" enabled="false" />
         <option name="BuildArtifacts" enabled="false" />
@@ -602,20 +818,48 @@
         <option name="Maven.BeforeRunTask" enabled="false" />
       </method>
     </configuration>
+    <configuration default="true" type="GroovyScriptRunConfiguration" factoryName="Groovy Script">
+      <module name="" />
+      <setting name="path" value="" />
+      <setting name="vmparams" value="" />
+      <setting name="params" value="" />
+      <setting name="workDir" value="$PROJECT_DIR$" />
+      <setting name="debug" value="false" />
+      <method>
+        <option name="AntTarget" enabled="false" />
+        <option name="BuildArtifacts" enabled="false" />
+        <option name="Make" enabled="true" />
+        <option name="Maven.BeforeRunTask" enabled="false" />
+      </method>
+    </configuration>
     <list size="5">
-      <item index="0" class="java.lang.String" itemvalue="JUnit.QuoteStringTokenizerTest.test nested quotes" />
-      <item index="1" class="java.lang.String" itemvalue="JUnit.CmdLineHelperTest.test splitter" />
-      <item index="2" class="java.lang.String" itemvalue="JUnit.BlowShellTest.test init method" />
-      <item index="3" class="java.lang.String" itemvalue="JUnit.AllTests" />
-      <item index="4" class="java.lang.String" itemvalue="JUnit.BlowShellTest.test addAction method" />
+      <item index="0" class="java.lang.String" itemvalue="JUnit.BlowShellTest.test init method" />
+      <item index="1" class="java.lang.String" itemvalue="JUnit.AllTests" />
+      <item index="2" class="java.lang.String" itemvalue="JUnit.BlowShellTest.test addAction method" />
+      <item index="3" class="java.lang.String" itemvalue="JUnit.DynLoaderTest" />
+      <item index="4" class="java.lang.String" itemvalue="JUnit.DynLoaderTest.load all classes" />
     </list>
+    <configuration default="true" type="GroovyScriptRunConfiguration" factoryName="Groovy">
+      <module name="" />
+      <setting name="path" value="" />
+      <setting name="vmparams" value="" />
+      <setting name="params" value="" />
+      <setting name="workDir" value="$PROJECT_DIR$" />
+      <setting name="debug" value="false" />
+      <method>
+        <option name="AntTarget" enabled="false" />
+        <option name="BuildArtifacts" enabled="false" />
+        <option name="Make" enabled="true" />
+        <option name="Maven.BeforeRunTask" enabled="false" />
+      </method>
+    </configuration>
     <configuration name="&lt;template&gt;" type="WebApp" default="true" selected="false">
       <Host>localhost</Host>
       <Port>5050</Port>
     </configuration>
   </component>
   <component name="ShelveChangesManager" show_recycled="false" />
-  <component name="SvnConfiguration" maxAnnotateRevisions="500" myUseAcceleration="nothing" myAutoUpdateAfterCommit="false" cleanupOnStartRun="false">
+  <component name="SvnConfiguration" maxAnnotateRevisions="500">
     <option name="USER" value="" />
     <option name="PASSWORD" value="" />
     <option name="mySSHConnectionTimeout" value="30000" />
@@ -642,29 +886,31 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="16" y="32" width="1611" height="1007" extended-state="0" />
+    <frame x="60" y="33" width="1691" height="1022" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="JetGradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3295711" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32890365" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39954853" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="10" side_tool="true" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39954853" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="11" side_tool="true" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3295711" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
-      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3295711" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
+      <window_info id="Dynamic Properties" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32988435" sideWeight="0.6710963" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="true" content_ui="tabs" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.24952015" sideWeight="0.6704289" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24952015" sideWeight="0.6704289" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3295711" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.24893488" sideWeight="0.6710963" order="0" side_tool="false" content_ui="combo" x="264" y="124" width="409" height="903" />
+      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24893488" sideWeight="0.6704289" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2535991" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Thumbnails" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32890365" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="JetGradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="VcsContentAnnotationSettings">
@@ -700,10 +946,7 @@
     <option name="INCLUDE_TEXT_INTO_PATCH" value="false" />
     <option name="INCLUDE_TEXT_INTO_SHELF" value="false" />
     <option name="CREATE_PATCH_EXPAND_DETAILS_DEFAULT" value="true" />
-    <option name="SHOW_FILE_HISTORY_DETAILS" value="true" />
-    <option name="SHOW_VCS_ERROR_NOTIFICATIONS" value="true" />
     <option name="FORCE_NON_EMPTY_COMMENT" value="false" />
-    <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="false" />
     <option name="LAST_COMMIT_MESSAGE" />
     <option name="MAKE_NEW_CHANGELIST_ACTIVE" value="false" />
     <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="false" />
@@ -726,128 +969,124 @@
     <option name="FILTER_TARGETS" value="false" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/src/main/extensions/blow/command/MasterInfoCommand.groovy">
+    <entry file="file://$PROJECT_DIR$/src/main/extensions/blow/command/StorageCommands.groovy">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="26" column="27" selection-start="881" selection-end="881" vertical-scroll-proportion="0.82539684">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/README.md">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="69" column="8" selection-start="2171" selection-end="2171" vertical-scroll-proportion="0.33212996">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/test/core/blow/BlowConfigTest.groovy">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="191" column="16" selection-start="4088" selection-end="4088" vertical-scroll-proportion="0.33333334">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/core/blow/BlowConfig.groovy">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="264" column="20" selection-start="7195" selection-end="7195" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://$MAVEN_REPOSITORY$/org/spockframework/spock-core/0.6-groovy-1.8/spock-core-0.6-groovy-1.8-sources.jar!/org/spockframework/util/GroovyRuntimeUtil.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="99" column="0" selection-start="3257" selection-end="3257" vertical-scroll-proportion="0.319224">
-          <folding>
-            <element signature="e#0#7265#0" expanded="false" />
-            <element signature="imports" expanded="false" />
-            <element signature="e#4089#4119#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/test/core/blow/command/SshCommandTest.groovy">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="46" column="8" selection-start="1403" selection-end="1403" vertical-scroll-proportion="1.4603175">
-          <folding>
-            <element signature="e#750#781#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/blow.conf">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="35" column="11" selection-start="647" selection-end="658" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://$MAVEN_REPOSITORY$/org/jclouds/jclouds-compute/1.3.2/jclouds-compute-1.3.2-sources.jar!/org/jclouds/compute/domain/internal/NodeMetadataImpl.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="44" column="13" selection-start="1545" selection-end="1545" vertical-scroll-proportion="0.19354838">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://$MAVEN_REPOSITORY$/org/jclouds/jclouds-compute/1.3.2/jclouds-compute-1.3.2-sources.jar!/org/jclouds/compute/domain/NodeMetadata.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="33" column="17" selection-start="1161" selection-end="1161" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/core/blow/BlowSession.groovy">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="494" column="0" selection-start="14327" selection-end="14327" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/extensions/blow/command/ListHostnamesCommand.groovy">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="31" column="22" selection-start="997" selection-end="997" vertical-scroll-proportion="0.65591395">
+        <state line="33" column="6" selection-start="1001" selection-end="1001" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/extensions/blow/command/SshCommand.groovy">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="70" column="87" selection-start="2037" selection-end="2037" vertical-scroll-proportion="-0.39784947">
+        <state line="147" column="27" selection-start="4113" selection-end="4113" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/extensions/blow/command/ClusterCommands.groovy">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="87" column="5" selection-start="2336" selection-end="2336" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/tools/groovy-1.8.6/src/main/groovy/lang/MetaClass.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="156" column="24" selection-start="7292" selection-end="7292" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/extensions/blow/command/NodesInfoCommand.groovy">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="37" column="7" selection-start="1131" selection-end="1131" vertical-scroll-proportion="0.0">
           <folding>
             <element signature="e#750#788#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/changelog.md">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="3" column="47" selection-start="143" selection-end="143" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/core/blow/shell/Completion.groovy">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="31" column="0" selection-start="1007" selection-end="1174" vertical-scroll-proportion="0.0">
+          <folding>
+            <element signature="e#749#786#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/core/blow/shell/Opt.groovy">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="35" column="58" selection-start="1149" selection-end="1149" vertical-scroll-proportion="0.0">
+          <folding>
+            <element signature="e#749#783#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/core/blow/shell/BlowShell.groovy">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="207" column="92" selection-start="5721" selection-end="5721" vertical-scroll-proportion="4.451613">
+        <state line="539" column="0" selection-start="14032" selection-end="14032" vertical-scroll-proportion="-4.8461537">
           <folding>
-            <element signature="e#748#789#0" expanded="true" />
+            <marker date="1335741346000" expanded="true" signature="14030:15037" placeholder="{...}" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/tools/groovy-1.8.6-src/src/main/org/codehaus/groovy/runtime/DefaultGroovyMethods.java">
+    <entry file="jar://$MAVEN_REPOSITORY$/net/schmizz/sshj/0.7.0/sshj-0.7.0-sources.jar!/net/schmizz/sshj/connection/channel/direct/Session.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="2834" column="36" selection-start="111887" selection-end="111887" vertical-scroll-proportion="0.32387707">
+        <state line="119" column="0" selection-start="4113" selection-end="4113" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/core/blow/shell/AbstractShellCommand.groovy">
+    <entry file="jar://$MAVEN_REPOSITORY$/net/schmizz/sshj/0.7.0/sshj-0.7.0-sources.jar!/net/schmizz/sshj/connection/channel/AbstractChannel.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="114" column="37" selection-start="3035" selection-end="3035" vertical-scroll-proportion="0.0">
-          <folding>
-            <element signature="e#748#771#0" expanded="true" />
-          </folding>
+        <state line="366" column="47" selection-start="11005" selection-end="11023" vertical-scroll-proportion="0.0">
+          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/extensions/blow/command/NodeInfoCommand.groovy">
+    <entry file="jar://$MAVEN_REPOSITORY$/net/schmizz/sshj/0.7.0/sshj-0.7.0-sources.jar!/net/schmizz/sshj/connection/channel/direct/SessionChannel.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="29" column="38" selection-start="958" selection-end="958" vertical-scroll-proportion="0.47613505">
+        <state line="190" column="98" selection-start="6580" selection-end="6668" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar:///Library/Java/JavaVirtualMachines/1.6.0_29-b11-402.jdk/Contents/Home/../Classes/classes.jar!/sun/misc/Signal.class">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="5" column="19" selection-start="152" selection-end="152" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$MAVEN_REPOSITORY$/net/schmizz/sshj/0.7.0/sshj-0.7.0-sources.jar!/net/schmizz/sshj/connection/channel/direct/Signal.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="19" column="12" selection-start="796" selection-end="796" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/build/launcher.stub">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="-0.508079">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/core/blow/ssh/SshConsole.groovy">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="208" column="73" selection-start="6773" selection-end="6773" vertical-scroll-proportion="0.6768402">
           <folding>
-            <element signature="e#750#788#0" expanded="true" />
+            <element signature="e#747#780#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -893,7 +1132,7 @@
       </state>
       <state key="GlobalLibrariesConfigurable.UI">
         <settings>
-          <last-edited>groovy-1.8.6</last-edited>
+          <last-edited>groovy-1.8.5</last-edited>
           <splitter-proportions>
             <option name="proportions">
               <list>
