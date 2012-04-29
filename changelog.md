@@ -1,5 +1,10 @@
+2012-05-29, version 0.5.0
+- Introducing 'shell methods' extension
+- Added 'listvolumes' command
+- Fixed error in 'checkForValidResponse' method
+
 2012-04-25, version 0.4.4
-- Switched to logback as logging subsistem
+- Switched to logback as logging subsystem
 - Logging to .blow.log file on current directory
 - Some fixes
 

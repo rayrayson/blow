@@ -35,6 +35,17 @@ public interface ShellCommand {
 	 * @return the string to be entered into the shell to invoke this command
 	 */
 	String getName();
+
+
+    /**
+     * @return One line description for the command
+     */
+    public String getSynopsis()
+
+    /**
+     * @return The help string for this command
+     */
+    public String getHelp()
 	
 	/**
 	 * Parse the command arguments provided by the user
@@ -48,10 +59,6 @@ public interface ShellCommand {
 	 */
 	void invoke();
 	
-	
-	/**
-	 * Returns the help for this command
-	 */
-	public String help()
+
 	
 }

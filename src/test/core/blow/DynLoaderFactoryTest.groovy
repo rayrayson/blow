@@ -33,7 +33,7 @@ class DynLoaderFactoryTest extends Specification {
 			loader != null
 			loader.foundGroovySources != null
 			loader.allClasses != null
-			loader.actionClasses != null
+			loader.shellCommands != null
 			loader.pluginClasses != null
 		
 	}

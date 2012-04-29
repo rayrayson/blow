@@ -68,7 +68,7 @@ class BlowShellTest extends Specification {
         def action = new AbstractShellCommand() {
             public String getName() { "hola" }
             public void invoke() {}
-            public String help() {}
+            public String getSynopsis() {}
         };
 
         when:

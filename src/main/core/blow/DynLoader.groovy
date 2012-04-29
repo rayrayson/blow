@@ -28,6 +28,8 @@ import java.lang.reflect.Modifier;
 
 import java.util.zip.ZipInputStream
 import blow.shell.ShellCommand
+import java.lang.reflect.Method
+import blow.shell.Cmd
 
 /**
  * Load all the class defined dynamically 
@@ -72,7 +74,7 @@ public class DynLoader {
 	 * to be used as Pilot shell extension	
 	 */
 	@Lazy
-	def List<Class<ShellCommand>> actionClasses = {
+	def List<Class<ShellCommand>> shellCommands = {
 		allClasses.findAll { Class clazz -> 
 			ShellCommand.class.isAssignableFrom(clazz) \
 			&& !clazz.isAnnotation() \
@@ -81,8 +83,39 @@ public class DynLoader {
 			&& Modifier.isPublic(clazz.getModifiers())
 		} 
 	}()
-	
-	
+
+    /**
+     * The list of discovered method marked with the {@link Cmd} annotation.
+     * These methods will added to the command available using the shell-methods
+     * extension mechanism
+     */
+    @Lazy
+    def List<Method> shellMethods = {
+
+        def result = []
+
+        allClasses.collect { Class clazz ->
+
+            if( !ShellCommand.class.isAssignableFrom(clazz) \
+                && !clazz.isAnnotation() \
+                && !Modifier.isAbstract(clazz.getModifiers()) \
+                && !Modifier.isInterface(clazz.getModifiers()) \
+                && Modifier.isPublic(clazz.getModifiers()) )
+            {
+
+                result.addAll(  clazz.getMethods().findAll { Method m -> m.getAnnotation(Cmd) } )
+
+            }
+
+        }
+
+        return result
+
+
+    }()
+
+    
+    
 	/**
 	 * All and only one classes the are annotated with {@link Plugin}
 	 */
@@ -119,7 +152,7 @@ public class DynLoader {
 		}
 		
 		/*
-		 * try to laod more classes for plugins in the extesions classpath
+		 * try to laod more classes for plugins in the extension classpath
 		 */
 		if( foundGroovySources ) {
 			log.trace "Loading groovy sources" 

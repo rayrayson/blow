@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso
+ * Copyright (c) 2012. Paolo Di Tommaso.
  *
  *   This file is part of Blow.
  *
@@ -17,41 +17,31 @@
  *   along with Blow.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package blow.command
+package blow
 
-import blow.shell.AbstractShellCommand;
+import blow.shell.Cmd
+import blow.shell.BlowShell
 
 /**
- * Display the list hostname of the current running nodes
- *
- * @author Paolo Di Tommaso
+ * Created by IntelliJ IDEA.
+ * User: yo
+ * Date: 4/28/12
+ * Time: 12:26 AM
+ * To change this template use File | Settings | File Templates.
  */
-class ListClustersCommand extends AbstractShellCommand {
+class TestShellMethods {
 
-	@Override
-	public String getName() {
-		return "listclusters";
-	}
+    def BlowSession session
 
-	@Override
-	public void invoke() {
+    def BlowShell shell
 
-		def clusters = session.listClusters()
-		if( clusters ) {
-			clusters.each { println "${it}"  }
-		}
-		else {
-			println "(no clusters available)"
-		}
 
-	}
+    @Cmd
+    def command1 () {}
 
-	@Override
-	public String help() {
-		"""\
-		Shows the list of the current running clusters
-		"""
-		.stripIndent()
-	}
+    def command2 () {}
+
+    @Cmd("cmd_3")
+    def command3 () { def args }
 
 }

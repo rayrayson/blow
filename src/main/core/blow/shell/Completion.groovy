@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso
+ * Copyright (c) 2012. Paolo Di Tommaso.
  *
  *   This file is part of Blow.
  *
@@ -17,27 +17,35 @@
  *   along with Blow.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package blow.command
+package blow.shell
 
-import blow.shell.AbstractShellCommand;
+import java.lang.annotation.Retention
+import java.lang.annotation.RetentionPolicy
 
-class ListHostnamesCommand extends AbstractShellCommand {
+/**
+ * Shell method that want to provide shell completion feature
+ * may use this annotation providing a closure to be as completion logic.
+ * <p>
+ * For example:
+ *
+ * <pre>
+ * class AnyName {
+ *
+ *     @Cmd
+ *     @Completion({ cmdline -> [ cmdline, cmdline.reverse() ]  })
+ *     def void myCustomCommand () {
+ *         :
+ *     }
+ *
+ * }
+ * </pre>
+ *
+ *
+ *
+ * @author Paolo Di Tommaso
+ */
 
-	@Override
-	public String getName() { "listhostnames" }
-
-	@Override
-	public void invoke() {
-		session.listHostNames().each {
-            println it
-        }
-	}
-
-	@Override
-	public String help() {
-		"""\
-		Shows the 'hostname' of the running nodes in current cluster
-		"""
-	}
-
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Completion {
+    Class value() // will hold a closure class
 }

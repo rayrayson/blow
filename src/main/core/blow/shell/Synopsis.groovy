@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso
+ * Copyright (c) 2012. Paolo Di Tommaso.
  *
  *   This file is part of Blow.
  *
@@ -17,30 +17,20 @@
  *   along with Blow.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package blow.command
+package blow.shell
 
-import blow.shell.AbstractShellCommand;
+import java.lang.annotation.Target
+import java.lang.annotation.ElementType
+import java.lang.annotation.Retention
+import java.lang.annotation.RetentionPolicy
 
 /**
- * Display the details of the current configuration
+ * Provide a brief description for a shell command extension
  *
  * @author Paolo Di Tommaso
  */
-class ConfCommand extends AbstractShellCommand {
-
-	@Override
-	public String getName() { "conf" }
-
-	@Override
-	public void invoke() {
-		println session.getConfString()
-	}
-
-	@Override
-	public String help() {
-		"""\
-		Shows the configuration settings for the current selected cluster"""
-		.stripIndent()
-	}
-
+@Target( ElementType.METHOD )
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Synopsis {
+    String value()
 }

@@ -20,9 +20,9 @@
 package blow.shell
 
 /**
- * Provide autocomplete altenatives at command level.
+ * Provide auto-complete alternatives at command level.
  * <p>
- * A {@link ShellCommand} that wants to provide autocomplete feature
+ * A {@link ShellCommand} that wants to provide auto-complete feature
  * have to implement this interface
  *
  * @author Paolo Di Tommaso

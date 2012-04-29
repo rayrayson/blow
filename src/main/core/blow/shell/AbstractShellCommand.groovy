@@ -44,93 +44,23 @@ abstract class AbstractShellCommand implements ShellCommand {
 	final BlowSession getSession() { shell.session }
 
 	/**
-	 * Define the command command name usedin the 'shell' interface,
+	 * Define the command command name used in the 'shell' interface,
 	 * override to provide a custom command name/verb
 	 */
 	public String getName() { this.getClass().getSimpleName(); } 
 
 	@Override
-	public void parse(def args) {
-		/* do nothing by default */
-	}
-
-	/**
-	 * The help string showed in the shell 
-	 */
-	public String help() { null }
+	public void parse(def args) { }
 
 
-
-    /**
-     * Find all matching attributes in all run instances
-     *
-     * @param criteria
-     * @return
-     */
-    def List<String> findMatchingAttributes( def criteria = null, def defAttribute = 'publicAddresses' ) {
-
-        /*
-        * Find all available IP addresses
-        */
-        def result
-        if( !criteria ) {
-            result = session.listNodes() .collect { NodeMetadata node  ->
-                node[defAttribute]
-            }
-        }
-
-        else {
-            result = session.listNodes() .collect { NodeMetadata node ->
-                def entries = []
-                def ip = node.getPublicAddresses()?.find();
-                if( ip?.startsWith(criteria) ) entries.add(ip)
-
-                if( node.getProviderId()?.startsWith(criteria) ) {
-                    entries?.add(node.getProviderId())
-                }
-
-                if( node.getHostname()?.startsWith(criteria) ) {
-                    entries.add(node.getHostname())
-                }
-
-                return entries
-            }
-        }
-
-        result = result.flatten()
-        return result?.sort();
-
-    }
-
-    /**
-     * Find the first node matching the specified attribute.
-     * The node can be specified either with the:
-     * - IP address
-     * - the Hostname
-     * - the InstanceID (providerID)
-     *
-     * @param value
-     * @return
-     */
-    def NodeMetadata findMatchingNode( String value ) {
-
-        def list = session.listNodes().findAll() { NodeMetadata node ->
-
-            return node.getPublicAddresses()?.contains(value) \
-                        || node.getHostname() == value \
-                        || node.getProviderId() == value
-
-        }
-
-        if( list?.size() > 1 ) {
-            log.warn "The specified attribute '$value' cannot identify uniquely a node"
-            return null
-        }
-
-        return list?.size() > 0 ? list.find() : null
+    @Override
+	public String getSynopsis() { null }
 
 
-    }
+    @Override
+    public  String getHelp() { getSynopsis() }
+
+
 
 
 }

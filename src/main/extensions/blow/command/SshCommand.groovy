@@ -74,7 +74,7 @@ class SshCommand extends AbstractShellCommand implements CommandCompletor {
     @Override
     List<String> findOptions(String cmdline) {
 
-        findMatchingAttributes(cmdline)
+        session.findMatchingAttributes(cmdline)
 
     }
 
@@ -145,7 +145,7 @@ class SshCommand extends AbstractShellCommand implements CommandCompletor {
 
     private void launchTerm() {
 
-        def node = findMatchingNode(targetHost)
+        def node = session.findMatchingNode(targetHost)
 
         if( !node ) {
             println "There isn'y any running node with the provide name/ip: 'targetHost'"

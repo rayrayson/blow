@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso
+ * Copyright (c) 2012. Paolo Di Tommaso.
  *
  *   This file is part of Blow.
  *
@@ -17,32 +17,18 @@
  *   along with Blow.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package blow.command
+package blow.shell
 
-import blow.shell.AbstractShellCommand;
+import spock.lang.Specification
 
 /**
- * Shows the details of the current running master node
- *
- * @author Paolo Di Tommaso
+ * Created by IntelliJ IDEA.
+ * User: yo
+ * Date: 4/29/12
+ * Time: 4:26 PM
+ * To change this template use File | Settings | File Templates.
  */
-class MasterInfoCommand extends AbstractShellCommand {
+class ShellMethodAdapterTest extends Specification {
 
-	@Override
-	public String getName() { "masterinfo" }
-
-	@Override
-	public void invoke() {
-		def id = session.getMasterMetadata().getProviderId()
-		session.printNodeInfo( id )
-	}
-
-	@Override
-	public String help() {
-		"""\
-		Shows the information details of the 'master' node
-		"""
-		.stripIndent()
-	}
-
+   //TODO
 }

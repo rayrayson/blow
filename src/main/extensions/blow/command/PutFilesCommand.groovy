@@ -19,30 +19,18 @@
 
 package blow.command
 
-import blow.shell.AbstractShellCommand;
+import blow.shell.AbstractShellCommand
+import blow.shell.Synopsis
+import blow.shell.Cmd
+import blow.BlowSession;
 
-class PutFilesCommand extends AbstractShellCommand {
+class PutFilesCommand  {
 
-    private def fLocal
-    private def fTarget
-
-	@Override
-	public String getName() { "put" }
-
-    public void parse(def args) {
-
-        if( !args || args.size()==0) {
-            fLocal = null
-            fTarget = null
-            return
-         }
-
-         fLocal = args.head()
-         fTarget = args.tail().join(' ')
-    }
-
-	@Override
-	public void invoke() {
+    def BlowSession session
+    
+    @Cmd
+    @Synopsis("Copy a file to the remote hosts")
+	public void put( String fLocal, String fTarget ) {
 
 		if( !fLocal ) {
 			println "usage: put <local filename> [<targetHost path>]"
@@ -61,10 +49,6 @@ class PutFilesCommand extends AbstractShellCommand {
 
 	}
 
-	@Override
-	public String help() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+
 
 }

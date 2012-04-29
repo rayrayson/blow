@@ -90,15 +90,30 @@ class BlowShell {
 	 * Defines the 'help' command used by the shell
 	 * 
 	 */
-	class HelpAction extends AbstractShellCommand {
+	class HelpCommand extends AbstractShellCommand implements CommandCompletor {
 
+        String cmd
+        
 		@Override
-		public String getName() { "help" } ;
+		public String getName() { "help" } 
 
+        @Override
+        public void parse( def args ) {  cmd = args ? args.head() : null  }
+        
 		@Override
 		public void invoke() {
-			printUsage()
-			listCommands()
+            
+            if( !cmd ) {
+                printUsage()
+                listCommands()
+            }
+            else if( availableCommands[cmd] ) {
+                def help = availableCommands[cmd].getHelp()?.trim()
+                println help ?: "(no help available)"
+            }
+            else {
+                println "Unknown command: '${cmd}'"
+            }
 		}
 		
 		def listCommands() {
@@ -110,19 +125,27 @@ class BlowShell {
 			println ""
 			availableCommands.each {
 				name, _action -> 
-				println " ${name.padRight(max)} ${_action.help()?.trim() ?: ''}"
+				println " ${name.padRight(max)} ${_action.getSynopsis()?.trim() ?: ''}"
 			}
 		} 
 
 		@Override
-		public String help() {
+		public String getSynopsis() {
 			"Print this help"
-		}} 
+		}
+
+        @Override
+        List<String> findOptions(String cmdline) {
+            def result = []
+            availableCommands.keySet().each() { if(!cmdline || it.startsWith(cmdline)) result.add(it) }
+            result.sort()
+        }
+    } 
 	
 	/**
-	 * Defines the 'use' command to switch between different confifuration
+	 * Defines the 'use' command to switch between different configuration
 	 */
-	class UseAction extends AbstractShellCommand {
+	class UseCommand extends AbstractShellCommand {
 
         private String clusterName
 
@@ -138,14 +161,14 @@ class BlowShell {
 		}
 
 		@Override
-		public String help() {
+		public String getSynopsis() {
 			"Switch to a different cluster configuration"
 		} } 
 	
 	/**
 	 * Exit from the shell environment 
 	 */
-	class ExitAction extends AbstractShellCommand {
+	class ExitCommand extends AbstractShellCommand {
 
 		public String getName() { "exit" }
 		
@@ -236,13 +259,13 @@ class BlowShell {
 		/*
 		 * add the availableCommands
 		 */
-		addCommand( new HelpAction() )
-		addCommand( new UseAction() )
-		addCommand( new ExitAction() )
+		addCommand( new HelpCommand() )
+		addCommand( new UseCommand() )
+		addCommand( new ExitCommand() )
 
-		loader.actionClasses.each { Class clazz ->
-			addCommand(clazz)
-		} 
+		loader.shellCommands.each { clazz -> addCommand(clazz) }
+        
+        loader.shellMethods.each {  method -> addCommand( new ShellMethodAdapter(this, method) ) }
 		
 		/*
 		 * create the console reader 
@@ -264,9 +287,11 @@ class BlowShell {
 			addCommand(clazz.newInstance())
 		}
 		catch( Throwable e ) {
-			log.error("Cannot create instance for shell command class: '$clazz?.getName()'")
+			log.error("Cannot add shell command defined by class: '${clazz?.getName()}'. Make sure that it defines a default constructor.", e)
 		}
 	}
+
+    
 
     /**
      * Add the specified {@link ShellCommand} instance to the list of {@link #availableCommands}
@@ -428,7 +453,7 @@ class BlowShell {
             }
             else if( availableCommands.containsKey( mainCommand.name ) ) {
                 print "${mainCommand.name}: "
-                println availableCommands[mainCommand.name].help() ?: "(no help available)"
+                println availableCommands[mainCommand.name].getSynopsis() ?: "(no help available)"
             }
             else {
                 println "Unknown command: '${mainCommand.name}'"

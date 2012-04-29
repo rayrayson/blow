@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso
+ * Copyright (c) 2012. Paolo Di Tommaso.
  *
  *   This file is part of Blow.
  *
@@ -17,39 +17,22 @@
  *   along with Blow.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package blow.command;
+package blow.shell;
 
-import blow.shell.AbstractShellCommand;
+
+import java.lang.annotation.ElementType
+import java.lang.annotation.Retention
+import java.lang.annotation.Target
+import static java.lang.annotation.RetentionPolicy.RUNTIME
 
 /**
- * Terminate the current running cluster
- *
+ * Use this annotation to inject configuration parameters to plugins 
+ * 
  * @author Paolo Di Tommaso
+ *
  */
-public class TerminateCommand extends AbstractShellCommand {
-
-	@Override
-	public String getName() { "terminate" }
-
-	@Override
-	public void invoke() {
-
-        def answer = shell.prompt("Please confirm that you want to termiante cluster named ${shell.session.clusterName} [y/n]") {
-            ['y','n'].contains(it)
-        }
-
-        if( answer == 'y' ) {
-            session.terminateCluster()
-        }
-
-	}
-
-	@Override
-	public String help() {
-		"""\
-		Terminate the current cluster
-		"""
-		.stripIndent()
-	}
-
+@Target( ElementType.METHOD )
+@Retention(RUNTIME)
+public @interface Cmd {
+	String value() default "";
 }

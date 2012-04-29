@@ -28,6 +28,7 @@ import org.jclouds.ec2.services.ElasticBlockStoreClient
 import java.util.concurrent.TimeoutException
 
 import blow.BlowConfig
+import org.jclouds.ec2.domain.Snapshot
 
 /**
  * Abstraction on (Amazon) Block Store 
@@ -69,14 +70,14 @@ class BlockStorage {
 	*/
    def attachVolume( String nodeId, String volumeId, String mountPath = "/data", String device = "/dev/sdh" ) {
 	   // now attach a EBS volume
-       blow.storage.BlockStorage.log.debug "Attaching vol: $volumeId to instance: $nodeId"
+       log.debug "Attaching vol: $volumeId to instance: $nodeId"
 	   Attachment attachment = ebs.attachVolumeInRegion(conf.regionId, volumeId, nodeId, device)
 
 	   Volume vol
 	   def status = attachment.getStatus()
 	   // TODO add a timeout constraint
 	   while( status != Attachment.Status.ATTACHED ) {
-		   blow.storage.BlockStorage.log.debug "Waiting the volume to be attached ($status)"
+		   log.debug "Waiting the volume to be attached ($status)"
 		   sleep(30000)
 		   // query for the attachment status
 		   vol = ebs.describeVolumesInRegion(conf.regionId, volumeId).find({true})
@@ -118,7 +119,7 @@ class BlockStorage {
 	  else {
 		  
 		  if( !size ) {
-			  blow.storage.BlockStorage.log.info("Volume size not specified. Applying default size: 10G")
+			  log.info("Volume size not specified. Applying default size: 10G")
 		  	  size = 10
 		  }
 		  
@@ -149,14 +150,14 @@ class BlockStorage {
    
    def void deleteVolume( String instanceId, String device, String volumeId, String snapshotId ) {
 	   
-	   blow.storage.BlockStorage.log.debug "Deleting volume attached to: '$device' for instance: '${instanceId}' "
+	   log.debug "Deleting volume attached to: '$device' for instance: '${instanceId}' "
 	   
 	   /*
 	   * lookup for the volume to delete
 	   */
 	  def vol = findAttachedVolume(instanceId, device)
 	  if( vol == null) {
-		  blow.storage.BlockStorage.log.warn "No volume found for instance-id: '$instanceId' and device: '$device'."
+		  log.warn "No volume found for instance-id: '$instanceId' and device: '$device'."
 		  return
 	  }
 	  
@@ -167,12 +168,12 @@ class BlockStorage {
 		  volumeId = vol.getId()
 	  }
 	  else if( volumeId != vol.getId() ){
-		  blow.storage.BlockStorage.log.warn "Volume id (${vol.getId()}) does not match with the declared one (${volumeId}). Volume deleting skipped.";
+		  log.warn "Volume id (${vol.getId()}) does not match with the declared one (${volumeId}). Volume deleting skipped.";
 		  return
 	  }
 	  
 	  if( snapshotId && snapshotId != vol.getSnapshotId() ) {
-		  blow.storage.BlockStorage.log.warn "Snapshot id (${vol.getSnapshotId()}) does not match with the declared one (${snapshotId}) for volume: {volumeId}. Volume deleting skipped.";
+		  log.warn "Snapshot id (${vol.getSnapshotId()}) does not match with the declared one (${snapshotId}) for volume: {volumeId}. Volume deleting skipped.";
 		  return
 		  }
 	  
@@ -180,16 +181,16 @@ class BlockStorage {
 	   * Before detach the volume 
 	   * Note: detaching EBS volume could take a lot of time
 	   */
-	 blow.storage.BlockStorage.log.debug "Detaching volume: '${volumeId}' "
+	 log.debug "Detaching volume: '${volumeId}' "
 	 ebs.detachVolumeInRegion(conf.regionId, volumeId, true, null)
 	 try {
 		 waitForVolumeAvail(vol, 10 * 60 * 1000)
-         blow.storage.BlockStorage.log.debug "Deleting volume: '${volumeId}' "
+         log.debug "Deleting volume: '${volumeId}' "
 		 ebs.deleteVolumeInRegion( conf.regionId, volumeId )
 	 }
 	 catch( TimeoutException e ) {
-	 	blow.storage.BlockStorage.log.warn( e.getMessage() );
-         blow.storage.BlockStorage.log.warn("Detaching volume: '${volumeId}' is requiring too much time. Volume has not been deleted. YOU WILL HAVE TO DELETE IT MANUALLY!!")
+	 	log.warn( e.getMessage() );
+        log.warn("Detaching volume: '${volumeId}' is requiring too much time. Volume has not been deleted. YOU WILL HAVE TO DELETE IT MANUALLY!!")
 	 }
 	 
 	   
@@ -215,7 +216,20 @@ class BlockStorage {
 	  
 	  return vol
    }
-   
+
+
+   def Set<Volume> listVolumes() {
+
+       ebs.describeVolumesInRegion( conf.regionId )
+
+   }
+
+
+    def Set<Snapshot> listSnapshots() {
+
+        ebs.describeSnapshotsInRegion( conf.regionId )
+
+    }
 
 
 	

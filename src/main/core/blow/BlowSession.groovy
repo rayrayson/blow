@@ -424,7 +424,7 @@ class BlowSession {
 			result.put( node.getId(), response )
             if( response.getExitCode() ) {
                 errorCount++
-                erros.put( node.getId(), response )
+                errors.put( node.getId(), response )
             }
 
             if( log.isDebugEnabled() && response.getExitCode() ) {
@@ -595,5 +595,76 @@ class BlowSession {
 		checkForValidResponse(map)
 	}
 
+
+    /**
+     * Find all matching attributes in all run instances
+     *
+     * @param criteria
+     * @return
+     */
+    def List<String> findMatchingAttributes( def criteria = null, def defAttribute = 'publicAddresses' ) {
+
+        /*
+        * Find all available IP addresses
+        */
+        def result
+        if( !criteria ) {
+            result = listNodes() .collect { NodeMetadata node  ->
+                node[defAttribute]
+            }
+        }
+
+        else {
+            result = listNodes() .collect { NodeMetadata node ->
+                def entries = []
+                def ip = node.getPublicAddresses()?.find();
+                if( ip?.startsWith(criteria) ) entries.add(ip)
+
+                if( node.getProviderId()?.startsWith(criteria) ) {
+                    entries?.add(node.getProviderId())
+                }
+
+                if( node.getHostname()?.startsWith(criteria) ) {
+                    entries.add(node.getHostname())
+                }
+
+                return entries
+            }
+        }
+
+        result = result.flatten()
+        return result?.sort();
+
+    }
+
+    /**
+     * Find the first node matching the specified attribute.
+     * The node can be specified either with the:
+     * - IP address
+     * - the Hostname
+     * - the InstanceID (providerID)
+     *
+     * @param value
+     * @return
+     */
+    def NodeMetadata findMatchingNode( String value ) {
+
+        def list = listNodes().findAll() { NodeMetadata node ->
+
+            return node.getPublicAddresses()?.contains(value) \
+                        || node.getHostname() == value \
+                        || node.getProviderId() == value
+
+        }
+
+        if( list?.size() > 1 ) {
+            log.warn "The specified attribute '$value' cannot identify uniquely a node"
+            return null
+        }
+
+        return list?.size() > 0 ? list.find() : null
+
+
+    }
 	
 }
