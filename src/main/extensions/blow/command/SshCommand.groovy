@@ -148,7 +148,7 @@ class SshCommand extends AbstractShellCommand implements CommandCompletor {
         def node = session.findMatchingNode(targetHost)
 
         if( !node ) {
-            println "There isn'y any running node with the provide name/ip: 'targetHost'"
+            println "There isn't any running node with the provide name/ip: 'targetHost'"
             return
         }
         // normalize to the IP address
