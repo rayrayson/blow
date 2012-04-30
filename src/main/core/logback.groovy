@@ -42,8 +42,8 @@ import blow.util.PrettyConsoleLayout
  */
 def consoleLevel = {
 
-    if( BlowShell.options.trace ) { return Level.TRACE }
-    else if( BlowShell.options.debug ) { return Level.DEBUG }
+    if( BlowShell.options?.trace ) { return Level.TRACE }
+    else if( BlowShell.options?.debug ) { return Level.DEBUG }
     else { return Level.INFO }
 
 }
@@ -74,7 +74,7 @@ appender("rolling", RollingFileAppender) {
 
 }
 
-if( BlowShell.options.trace ) {
+if( BlowShell.options?.trace ) {
     logger("blow", Level.TRACE, ['console','rolling'], false)
 }
 else  {
