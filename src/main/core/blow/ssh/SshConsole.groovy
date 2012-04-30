@@ -20,15 +20,14 @@
 package blow.ssh
 
 import net.schmizz.sshj.SSHClient
+import net.schmizz.sshj.connection.channel.direct.PTYMode
 import net.schmizz.sshj.connection.channel.direct.Session
 import net.schmizz.sshj.transport.verification.HostKeyVerifier
+import sun.misc.Signal
+import sun.misc.SignalHandler
 
 import java.security.PublicKey
-import net.schmizz.sshj.connection.channel.direct.PTYMode
-import sun.misc.SignalHandler
-import sun.misc.Signal
-import net.schmizz.sshj.connection.channel.direct.Signal as SshSignal
-import net.schmizz.sshj.common.Buffer
+import groovy.util.logging.Slf4j
 
 /**
  * Implement a terminal redirecting remote host i/o to the system current system i/o
@@ -37,6 +36,7 @@ import net.schmizz.sshj.common.Buffer
  * Date: 4/23/12
  *
  */
+@Slf4j
 class SshConsole {
 
     /** The remote host name to which connect */
@@ -58,7 +58,7 @@ class SshConsole {
     boolean useCompression = true;
 
     /** The terminal type to use e.g {@code ansi}, {@code vt100}, {@code vt220}, {@code vt320} */
-    String term = "vt100"
+    String term = "ansi"
 
 
     private SSHClient ssh;
@@ -117,8 +117,15 @@ class SshConsole {
             /*
              * installs signals handles
              */
-            prevSigInt = Signal.handle(new Signal("INT"), new SignalHandler() { @Override void handle(Signal signal) { shell.signal(SshSignal.INT)  }} )
-            prevSigStop = sun.misc.Signal.handle(new Signal("TSTP"), new SignalHandler() { @Override void handle(Signal signal) { /* TODO */  }} )
+            prevSigInt = Signal.handle(new Signal("INT"), new SignalHandler() { @Override void handle(Signal signal) {
+                shell.getOutputStream().write(3)    // send CTRL+C signal
+                shell.getOutputStream().flush()
+            }} )
+            prevSigStop = sun.misc.Signal.handle(new Signal("TSTP"), new SignalHandler() { @Override void handle(Signal signal) {
+                shell.getOutputStream().write(0x1A)   // send CTRL+Z signal
+                shell.getOutputStream().flush()
+
+            }} )
 
 
             /*
@@ -145,6 +152,10 @@ class SshConsole {
                     while( shell.isOpen() ) {
                         if( System.in.available() ) {
                             int len = System.in.read(buf)
+                            // Hack!! Java returns 0xA (line feed) pressing the enter key, but some terminal application
+                            // does not work properly. It seems better to replace it with 0xD (carriage return)
+                            if( len==1 && buf[0]==0xA ) buf[0]=0xD
+
                             out.write(buf,0,len)
                             out.flush()
                         }
@@ -208,8 +219,6 @@ class SshConsole {
         println "Connecting to $host as $user"
         SshConsole term = new SshConsole(user: user, host: host, key: key)
         term.launch()
-
-        //System.exit(0)
     }
 
 }
