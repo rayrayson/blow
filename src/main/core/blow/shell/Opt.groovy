@@ -47,7 +47,6 @@ import static java.lang.Character.UNASSIGNED
 @Target( ElementType.PARAMETER )
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Opt {
-    String name()
     String argName() default ""
     String longOpt() default ""
     int args() default 0

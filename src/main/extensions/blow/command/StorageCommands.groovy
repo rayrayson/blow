@@ -43,7 +43,7 @@ class StorageCommands  {
     @Cmd("listvolumes")
     @Completion( { findVolumesCompletion(it) } )
     @Synopsis("Display the list of volumes in the current region")
-    def void listVolumes( @Opt( name='name') def name,  def args ) {
+    def void listVolumes( @Opt( argName='name') def name,  def args ) {
 
         def list = shell.session.blockStore.listVolumes()
         if( !list ) {

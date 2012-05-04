@@ -19,13 +19,12 @@
 
 package blow.shell
 
-import java.lang.reflect.Method
+import blow.BlowSession
+import groovy.util.logging.Slf4j
 import org.apache.commons.cli.Option
 import org.apache.commons.cli.OptionBuilder
-import groovy.util.logging.Slf4j
-import java.lang.reflect.Field
-import blow.BlowSession
-import java.lang.reflect.Modifier
+
+import java.lang.reflect.Method
 
 /**
  * This class converts a generic method marked with the {@link Cmd} annotation to be sued
@@ -128,12 +127,12 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
             if( !annotation ) continue
 
             Option option
-            if( annotation.name() ) {
-                option = new Option( annotation.name(), annotation.description() )
+            if( annotation.argName() ) {
+                option = new Option( annotation.argName(), annotation.description() )
                 if( annotation.longOpt() ) option.setLongOpt(annotation.longOpt())
             }
             else if( annotation.longOpt() ) {
-                option = OptionBuilder.withLongOpt(annotation).create();
+                option = OptionBuilder.withLongOpt(annotation.longOpt()).create();
                 if( annotation.description() ) option.setDescription(annotation.description())
             }
             else {
@@ -260,7 +259,7 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
             // we get the value form the CLI's option object
             if( (opt=methodOpts[i]) ) {
                 if( !options ) continue
-                if( opt.name() ) val = options[ opt.name() ]
+                if( opt.argName() ) val = options[ opt.argName() ]
                 else if( opt.longOpt() ) val = options[ opt.longOpt() ]
                 else val = null
 

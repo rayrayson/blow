@@ -27,7 +27,7 @@ import jline.ConsoleReader
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import blow.*
-import blow.util.CmdLine
+import blow.util.CmdLineHelper
 
 /**
  * The Pilot shell runner 
@@ -205,21 +205,27 @@ class BlowShell {
 			 */
             def result = cursor
 			def sCommand = ""
+            def cmdItems = CmdLineHelper.splitter(buffer)
 			def p = buffer.indexOf(' ')
 			if( p >= 0 ) {
                 /*
-                 * Aplit it again, the first part is interpred as the command entered by the user
+                 * Apply it again, the first part is interpreted as the command entered by the user
                  * the second part is/are the option(s) for this command
                  *
                  * So here it will delegate the command itself to propose some options to display
                  */
 				sCommand = buffer.substring(0,p);
-                def sOptions = buffer.substring(p).trim()
+                
+                def sArgs = buffer.substring(p).trim()
                 if( sCommand && availableCommands[sCommand] instanceof CommandCompletor) {
-                    def options = (availableCommands[sCommand] as CommandCompletor).findOptions( sOptions )
+                    def items = CmdLineHelper.splitter(sArgs)
+                    def token = items && items.size()>0 ? items.last() : ''
+                    def options = (availableCommands[sCommand] as CommandCompletor).findOptions( token )
                     if( options ) {
+                        options.sort()
                         candidates.addAll(options)
-                        result =  cursor - sOptions.length()
+                        result =  cursor - token.length()
+                        BlowShell.this.log.debug ">>> cursor: $cursor - length: ${sArgs.length()} = $result "
                     }
                 }
 			}
@@ -482,7 +488,7 @@ class BlowShell {
 		 */
 		while( true ) {
 		
-			def line = CmdLine.splitter( prompt() )
+			def line = CmdLineHelper.splitter( prompt() )
 			if( !line || line.size()==0 ) { continue }
 
 			try {

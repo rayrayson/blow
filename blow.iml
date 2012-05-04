@@ -48,6 +48,9 @@
     <orderEntry type="library" name="Maven: org.jclouds.driver:jclouds-netty:1.3.2" level="project" />
     <orderEntry type="library" name="Maven: org.jboss.netty:netty:3.2.4.Final" level="project" />
     <orderEntry type="library" name="Maven: org.skife.com.typesafe.config:typesafe-config:0.3.0" level="project" />
+    <orderEntry type="library" name="Maven: org.codehaus.gpars:gpars:0.12" level="project" />
+    <orderEntry type="library" name="Maven: org.codehaus.jsr166-mirror:jsr166y:1.7.0" level="project" />
+    <orderEntry type="library" name="Maven: org.codehaus.jsr166-mirror:extra166y:1.7.0" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:jcl-over-slf4j:1.6.4" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:jul-to-slf4j:1.6.4" level="project" />
     <orderEntry type="library" name="Maven: ch.qos.logback:logback-classic:1.0.1" level="project" />

@@ -38,6 +38,12 @@
   		<version>0.3.0</version>
   	</dependency>
 
+    <dependency>
+        <groupId>org.codehaus.gpars</groupId>
+        <artifactId>gpars</artifactId>
+        <version>0.12</version>
+    </dependency>
+
 
     <!-- http://www.slf4j.org/legacy.html -->
   	<dependency>

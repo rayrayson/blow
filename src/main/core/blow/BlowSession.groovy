@@ -146,6 +146,19 @@ class BlowSession {
 
 	public BlockStorage getBlockStore() { blockstore }
 
+
+    private void postEvent( def event ) {
+        assert event
+
+        try {
+            eventBus.post( event )
+        }
+        catch( Throwable e ) {
+
+        }
+    }
+
+
 	/**
 	 * Create an instance of the specific cluster 
 	 * 
@@ -664,7 +677,7 @@ class BlowSession {
 
         return list?.size() > 0 ? list.find() : null
 
-
     }
-	
+
+
 }

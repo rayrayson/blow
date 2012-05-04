@@ -20,7 +20,7 @@
 package blow.command
 
 import spock.lang.Specification
-import blow.util.CmdLine
+import blow.util.CmdLineHelper
 
 /**
  * @author Paolo Di Tommaso
@@ -34,7 +34,7 @@ class SshCommandTest extends Specification{
         def ssh = new SshCommand();
 
         expect:
-        ssh.parse( CmdLine.splitter(cmdline) )
+        ssh.parse( CmdLineHelper.splitter(cmdline) )
         ssh.targetHost == target
         ssh.targetCommand == targetCommand
 
