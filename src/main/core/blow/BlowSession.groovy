@@ -200,8 +200,13 @@ class BlowSession {
 	private startNodes( TemplateBuilder template, int numberOfNodes, String role ) {
 		
 		// note this will create a user with the same name as you on the
-		// node. ex. you can connect via ssh publicip
-		AdminAccess admin = AdminAccess.standard();
+		// node. ex. you can connect via ssh public ip
+        def builder = new AdminAccess.Builder()
+		AdminAccess admin = builder
+                            .adminUsername( conf.userName ) 
+                            .adminPublicKey( conf.publicKeyFile )   
+                            .adminPrivateKey( conf.privateKeyFile )
+                            .build()
 
 		TemplateOptions opt = new TemplateOptions()
 		opt.runScript(admin)
@@ -531,6 +536,7 @@ class BlowSession {
 		def ip = targetNode.getPublicAddresses()?.find()
 		log.debug("[scp] connecting host: ${ip}")
 		def scp = new ScpClient()
+		
 		scp.connect( ip, conf.userName, conf.privateKeyFile )
 		try {
 			def result

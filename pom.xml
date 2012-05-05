@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>blow</groupId>
   <artifactId>blow</artifactId>
-  <version>0.5.0</version>
+  <version>0.5.1</version>
   <dependencies>
   	<dependency>
   		<groupId>org.jclouds.provider</groupId>

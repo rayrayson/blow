@@ -1,4 +1,7 @@
-2012-05-29, version 0.5.0
+2012-05-05, version 0.5.1
+- Fixed issue user-name, public/private keys parameters 
+
+2012-04-29, version 0.5.0
 - Introducing 'shell methods' extension
 - Added 'listvolumes' command
 - Fixed error in 'checkForValidResponse' method
