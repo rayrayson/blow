@@ -25,6 +25,7 @@ import blow.plugin.*;
 import blow.shell.BlowShellTest;
 import blow.ssh.ScpClientTest;
 import blow.util.CmdLineHelperTest;
+import blow.util.KeyPairBuilderTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
@@ -51,6 +52,7 @@ import util.TypesafeConfigTest;
     DynLoaderFactoryTest.class,
     BlowShellTest.class,
     CmdLineHelperTest.class,
+    KeyPairBuilderTest.class,
 
     SshCommandTest.class,
 

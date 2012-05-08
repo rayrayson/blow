@@ -293,6 +293,8 @@ class BlowConfigTest extends Specification {
 		then:
 			thrown(BlowConfigException)
 				
-	} 
+	}
+
+
 
 }

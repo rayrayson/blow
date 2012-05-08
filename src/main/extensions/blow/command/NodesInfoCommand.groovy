@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso
+ * Copyright (c) 2012. Paolo Di Tommaso.
  *
  *   This file is part of Blow.
  *
@@ -19,14 +19,11 @@
 
 package blow.command
 
-import blow.shell.AbstractShellCommand
-import blow.shell.CommandCompletor
 import blow.BlowSession
-import blow.shell.BlowShell
 import blow.shell.Cmd
+import blow.shell.Completion
 import blow.shell.Synopsis
 import org.jclouds.compute.domain.NodeMetadata
-import blow.shell.Completion
 
 /**
  * Print out information details for the specified node
@@ -44,7 +41,7 @@ class NodesInfoCommand  {
         def nodes = session.listNodes() ;
         if( nodes ) {
             nodes.each { NodeMetadata node ->
-                println "${node.providerId}; ${node.getPublicAddresses()?.find()?.padLeft(15)}; ${node.getHostname()?.padLeft(15)}; ${node.state}; ${node.group}; ${node.getUserMetadata()?.'Role'}"
+                println "${node.providerId}; ${node.getPublicAddresses()?.find()?.padLeft(15)}; ${node.state}; ${node.group}; ${node.getUserMetadata()?.'Role'}"
             }
             return
         }

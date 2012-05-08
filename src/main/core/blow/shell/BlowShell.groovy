@@ -28,6 +28,8 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import blow.*
 import blow.util.CmdLine
+import blow.exception.MissingKeyException
+import blow.util.KeyPairBuilder
 
 /**
  * The Pilot shell runner 
@@ -391,14 +393,32 @@ class BlowShell {
 		 */
 			
 		BlowConfig config
-		try {
-			config = new BlowConfig(confObj, clusterName)
-			config.checkValid()
-		}
-		catch( BlowConfigException e ) {
-			System.err.println "Configuration error: ${e.message}"
-			return
-		}
+        while( true ) {
+            try {
+                config = new BlowConfig(confObj, clusterName)
+                config.checkValid()
+                // configuration validated -> exit from teh loop
+                break
+            }
+            catch( MissingKeyException e ) {
+                def answer = prompt("The required key file: '${e.keyFile}' does not exist. Do you Blow to create it?", ['y','n'])
+                if( answer == 'y' ) {
+                    KeyPairBuilder.create()
+                            .privateKey( config.privateKeyFile )
+                            .publicKey( config.publicKeyFile )
+                            .store()
+                }
+                else {
+                    println "Blow requires a valid asymmetric key-pair to continue. Configure them in the blow.conf file."
+                    System.exit 2
+                }
+            }
+            catch( BlowConfigException e ) {
+                System.err.println "Configuration error: ${e.message}"
+                return
+            }
+        }
+
 		
 		/*
 		 * if OK, close the previous instance 
@@ -509,7 +529,7 @@ class BlowShell {
 	 * 
 	 * @return the entered text
 	 */
-	def prompt( String prompt = null, Closure<String> accept = null ) {
+	def String prompt( String prompt = null, Closure<String> accept = null ) {
 		def cluster = session ? "[${session.clusterName}] " : ""
 
         // format the prompt nicely
@@ -525,6 +545,22 @@ class BlowShell {
 
         return line
 	}
+
+    /**
+     * Wait for an the user console input. Only the entries specified as the second
+     * parameters will be accepted as valid.
+     *
+     * @param query The string value to show on the input prompt
+     * @param options A list of valid entries that will accepted, otherwise
+     * it will continue to prompt for an answer
+     */
+    def String prompt ( String query, List<String> options  ) {
+        assert options, "You should provide at least one entry in the 'options' list parameter"
+
+        def show = (query ?: "") + " [${options.join('/')}]"
+        prompt( show ) { it in options }
+
+    }
 	
 	def void printUsage() {
 		println "usage: ${Project.name} <clustername> [command [..]]"

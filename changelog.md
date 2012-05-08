@@ -1,3 +1,6 @@
+2012-05-08, version 0.5.2 
+- SSH key-pair are created automatically if missing 
+
 2012-05-05, version 0.5.1
 - Fixed issue user-name, public/private keys parameters 
 
