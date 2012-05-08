@@ -21,6 +21,7 @@ package blow
 
 import blow.exception.BlowConfigException
 import blow.plugin.PluginFactory
+import blow.plugin.Validate
 import com.google.common.base.Charsets
 import com.google.common.io.Files
 import com.typesafe.config.Config
@@ -30,9 +31,9 @@ import com.typesafe.config.ConfigValue
 import groovy.util.logging.Slf4j
 import org.jclouds.domain.LoginCredentials
 
-import java.lang.reflect.Method
-import blow.plugin.Validate
 import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Method
+import blow.exception.MissingKeyException
 
 /**
  * Contains all configuration required to handle a cluster 
@@ -43,7 +44,7 @@ import java.lang.reflect.InvocationTargetException
 
 @Slf4j
 class BlowConfig {
-	
+
 	def accessKey
 	def secretKey
 
@@ -115,10 +116,20 @@ class BlowConfig {
 		 * credential 
 		 */
 		userName = getString(conf, "user-name", System.getProperty("user.name")) 
-		privateKeyFile = new File(getString(conf,"private-key", System.getProperty("user.home") + "/.ssh/id_rsa"))
-		publicKeyFile = new File(getString(conf,"public-key", System.getProperty("user.home") + "/.ssh/id_rsa.pub"))
+		privateKeyFile = getFile(conf,"private-key")
+		publicKeyFile = getFile(conf,"public-key")
 
-		
+        // if not keys has been specified fallback to the default private key
+        if ( !privateKeyFile && !publicKeyFile ) {
+            privateKeyFile = getDefaultKeyFile()
+        }
+
+        // use by default the same as private + '.pub' extension
+        if( privateKeyFile && !publicKeyFile ) {
+            publicKeyFile = new File( privateKeyFile.toString() + ".pub" )
+        }
+
+
 		/*
 		 * size of the cluster
 		 */
@@ -177,12 +188,33 @@ class BlowConfig {
 		/*
 		 * validate credentials
 		 */
-		checkTrue( userName, "Missing cluster user name. Please provide attribute 'user-name' in your configuration") 
-//		checkIf( privateKeyFile.exists(), "Missing ")
-//		checkIf( privateKeyFile.text.startsWith("-----BEGIN RSA PRIVATE KEY-----"), "" )
-//		
-//		checkIf( publicKeyFile.exists(), "")
-//		checkIf( publicKeyFile.text.startsWith("ssh-rsa"), "" )
+		checkTrue( userName, "Missing cluster user name. Please provide attribute 'user-name' in your configuration")
+
+        /*
+         * Verify keys
+         */
+        // now verify that this keys exists otherwise raise an exception
+        if( !privateKeyFile.exists() ) {
+            throw new MissingKeyException(privateKeyFile)
+        }
+
+        if( !publicKeyFile.exists() ) {
+            throw new MissingKeyException(publicKeyFile)
+        }
+
+
+        if( !privateKeyFile.text.startsWith("-----BEGIN RSA PRIVATE KEY-----") \
+            && !privateKeyFile.text.startsWith("-----BEGIN DSA PRIVATE KEY-----") )
+        {
+             throw new BlowConfigException("Invalid private key file format: '$privateKeyFile'")
+        }
+
+
+		if( !publicKeyFile.text.startsWith("ssh-rsa") \
+		    && !publicKeyFile.text.startsWith("ssh-dss") )
+        {
+            throw new BlowConfigException("Invalid public key file format: '$publicKeyFile'")
+        }
 
         /*
          * validate plugins
@@ -251,22 +283,63 @@ class BlowConfig {
 	} 
 	
 	private String getString( Config conf, String key, String defValue = null) {
-		return conf.hasPath(key) ? conf.getString(key) : defValue
+        return conf.hasPath(key) ? conf.getString(key) : defValue
 	}
+
+    private File getFile( Config conf, String key, File defValue = null ) {
+        def val = conf.hasPath(key) ? conf.getString(key) : null
+        return val ? new File(val) : defValue
+    }
 	
 	def getConfMap() {
 
 		def result = [:]
-		
+
 		result.put("access-key", accessKey)
 		result.put("region-id", regionId)
 		result.put("zone-id", zoneId)
 		result.put("image-id", imageId)
 		result.put("instance-type",instanceType)
 		result.put("size", size)
-		
-		return result
+        result.put("private-key", privateKeyFile)
+        result.put("public-key", publicKeyFile)
+
+        return result
 	}
 
-	
+    private static getDefaultKeyFile() {
+        def result = [:]
+
+        def localPrivateKeyFile = new File('./id_rsa')
+        def localPublicKeyFile = new File('./id_rsa.pub')
+        if( localPrivateKeyFile.exists() && localPublicKeyFile.exists() ) {
+            return localPrivateKeyFile
+        }
+
+        def ssh = new File(System.getProperty("user.home"),'.ssh')
+        def privateKeyFile = new File(ssh,"id_rsa")
+        def publicKeyFile = new File(ssh,"id_rsa.pub")
+
+        if( privateKeyFile.exists() && publicKeyFile.exists() ) {
+            return privateKeyFile
+        }
+
+        privateKeyFile = new File(ssh,"id_dsa")
+        publicKeyFile = new File(ssh,"id_dsa.pub")
+
+        if( privateKeyFile.exists() && publicKeyFile.exists() ) {
+            return privateKeyFile
+        }
+
+
+        /*
+         * when none of them exists fallback to non-existing keys in the current path
+         */
+        return localPrivateKeyFile
+
+
+    }
+
+
+
 }

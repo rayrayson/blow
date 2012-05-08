@@ -2,7 +2,8 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>blow</groupId>
   <artifactId>blow</artifactId>
-  <version>0.5.1</version>
+  <version>0.5.2</version>
+
   <dependencies>
   	<dependency>
   		<groupId>org.jclouds.provider</groupId>
@@ -72,7 +73,13 @@
 		<groupId>com.jcraft</groupId>
 		<artifactId>jzlib</artifactId>
 		<version>1.1.1</version>
-	</dependency> 	
+	</dependency>
+
+    <dependency>
+          <groupId>com.jcraft</groupId>
+          <artifactId>jsch</artifactId>
+          <version>0.1.48</version>
+    </dependency>
   	
     <dependency>
       <groupId>org.spockframework</groupId>
