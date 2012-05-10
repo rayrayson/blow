@@ -119,10 +119,12 @@ class Build {
 		
 		// copy groovy dependencies
 		ant.copy( todir: pathEmbedLibs , verbose: "true" ) {
-			  fileset( dir: GROOVY_HOME, includes: 'embeddable/groovy-all-*.jar'  )
+			  fileset( dir: GROOVY_HOME, includes: 'lib/groovy-*.jar'  )
+              fileset( dir: GROOVY_HOME, includes: 'lib/antlr-*.jar'  )
 			  fileset( dir: GROOVY_HOME, includes: 'lib/commons-cli-*.jar'  )
 			  fileset( dir: GROOVY_HOME, includes: 'lib/asm-*.jar'  )
-			  fileset( dir: GROOVY_HOME, includes: 'lib/jline-*.jar'  )
+			  fileset( dir: GROOVY_HOME, includes: 'lib/gpars-*.jar' )
+              fileset( dir: GROOVY_HOME, includes: 'lib/jline-*.jar'  )
 			  mapper type:"flatten"
 			}
 		
