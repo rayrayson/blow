@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso
+ * Copyright (c) 2012, the authors.
  *
  *   This file is part of Blow.
  *
@@ -107,22 +107,25 @@ class BlockStorage {
 	   * create a volume from the specified 'snapshot' and the specified 'size' 
 	   */
 	  if( snapshotId && size ) {
+          log.debug "Creating volume from snapshot ${snapshotId} with size $size G"
 		  vol = ebs.createVolumeFromSnapshotInAvailabilityZone( conf.zoneId, size, snapshotId )
 	  }
 	  /*
 	   * create a volume from the specified 
 	   */
 	  else if( snapshotId ) {
+          log.debug "Creating volume from snapshot ${snapshotId} with default size"
 		  vol = ebs.createVolumeFromSnapshotInAvailabilityZone( conf.zoneId, snapshotId )
 	  }
 	  
 	  else {
-		  
+
 		  if( !size ) {
-			  log.info("Volume size not specified. Applying default size: 10G")
+			  log.debug("Volume size not specified, using default value")
 		  	  size = 10
 		  }
-		  
+
+          log.debug "Creating new volume with size $size G"
 		  vol = ebs.createVolumeInAvailabilityZone( conf.zoneId, size )
 	  }
 

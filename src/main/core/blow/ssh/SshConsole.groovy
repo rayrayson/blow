@@ -141,9 +141,15 @@ class SshConsole {
 
                 @Override
                 public void run() {
-                    OutputStream out = shell.getOutputStream()
+                    OutputStream _out = shell.getOutputStream()
                     InputStream _in = Channels.newInputStream((new FileInputStream(FileDescriptor.in)).getChannel())
-                    byte[] buf = new byte[shell.getRemoteMaxPacketSize()];
+
+                    // define a buffer in a safe way
+                    int maxPacketSize = shell.getRemoteMaxPacketSize()
+                    log.debug("Ptty remoteMaxPacketSize: $maxPacketSize")
+                    byte[] buf = new byte[maxPacketSize];
+
+                    // read the inout from the keyboard and sent to the ptty
                     try {
                         while( shell.isOpen() ) {
                             int len = _in.read(buf)
@@ -152,13 +158,19 @@ class SshConsole {
                                 // does not work properly. It seems better to replace it with 0xD (carriage return)
                                 if( len==1 && buf[0]==0xA ) buf[0]=0xD
 
-                                out.write(buf,0,len)
-                                out.flush()
+                                _out.write(buf,0,len)
+                                _out.flush()
                             }
                         }
                     }
+                    catch( InterruptedIOException e ) {
+                        log.debug "Keyboard listener thread InterruptedIOException"
+                    }
+                    catch( InterruptedException e ) {
+                        log.debug "Keyboard listener thread InterruptedException"
+                    }
                     catch( Throwable e ) {
-                        log.debug "Sys.in interrupted"
+                        log.debug("Keyboard listener unknown exception",e)
                     }
                 }
 
@@ -184,10 +196,9 @@ class SshConsole {
 
         }
         finally {
+            try { if( session && session.isOpen() ) { session.close() } } catch( Exception e ) {}
+            try { ssh.disconnect(); } catch( Exception e ) { }
             try { keyboardListener.interrupt() } catch( Exception e ) {}
-
-            if( session && session.isOpen() ) { session.close() }
-            ssh.disconnect();
 
             if( prevSigStop ) Signal.handle(new Signal("TSTP"), prevSigStop )
             if( prevSigInt ) Signal.handle(new Signal("INT"), prevSigInt )

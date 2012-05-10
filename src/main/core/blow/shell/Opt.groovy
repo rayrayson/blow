@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso.
+ * Copyright (c) 2012, the authors.
  *
  *   This file is part of Blow.
  *
@@ -19,11 +19,10 @@
 
 package blow.shell
 
-import java.lang.annotation.Target
 import java.lang.annotation.ElementType
 import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
-import static java.lang.Character.UNASSIGNED
+import java.lang.annotation.Target
 
 /**
  * Mark shell-method parameter as command line parameters.

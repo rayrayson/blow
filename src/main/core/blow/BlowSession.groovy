@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso
+ * Copyright (c) 2012, the authors.
  *
  *   This file is part of Blow.
  *
@@ -215,7 +215,7 @@ class BlowSession {
 		/*
 		 * send the before creation event
 		 */
-		eventBus.post( new ONBeforeNodeStartEvent(
+		eventBus.post( new OnBeforeNodeStartEvent(
 			session: this,
 			clusterName: clusterName, 
 			numberOfNodes: numberOfNodes, 

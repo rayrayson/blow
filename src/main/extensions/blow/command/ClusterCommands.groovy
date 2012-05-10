@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso
+ * Copyright (c) 2012, the authors.
  *
  *   This file is part of Blow.
  *
@@ -19,13 +19,11 @@
 
 package blow.command
 
-import blow.shell.AbstractShellCommand
-import groovy.util.logging.Slf4j
+import blow.BlowSession
 import blow.shell.BlowShell
 import blow.shell.Cmd
 import blow.shell.Synopsis
-import org.jclouds.compute.domain.NodeMetadata
-import blow.BlowSession;
+import groovy.util.logging.Slf4j
 
 /**
  * Create a cluster using the underlying configuration

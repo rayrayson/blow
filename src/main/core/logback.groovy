@@ -10,7 +10,7 @@ import ch.qos.logback.core.rolling.TimeBasedRollingPolicy
 import blow.util.PrettyConsoleLayout
 
 /*
-* Copyright (c) 2012. Paolo Di Tommaso.
+* Copyright (c) 2012, the authors.
 *
 *   This file is part of Blow.
 *

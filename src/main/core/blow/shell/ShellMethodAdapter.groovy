@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso.
+ * Copyright (c) 2012, the authors.
  *
  *   This file is part of Blow.
  *
@@ -19,13 +19,12 @@
 
 package blow.shell
 
-import java.lang.reflect.Method
+import blow.BlowSession
+import groovy.util.logging.Slf4j
 import org.apache.commons.cli.Option
 import org.apache.commons.cli.OptionBuilder
-import groovy.util.logging.Slf4j
-import java.lang.reflect.Field
-import blow.BlowSession
-import java.lang.reflect.Modifier
+
+import java.lang.reflect.Method
 
 /**
  * This class converts a generic method marked with the {@link Cmd} annotation to be sued

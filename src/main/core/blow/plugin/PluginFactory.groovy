@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso
+ * Copyright (c) 2012, the authors.
  *
  *   This file is part of Blow.
  *
@@ -121,7 +121,17 @@ class PluginFactory {
                 }
             }
 		}
-		
+
+//        /*
+//         * memoize the initialized values in the plugin itself
+//         */
+//        def init_values = [:]
+//        result.getMetaClass().getProperties().each { MetaProperty property ->
+//            init_values.put( property.getName(), property.getProperty(result) )
+//        }
+//        log.debug( "Memoizing values for ${name} <- ${init_values}" )
+//        //result['__init_values']= init_values
+
 		return result
 	} 
 

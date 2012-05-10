@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso
+ * Copyright (c) 2012, the authors.
  *
  *   This file is part of Blow.
  *
@@ -26,7 +26,7 @@ import blow.events.OnAfterClusterTerminationEvent
 import blow.events.OnBeforeClusterCreationEvent
 import blow.events.OnBeforeClusterTerminationEvent
 import blow.events.OnAfterNodeStartEvent
-import blow.events.ONBeforeNodeStartEvent
+import blow.events.OnBeforeNodeStartEvent
 
 
 @Slf4j
@@ -50,7 +50,7 @@ class TracePlugin {
 
 	
 	@Subscribe
-	public void onBeforeStart( ONBeforeNodeStartEvent event ) {
+	public void onBeforeStart( OnBeforeNodeStartEvent event ) {
 		blow.plugin.TracePlugin.log.info(">> Before start node(s): ${event.role}: ${event.numberOfNodes}")
 	}
 

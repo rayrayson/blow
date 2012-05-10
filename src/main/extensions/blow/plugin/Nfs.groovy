@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso
+ * Copyright (c) 2012, the authors.
  *
  *   This file is part of Blow.
  *
@@ -40,7 +40,7 @@ class Nfs {
 	/**
 	 * The volume ID of a Block Store to be mounted
 	 */
-	@Conf("volume-id") def volumeId 
+	@Conf("volume-id") def volumeId
 
 	/**
 	 * The identifier of an existing snapshot which will be used to mount 
@@ -63,13 +63,14 @@ class Nfs {
 	@Conf Integer size = 10
 	
 	@Conf("delete-on-termination") 
-	def boolean deleteOnTermination = "false"
+	def String deleteOnTermination = "false"
 	
 
 	private String masterInstanceId 
 	private userName 
 	private masterHostname
-	
+    private needFormatVolume
+
 	private BlowSession pilot
 
 
@@ -81,6 +82,7 @@ class Nfs {
         assert device, "You need to define the 'device' attribute in the NFS configuraton"
 
     }
+
 
 
 	@Subscribe
@@ -127,7 +129,7 @@ class Nfs {
         /*
          * TODO since the volume detach and delete could require
          */
-        def boolean needToDelete = deleteOnTermination == true && ( snapshotId || volumeId );
+        def boolean needToDelete = (deleteOnTermination == "true") && ( snapshotId || volumeId );
 
         if( !needToDelete ) { return }
 
@@ -166,8 +168,13 @@ class Nfs {
 		 * create a new volume
 		 */
 		if( volumeId == "new" ) {
+            log.debug "Creating new volume with size: $size G"
 			def vol = pilot.getBlockStore().createVolume(size)
-			volumeId = vol.getId()
+
+            log.info "New volume created with id ${vol.getId()}, size: ${vol.getSize()} G"
+            volumeId = vol.getId()
+            needFormatVolume = true // <-- set this flag to 'remember' to format the volume
+
 		}
 
 		/*
@@ -200,17 +207,32 @@ class Nfs {
 
 
 	protected String scriptMaster( boolean mountDevice ) {
-		
+
+        // the format fragment required for new volumes
+        String volumeFormatCommand
+        if( needFormatVolume ) {
+            volumeFormatCommand = """\
+            # format device
+            mkfs.ext3 ${device}
+            sleep 1
+            """
+            .stripIndent()
+        }
+
+
 		// Mount the external device (EBS block) only is required 
 		// otherwise it will mount a local path
 		String mountDeviceCommand = (mountDevice) ? "mount ${device} ${path}; sleep 1" : ""
-		
+
+
 		"""\
 		# Installing nfs components 
 		yum install -y nfs-utils rpcbind
 		
 		# disable selinux 
 		setenforce 0
+
+		${volumeFormatCommand}
 		
 		#
 		# Check path
