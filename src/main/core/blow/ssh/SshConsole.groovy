@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso.
+ * Copyright (c) 2012, the authors.
  *
  *   This file is part of Blow.
  *
@@ -117,16 +117,8 @@ class SshConsole {
             /*
              * installs signals handles
              */
-            prevSigInt = Signal.handle(new Signal("INT"), new SignalHandler() { @Override void handle(Signal signal) {
-                shell.getOutputStream().write(3)    // send CTRL+C signal
-                shell.getOutputStream().flush()
-            }} )
-            prevSigStop = sun.misc.Signal.handle(new Signal("TSTP"), new SignalHandler() { @Override void handle(Signal signal) {
-                shell.getOutputStream().write(0x1A)   // send CTRL+Z signal
-                shell.getOutputStream().flush()
-
-            }} )
-
+            prevSigInt = installSignalHandlerForCtrl_C(shell)
+            prevSigStop = installSignalHandlerForCtrl_Z(shell)
 
             /*
              * redirect the remote shell i/o to the current system console
@@ -192,6 +184,38 @@ class SshConsole {
 
             if( prevSigStop ) Signal.handle(new Signal("TSTP"), prevSigStop )
             if( prevSigInt ) Signal.handle(new Signal("INT"), prevSigInt )
+        }
+    }
+
+    private installSignalHandlerForCtrl_Z(def shell) {
+
+        if( System.getProperty("os.name")?.startsWith("Windows")) {
+            log.trace "Skipping ctrl+z signal handler on Windows"
+            return
+        }
+
+        try {
+            sun.misc.Signal.handle(new Signal("TSTP"), new SignalHandler() { @Override void handle(Signal signal) {
+                shell.getOutputStream().write(0x1A)   // send CTRL+Z signal
+                shell.getOutputStream().flush()
+
+            }} )
+        }
+        catch( Exception e ) {
+            log.warn("Cannot install term signal handler 'TSTP'", e)
+        }
+
+    }
+
+    private installSignalHandlerForCtrl_C(def shell) {
+        try {
+             Signal.handle(new Signal("INT"), new SignalHandler() { @Override void handle(Signal signal) {
+                shell.getOutputStream().write(3)    // send CTRL+C signal
+                shell.getOutputStream().flush()
+            }} )
+        }
+        catch( Exception e ) {
+            log.warn ("Cannot install term signal handler 'INT'", e)
         }
     }
 
