@@ -19,6 +19,7 @@
 
 package blow.ssh
 
+import groovy.util.logging.Slf4j
 import net.schmizz.sshj.SSHClient
 import net.schmizz.sshj.connection.channel.direct.PTYMode
 import net.schmizz.sshj.connection.channel.direct.Session
@@ -26,8 +27,8 @@ import net.schmizz.sshj.transport.verification.HostKeyVerifier
 import sun.misc.Signal
 import sun.misc.SignalHandler
 
+import java.nio.channels.Channels
 import java.security.PublicKey
-import groovy.util.logging.Slf4j
 
 /**
  * Implement a terminal redirecting remote host i/o to the system current system i/o
@@ -89,6 +90,7 @@ class SshConsole {
         );
 
 
+        def Thread keyboardListener
         def prevSigStop
         def prevSigInt
 
@@ -135,25 +137,28 @@ class SshConsole {
             // note: it uses a custom loop instead of the stream pump because the latter
             // was blocking on the read method and so the underlying thread won't terminate
             // as the user logout from the remote shell
-            new Thread() {
+            keyboardListener = new Thread() {
 
                 @Override
                 public void run() {
                     OutputStream out = shell.getOutputStream()
+                    InputStream _in = Channels.newInputStream((new FileInputStream(FileDescriptor.in)).getChannel())
                     byte[] buf = new byte[shell.getRemoteMaxPacketSize()];
-                    while( shell.isOpen() ) {
-                        if( System.in.available() ) {
-                            int len = System.in.read(buf)
-                            // Hack!! Java returns 0xA (line feed) pressing the enter key, but some terminal application
-                            // does not work properly. It seems better to replace it with 0xD (carriage return)
-                            if( len==1 && buf[0]==0xA ) buf[0]=0xD
+                    try {
+                        while( shell.isOpen() ) {
+                            int len = _in.read(buf)
+                            if( len ) {
+                                // Hack!! Java returns 0xA (line feed) pressing the enter key, but some terminal application
+                                // does not work properly. It seems better to replace it with 0xD (carriage return)
+                                if( len==1 && buf[0]==0xA ) buf[0]=0xD
 
-                            out.write(buf,0,len)
-                            out.flush()
+                                out.write(buf,0,len)
+                                out.flush()
+                            }
                         }
-                        else {
-                            Thread.sleep(50)
-                        }
+                    }
+                    catch( Throwable e ) {
+                        log.debug "Sys.in interrupted"
                     }
                 }
 
@@ -179,6 +184,8 @@ class SshConsole {
 
         }
         finally {
+            try { keyboardListener.interrupt() } catch( Exception e ) {}
+
             if( session && session.isOpen() ) { session.close() }
             ssh.disconnect();
 
