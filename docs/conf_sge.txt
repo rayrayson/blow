@@ -1,0 +1,72 @@
+Open Grid Engine (SGE) configuration
+====================================
+
+Open Grid Scheduler/Grid Engine is a free and open-source batch-queuing system for distributed resource management. 
+OGS/GE is based on Sun Grid Engine, and maintained by the same group of external (i.e. non-Sun) developers who started contributing 
+code since 2001. 
+
+Here is explained how to get the *SGE* resource manager installed and configured automatically 
+in a cluster managed by *Blow*. A full description of the *SGE* installation and configuration 
+procedure is out of the scope of this manual. 
+
+Read more about the Open Grid Scheduler project at the following lik http://gridscheduler.sourceforge.net
+
+
+
+
+Basic SGE configuration
+-----------------------
+
+
+The SGE configuration requires the plugin ``sge`` to be added in the ``plugin`` attribute 
+in the cluster configuration file. 
+
+Currently is it required to install the *SGE* binary files in a directory shared by all nodes in the clusters. 
+This directory is the defined as the ``root`` installation directory and it needs to be specified as an attribute 
+in the ``sge`` plugin configuration. For example::
+
+  my_cluster {
+  
+    image-id: ami_xxx
+    :
+    plugin [
+      hosts
+      {nfs { path: /soft }}
+      {sge { root: /soft/sge6 } }
+    ]
+  }
+
+In the above example, it is installed a shared directory named ``/soft``. The *SGE* is installed in the sub-directory 
+``/soft/sge6``, moreover the ``sge`` plugin starts the required daemon(s) both on the master node and the workers nodes 
+as well as configure the enviorment variables. 
+
+When the installation complete, wou will able to log-in in any remote node using a SSH client and verify 
+that the *SGE* installation process has been completed successfully with the command ``qhost``. It will display 
+the list of all running *SGE* nodes. 
+
+
+
+SGE configuration attributes
+----------------------------
+
+* ``root`` (\*): The root directory where the *SGE* binary files will be installed. It must be a shared 
+  directory accessible by all the nodes in the cluster.
+
+* ``installation-mode``: The type of installation
+
+* ``tmp``: The temporary path used during the installation process. If it is not specified, the path ``/tmp``
+  will used by defualt. 
+
+* ``cluster-name``: The name for the cluster installation. If it is not specified, the value ``cloud_sge``
+  will used by default.
+
+* ``qmaster-port``: The *TCP* port used by the *SGE* qmaster daemon. Default value ``6444``.
+
+* ``execd-port``: The *TCP* port required by the *SGE* ``execd`` daemon. Default value ``6445``.
+
+* ``cell``: The name of the *SGE* instance. Default value ``default``.
+
+* ``admin-email``: The email address used by the *SGE* to send notification. Default value ``none@none.edue``
+
+
+

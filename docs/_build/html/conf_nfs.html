@@ -1,0 +1,232 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Network File System (NFS) configuration &mdash; Blow 0.5.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.5.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Blow 0.5.0 documentation" href="index.html" />
+    <link rel="next" title="Open Grid Engine (SGE) configuration" href="conf_sge.html" />
+    <link rel="prev" title="Blow configuration" href="conf_main.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="conf_sge.html" title="Open Grid Engine (SGE) configuration"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="conf_main.html" title="Blow configuration"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Blow 0.5.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="network-file-system-nfs-configuration">
+<h1>Network File System (NFS) configuration<a class="headerlink" href="#network-file-system-nfs-configuration" title="Permalink to this headline">¶</a></h1>
+<p>The most common way to share resources in a cluster is by using a shared network file system (NFS)
+accessible from all the nodes making-up the cluster.</p>
+<p>Configuring a Linux NFS is not a trivil task, in particular when the clients are dinamically created
+in a virtual environment.</p>
+<p><em>Blow</em> simplifies this task by only requiring a short declaration in the <em>cluster</em> configuration file.</p>
+<div class="section" id="the-nfs-plugin">
+<h2>The NFS plugin<a class="headerlink" href="#the-nfs-plugin" title="Permalink to this headline">¶</a></h2>
+<p>The NFS setup is carried out by the <em>Blow</em> plugin named <tt class="docutils literal"><span class="pre">nfs</span></tt>. This plugin has to be added to
+the <tt class="docutils literal"><span class="pre">plugin</span></tt> attribute in the cluster definition and the <em>shared path</em> needs to be specified as an
+attribute of the <tt class="docutils literal"><span class="pre">nfs</span></tt> plugin. For example:</p>
+<div class="highlight-python"><pre>my_cluster {
+  image-id: ..
+  :
+  plugin [
+    hosts
+    { nfs: { path: /scratch  }}
+  ]
+}</pre>
+</div>
+<p>The above declaration will create the <tt class="docutils literal"><span class="pre">/scratch</span></tt> directory in the master node, start the NFS daemon
+and export that folder to the client nodes. Also it will create the same directory on all client nodes
+and mount the network shared folder.</p>
+<p>It is possible to share more than one NFS folder by simply repeating the <tt class="docutils literal"><span class="pre">nfs</span></tt> entry as many times as the folders are to be exported.
+The only difference is that in this case we need to provide the <tt class="docutils literal"><span class="pre">device</span></tt> name to be used to mount them.</p>
+<p>For example:</p>
+<div class="highlight-python"><pre>my_cluster {
+  image-id: ..
+  :
+  plugin [
+    hosts
+    { nfs: { path: /scratch, device: /dev/sdf  }}
+    { nfs: { path: /data, device: /dev/sdg  }}
+  ]
+}</pre>
+</div>
+<p>When you start an Amazon EC2 instance, you get a certain amount of storage that depends by the instance type.
+This storage is defined as <em>ephemeral</em> because it is persisted on the system termination. In other words
+you lose all your data when the machine is switched off.</p>
+<p>To save your data indefinitely you have to use the <a class="reference external" href="http://aws.amazon.com/ebs/">Amazon Elastic Block Store</a> (EBS) service. Amazon EBS volumes
+provides storage that persists independently from the life of an instance, and can be attached to a running
+Amazon EC2 instance and exposed as a Linux device within the instance.</p>
+</div>
+<div class="section" id="mount-and-share-an-ebs-volume">
+<h2>Mount and Share an EBS volume<a class="headerlink" href="#mount-and-share-an-ebs-volume" title="Permalink to this headline">¶</a></h2>
+<p>Once you have created an EBS volume, to get it configured in your cluster all you need to do is to specify the
+property <tt class="docutils literal"><span class="pre">volume-id</span></tt> in the <tt class="docutils literal"><span class="pre">nfs</span></tt> configuration. For example:</p>
+<div class="highlight-python"><pre>my_cluster {
+  image-id: ..
+  :
+  plugin [
+    hosts
+    { nfs: { path: /data, volume-id: vol-123  }}
+  ]
+}</pre>
+</div>
+<p>The above configuration will attach the specified volume to the <em>master</em> node, mount it and configure
+the NFS sharing. The content of the EBS volume will be accessible on all nodes using the path <tt class="docutils literal"><span class="pre">/data</span></tt>.</p>
+<p>To create a new empty volume, just provide the value <tt class="docutils literal"><span class="pre">new</span></tt> for the attribute <tt class="docutils literal"><span class="pre">volume-id</span></tt>. The new volume
+size can be specified providing the attribute <tt class="docutils literal"><span class="pre">size</span></tt> which specify the number of GB required. For example:</p>
+<div class="highlight-python"><pre>my_cluster {
+  image-id: ..
+  :
+  plugin [
+    hosts
+    { nfs: { path: /data, volume-id: new, size: 50  }}
+  ]
+}</pre>
+</div>
+<p>If omitted it will created a 10 GB volume by default.</p>
+<div class="admonition attention">
+<p class="first admonition-title">Attention</p>
+<p class="last">This creates a new volume each time you will launch a new instance.</p>
+</div>
+</div>
+<div class="section" id="mount-share-an-ebs-snapshot">
+<h2>Mount Share an EBS snapshot<a class="headerlink" href="#mount-share-an-ebs-snapshot" title="Permalink to this headline">¶</a></h2>
+<p>Amazon EBS also provides the ability to create point-in-time snapshots of volumes,
+which are persisted to Amazon S3. These snapshots can be used as the starting point for
+new Amazon EBS volumes, and protect data for long-term durability.</p>
+<p>A common use case is to create a new EBS volume with the content of a previously saved snapshot.</p>
+<p>Using <em>Blow</em> this can be done by simply replacing the <tt class="docutils literal"><span class="pre">volume-id</span></tt> with the attribute <tt class="docutils literal"><span class="pre">snapshot-id</span></tt>
+in the <tt class="docutils literal"><span class="pre">nfs</span></tt> plugin configuration, and specifying the ID of a snashot previously created. Optionally
+can be provided the size in GB of the newly create volume.  For example:</p>
+<div class="highlight-python"><pre>my_cluster {
+  image-id: ..
+  :
+  plugin [
+    hosts
+    { nfs: { path: /data, snapshot-id: &lt; the id &gt;, size: 50  }}
+  ]
+}</pre>
+</div>
+<p>The new resulting volume, is not deleted on the system termination and its content is preserved across instances restarts.</p>
+<p>It this is not required, it is posible to specify to delete the newly created volume on the cluster termination,
+adding the attribute <tt class="docutils literal"><span class="pre">delete-on-terminate</span></tt> as showed below:</p>
+<div class="highlight-python"><pre>my_cluster {
+  image-id: ..
+  :
+  plugin [
+    hosts
+    { nfs: {
+         path: /data,
+         snapshot-id: &lt; the id &gt;,
+         size: 50
+         delete-on-termination: true
+     }}
+  ]
+}</pre>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Network File System (NFS) configuration</a><ul>
+<li><a class="reference internal" href="#the-nfs-plugin">The NFS plugin</a></li>
+<li><a class="reference internal" href="#mount-and-share-an-ebs-volume">Mount and Share an EBS volume</a></li>
+<li><a class="reference internal" href="#mount-share-an-ebs-snapshot">Mount Share an EBS snapshot</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="conf_main.html"
+                        title="previous chapter">Blow configuration</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="conf_sge.html"
+                        title="next chapter">Open Grid Engine (SGE) configuration</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/conf_nfs.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="conf_sge.html" title="Open Grid Engine (SGE) configuration"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="conf_main.html" title="Blow configuration"
+             >previous</a> |</li>
+        <li><a href="index.html">Blow 0.5.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Paolo Di Tommaso.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
