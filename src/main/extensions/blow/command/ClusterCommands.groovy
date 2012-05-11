@@ -39,7 +39,7 @@ class ClusterCommands {
 
 	@Cmd
     @Synopsis("Create and launch the cluster using the settings provided in the configuration file")
-	public void create() {
+	public void start() {
         def size = session.conf.size
         def answer = shell.prompt("Please confirm that you want to start ${size} node(s) [y/n]") { ['y','n'].contains(it) }
 
