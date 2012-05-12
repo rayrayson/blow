@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso
+ * Copyright (c) 2012, the authors.
  *
  *   This file is part of Blow.
  *
@@ -295,14 +295,16 @@ class BlowConfig {
 
 		def result = [:]
 
-		result.put("access-key", accessKey)
+        result.put("user-name", userName)
+        result.put("private-key", privateKeyFile)
+        result.put("public-key", publicKeyFile)
+        result.put("access-key", accessKey)
 		result.put("region-id", regionId)
 		result.put("zone-id", zoneId)
 		result.put("image-id", imageId)
 		result.put("instance-type",instanceType)
 		result.put("size", size)
-        result.put("private-key", privateKeyFile)
-        result.put("public-key", publicKeyFile)
+
 
         return result
 	}

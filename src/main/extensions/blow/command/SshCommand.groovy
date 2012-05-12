@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso
+ * Copyright (c) 2012, the authors.
  *
  *   This file is part of Blow.
  *
@@ -40,6 +40,10 @@ class SshCommand extends AbstractShellCommand implements CommandCompletor {
 
     @Override
     def String getName() { "ssh" }
+
+    def String getSynopsis() {
+        "Launch a SSH session with a remote node"
+    }
 
     /**
      * Parse the list of arguments for the SSH command

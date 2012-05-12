@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso
+ * Copyright (c) 2012, the authors.
  *
  *   This file is part of Blow.
  *
@@ -173,7 +173,9 @@ class BlowShell {
 	class ExitCommand extends AbstractShellCommand {
 
 		public String getName() { "exit" }
-		
+
+        public String getSynopsis() { "Quit the current shell session" }
+
 		@Override
 		public void invoke() {
 			throw new ShellExit()

@@ -1,4 +1,9 @@
-2012-05-08, version 0.5.2 
+2012-05-10, version 0.5.3
+- Fixed minor issue on SSH console
+- Improved conf command
+- Fixed minor issues
+
+2012-05-08, version 0.5.2
 - SSH key-pair are created automatically if missing 
 
 2012-05-05, version 0.5.1

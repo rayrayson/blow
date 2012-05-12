@@ -1,0 +1,222 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Blow configuration &mdash; Blow 0.5.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.5.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Blow 0.5.0 documentation" href="index.html" />
+    <link rel="next" title="Network File System (NFS) configuration" href="conf_nfs.html" />
+    <link rel="prev" title="Prerequisites" href="prerequisites.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="conf_nfs.html" title="Network File System (NFS) configuration"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="prerequisites.html" title="Prerequisites"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Blow 0.5.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="blow-configuration">
+<h1>Blow configuration<a class="headerlink" href="#blow-configuration" title="Permalink to this headline">¶</a></h1>
+<p><em>Blow</em> configuration has to be defined in a file named <tt class="docutils literal"><span class="pre">blow.conf</span></tt>. <em>Blow</em> will look
+for this file in the directory where the application has been launched and in the user home,
+the path <tt class="docutils literal"><span class="pre">$HOME/.blow/blow.conf</span></tt>. If both of them exist the values in the former will
+have an higher priority, in other words, they will override the values defined in the
+configuration file stored in the home directory.</p>
+<p>A common approach is to put <em>Blow</em> general properties in the <tt class="docutils literal"><span class="pre">$HOME/.blow/blow.conf</span></tt>
+file, and place clusters specific properties in a file located in the different folder.</p>
+<p>The configuration file provides the definition of the clusters which are supposed to be
+managed with <em>Blow</em>.</p>
+<p>Each <em>cluster</em> definition needs to declare some configuration attributes like:
+the virtual machine to use, the region where the clustes will run, the number of nodes, etc.</p>
+<div class="section" id="configuration-file-syntax">
+<h2>Configuration file syntax<a class="headerlink" href="#configuration-file-syntax" title="Permalink to this headline">¶</a></h2>
+<p>The <em>Blow</em> configuration file uses the HOCON syntax, a human-friendly JSON superset.
+It provides a more easy-to-use notation that allows omitting the <tt class="docutils literal"><span class="pre">{</span> <span class="pre">}</span></tt> around the root object,
+uses <tt class="docutils literal"><span class="pre">=</span></tt> as a synonym for <tt class="docutils literal"><span class="pre">:</span></tt> character, allows unquoted strings for any keys and values, etc.</p>
+<p>In other words the <tt class="docutils literal"><span class="pre">blow.conf</span></tt> configuration file is a JSON formatted document, with a more
+<em>relaxed</em> syntax, where some redundant delimiter characters can be omitted.</p>
+<p>The read more about the HOCON format and more advanced features supported by this format
+please refer to the project page available at this link <a class="reference external" href="http://github.com/typesafehub/config">http://github.com/typesafehub/config</a> .</p>
+<p>A basic <em>Blow</em> configuration file would be as follows:</p>
+<div class="highlight-python"><pre>my_cluster {
+      region-id = us-east-1
+      image-id: ami-e565ba8c
+      size: 9
+}</pre>
+</div>
+<p>This file defines a cluster named <tt class="docutils literal"><span class="pre">my_cluster</span></tt>, composed by <tt class="docutils literal"><span class="pre">99</span></tt> nodes that will be launched in the <tt class="docutils literal"><span class="pre">us-east-1</span></tt> region.</p>
+<p>The <tt class="docutils literal"><span class="pre">blow.conf</span></tt> configuration file can contain any number of cluster declarations as seen above above.
+Each definition has to come with a unique name identifier and contain its own attributes within the curly brackets.</p>
+<p>Attributes placed at the top of the file, outside any cluster declaration, will be considered global attributes common to all
+clusters. They can be overridden by any cluster within the scope of its declaration.</p>
+<p>For example:</p>
+<div class="highlight-python"><pre>region-id = us-east-1
+image-id: ami-e565ba8c
+
+cluster_one {
+      size: 10
+}
+
+cluster_two {
+      image-id: ami-a934bb8e
+      size: 20
+}</pre>
+</div>
+<p>We have defined two clusters, both of them in the region <tt class="docutils literal"><span class="pre">us-east-1</span></tt>. The first uses the image <tt class="docutils literal"><span class="pre">ami-e565ba8c</span></tt>,
+will run <tt class="docutils literal"><span class="pre">10</span></tt> nodes. The second launches <tt class="docutils literal"><span class="pre">20</span></tt> nodes, but will use the machine image <tt class="docutils literal"><span class="pre">ami-a934bb8e</span></tt> since it overrides
+the global <tt class="docutils literal"><span class="pre">image-id</span></tt> attribute declaration.</p>
+</div>
+<div class="section" id="available-configuration-attributes">
+<h2>Available configuration attributes<a class="headerlink" href="#available-configuration-attributes" title="Permalink to this headline">¶</a></h2>
+<p>Currently the following attributes can be defined in the <tt class="docutils literal"><span class="pre">blow.conf</span></tt> file (the ones marked with * are mandatory):</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">access-key</span></tt> *: The AWS account <em>Access Key ID</em>, available through the <a class="reference external" href="https://aws-portal.amazon.com/gp/aws/securityCredentials#access_credentials">AWS Security Credential</a> page.</li>
+<li><tt class="docutils literal"><span class="pre">secret-key</span></tt> *: The AWS account <em>Secret Access Key</em>, available through the <a class="reference external" href="https://aws-portal.amazon.com/gp/aws/securityCredentials#access_credentials">AWS Security Credential</a> page.</li>
+<li><tt class="docutils literal"><span class="pre">region-id</span></tt>: The AWS <em>Region ID</em> where the cluster has to be created. If it is not specified, the region <cite>us-east-1</cite>
+will be used by default. Read more about regions in the <a class="reference external" href="http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html">AWS Regions and Availability Zones</a> documentation.</li>
+<li><tt class="docutils literal"><span class="pre">zone-id</span></tt>: The AWS <em>Region ID</em> where the cluster has to be created. If it is not specified,
+the zone <cite>us-east-1a</cite> will be used by default. Read more about regions in the <a class="reference external" href="http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html">AWS Regions and Availability Zones</a> documentation.</li>
+<li><tt class="docutils literal"><span class="pre">image-id</span></tt>: The Amazon EC2 machine image ID. In other words this is the identifier of the virtual machine used
+to run the cluster nodes. The list of all machines is available at this page <a class="reference external" href="https://aws.amazon.com/amis">Amazon Machine Images</a> .</li>
+<li><tt class="docutils literal"><span class="pre">instance-type</span></tt>: The type of the instance to launch. This attribute allows to select the features
+of the virtual machine i.e. the type of processor(s), the amount of memory, the platform architecture (32 - 64 bits), etc.
+The possible values are: <tt class="docutils literal"><span class="pre">t1.micro</span></tt>, <tt class="docutils literal"><span class="pre">m1.small</span></tt>, <tt class="docutils literal"><span class="pre">m1.medium</span></tt>,  <tt class="docutils literal"><span class="pre">m1.large</span></tt>, <tt class="docutils literal"><span class="pre">m1.xlarge</span></tt>, <tt class="docutils literal"><span class="pre">m2.xlarge</span></tt>,
+<tt class="docutils literal"><span class="pre">m2.2xlarge</span></tt>, <tt class="docutils literal"><span class="pre">m2.4xlarge</span></tt>, <tt class="docutils literal"><span class="pre">c1.medium</span></tt>, <tt class="docutils literal"><span class="pre">c1.xlarge</span></tt>, <tt class="docutils literal"><span class="pre">cc1.4xlarge</span></tt>, <tt class="docutils literal"><span class="pre">cc2.8xlarge</span></tt>.
+The detailed description is available at the page <a class="reference external" href="http://aws.amazon.com/ec2/instance-types/">EC2 Instance Types</a>.</li>
+<li><tt class="docutils literal"><span class="pre">size</span></tt>: The number of nodes of of which the cluster is made-up.</li>
+<li><tt class="docutils literal"><span class="pre">user-name</span></tt>: The user name to log-in the remote nodes. If this values is not specified, the current logged user name will be used.</li>
+<li><tt class="docutils literal"><span class="pre">private-key</span></tt>: The SSH <em>private</em> key file to access the remote nodes. If this values is not specified, the private key defined
+in the path <tt class="docutils literal"><span class="pre">$HOME/.ssh/id_rsa</span></tt> will be used. If this file does not exist, a new key-pair in the current directory will be created.</li>
+<li><tt class="docutils literal"><span class="pre">public-key</span></tt>: The SSH <em>public</em> key file required to authenticate the user remotely. If this value is not specified,
+the public key defined in the path <tt class="docutils literal"><span class="pre">$HOME/.ssh/id_rsa.pub</span></tt> will be used. If this file does not exist,
+a new key-pair in the current directory will be created.</li>
+<li><tt class="docutils literal"><span class="pre">plugin</span></tt>: The list of <em>Blow</em> plugins to be used in this cluster definition.</li>
+</ul>
+</div>
+<div class="section" id="configuration-example">
+<h2>Configuration example<a class="headerlink" href="#configuration-example" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><pre>my_cluster {
+  access-key = &lt;your access key&gt;
+  secret-key = &lt;yout secret key&gt;
+  region-id = us-east-1
+  zone-id = us-east-1d
+  image-id =  ami-e565ba8c
+  instance-type = t1.micro
+  size = 2
+
+  plugin = [
+      hosts
+
+      { nfs = {
+          path: /soft
+          device: /dev/sdh1
+      }}
+
+      { sge = { root: /soft/sge6, installation-type: deploy } }
+  ]
+}</pre>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Blow configuration</a><ul>
+<li><a class="reference internal" href="#configuration-file-syntax">Configuration file syntax</a></li>
+<li><a class="reference internal" href="#available-configuration-attributes">Available configuration attributes</a></li>
+<li><a class="reference internal" href="#configuration-example">Configuration example</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="prerequisites.html"
+                        title="previous chapter">Prerequisites</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="conf_nfs.html"
+                        title="next chapter">Network File System (NFS) configuration</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/conf_main.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="conf_nfs.html" title="Network File System (NFS) configuration"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="prerequisites.html" title="Prerequisites"
+             >previous</a> |</li>
+        <li><a href="index.html">Blow 0.5.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Paolo Di Tommaso.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

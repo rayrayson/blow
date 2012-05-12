@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso
+ * Copyright (c) 2012, the authors.
  *
  *   This file is part of Blow.
  *
@@ -19,13 +19,11 @@
 
 package blow.command
 
-import blow.shell.AbstractShellCommand
-import groovy.util.logging.Slf4j
+import blow.BlowSession
 import blow.shell.BlowShell
 import blow.shell.Cmd
 import blow.shell.Synopsis
-import org.jclouds.compute.domain.NodeMetadata
-import blow.BlowSession;
+import groovy.util.logging.Slf4j
 
 /**
  * Create a cluster using the underlying configuration
@@ -41,7 +39,7 @@ class ClusterCommands {
 
 	@Cmd
     @Synopsis("Create and launch the cluster using the settings provided in the configuration file")
-	public void create() {
+	public void start() {
         def size = session.conf.size
         def answer = shell.prompt("Please confirm that you want to start ${size} node(s) [y/n]") { ['y','n'].contains(it) }
 

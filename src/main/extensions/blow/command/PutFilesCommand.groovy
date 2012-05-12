@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso
+ * Copyright (c) 2012, the authors.
  *
  *   This file is part of Blow.
  *
@@ -19,10 +19,9 @@
 
 package blow.command
 
-import blow.shell.AbstractShellCommand
-import blow.shell.Synopsis
+import blow.BlowSession
 import blow.shell.Cmd
-import blow.BlowSession;
+import blow.shell.Synopsis
 
 class PutFilesCommand  {
 

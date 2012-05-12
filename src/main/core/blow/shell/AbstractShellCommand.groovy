@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso
+ * Copyright (c) 2012, the authors.
  *
  *   This file is part of Blow.
  *
@@ -20,7 +20,6 @@
 package blow.shell
 
 import blow.BlowSession
-import org.jclouds.compute.domain.NodeMetadata
 import groovy.util.logging.Slf4j
 
 /**

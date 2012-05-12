@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso.
+ * Copyright (c) 2012, the authors.
  *
  *   This file is part of Blow.
  *
@@ -19,6 +19,7 @@
 
 package blow.ssh
 
+import groovy.util.logging.Slf4j
 import net.schmizz.sshj.SSHClient
 import net.schmizz.sshj.connection.channel.direct.PTYMode
 import net.schmizz.sshj.connection.channel.direct.Session
@@ -26,8 +27,8 @@ import net.schmizz.sshj.transport.verification.HostKeyVerifier
 import sun.misc.Signal
 import sun.misc.SignalHandler
 
+import java.nio.channels.Channels
 import java.security.PublicKey
-import groovy.util.logging.Slf4j
 
 /**
  * Implement a terminal redirecting remote host i/o to the system current system i/o
@@ -89,6 +90,7 @@ class SshConsole {
         );
 
 
+        def Thread keyboardListener
         def prevSigStop
         def prevSigInt
 
@@ -117,16 +119,8 @@ class SshConsole {
             /*
              * installs signals handles
              */
-            prevSigInt = Signal.handle(new Signal("INT"), new SignalHandler() { @Override void handle(Signal signal) {
-                shell.getOutputStream().write(3)    // send CTRL+C signal
-                shell.getOutputStream().flush()
-            }} )
-            prevSigStop = sun.misc.Signal.handle(new Signal("TSTP"), new SignalHandler() { @Override void handle(Signal signal) {
-                shell.getOutputStream().write(0x1A)   // send CTRL+Z signal
-                shell.getOutputStream().flush()
-
-            }} )
-
+            prevSigInt = installSignalHandlerForCtrl_C(shell)
+            prevSigStop = installSignalHandlerForCtrl_Z(shell)
 
             /*
              * redirect the remote shell i/o to the current system console
@@ -143,25 +137,40 @@ class SshConsole {
             // note: it uses a custom loop instead of the stream pump because the latter
             // was blocking on the read method and so the underlying thread won't terminate
             // as the user logout from the remote shell
-            new Thread() {
+            keyboardListener = new Thread() {
 
                 @Override
                 public void run() {
-                    OutputStream out = shell.getOutputStream()
-                    byte[] buf = new byte[shell.getRemoteMaxPacketSize()];
-                    while( shell.isOpen() ) {
-                        if( System.in.available() ) {
-                            int len = System.in.read(buf)
-                            // Hack!! Java returns 0xA (line feed) pressing the enter key, but some terminal application
-                            // does not work properly. It seems better to replace it with 0xD (carriage return)
-                            if( len==1 && buf[0]==0xA ) buf[0]=0xD
+                    OutputStream _out = shell.getOutputStream()
+                    InputStream _in = Channels.newInputStream((new FileInputStream(FileDescriptor.in)).getChannel())
 
-                            out.write(buf,0,len)
-                            out.flush()
+                    // define a buffer in a safe way
+                    int maxPacketSize = shell.getRemoteMaxPacketSize()
+                    log.debug("Ptty remoteMaxPacketSize: $maxPacketSize")
+                    byte[] buf = new byte[maxPacketSize];
+
+                    // read the inout from the keyboard and sent to the ptty
+                    try {
+                        while( shell.isOpen() ) {
+                            int len = _in.read(buf)
+                            if( len ) {
+                                // Hack!! Java returns 0xA (line feed) pressing the enter key, but some terminal application
+                                // does not work properly. It seems better to replace it with 0xD (carriage return)
+                                if( len==1 && buf[0]==0xA ) buf[0]=0xD
+
+                                _out.write(buf,0,len)
+                                _out.flush()
+                            }
                         }
-                        else {
-                            Thread.sleep(50)
-                        }
+                    }
+                    catch( InterruptedIOException e ) {
+                        log.debug "Keyboard listener thread InterruptedIOException"
+                    }
+                    catch( InterruptedException e ) {
+                        log.debug "Keyboard listener thread InterruptedException"
+                    }
+                    catch( Throwable e ) {
+                        log.debug("Keyboard listener unknown exception",e)
                     }
                 }
 
@@ -187,11 +196,44 @@ class SshConsole {
 
         }
         finally {
-            if( session && session.isOpen() ) { session.close() }
-            ssh.disconnect();
+            try { if( session && session.isOpen() ) { session.close() } } catch( Exception e ) {}
+            try { ssh.disconnect(); } catch( Exception e ) { }
+            try { keyboardListener.interrupt() } catch( Exception e ) {}
 
             if( prevSigStop ) Signal.handle(new Signal("TSTP"), prevSigStop )
             if( prevSigInt ) Signal.handle(new Signal("INT"), prevSigInt )
+        }
+    }
+
+    private installSignalHandlerForCtrl_Z(def shell) {
+
+        if( System.getProperty("os.name")?.startsWith("Windows")) {
+            log.trace "Skipping ctrl+z signal handler on Windows"
+            return
+        }
+
+        try {
+            sun.misc.Signal.handle(new Signal("TSTP"), new SignalHandler() { @Override void handle(Signal signal) {
+                shell.getOutputStream().write(0x1A)   // send CTRL+Z signal
+                shell.getOutputStream().flush()
+
+            }} )
+        }
+        catch( Exception e ) {
+            log.warn("Cannot install term signal handler 'TSTP'", e)
+        }
+
+    }
+
+    private installSignalHandlerForCtrl_C(def shell) {
+        try {
+             Signal.handle(new Signal("INT"), new SignalHandler() { @Override void handle(Signal signal) {
+                shell.getOutputStream().write(3)    // send CTRL+C signal
+                shell.getOutputStream().flush()
+            }} )
+        }
+        catch( Exception e ) {
+            log.warn ("Cannot install term signal handler 'INT'", e)
         }
     }
 

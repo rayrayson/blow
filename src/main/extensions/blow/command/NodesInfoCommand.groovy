@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso.
+ * Copyright (c) 2012, the authors.
  *
  *   This file is part of Blow.
  *
@@ -71,7 +71,6 @@ class NodesInfoCommand  {
 	}
 
 
-
     @Cmd
     @Synopsis("Shows the information details of the 'master' node")
     public void masterinfo() {
@@ -85,13 +84,6 @@ class NodesInfoCommand  {
     }
 
 
-    @Cmd
-    @Synopsis("Shows the 'hostname' of the running nodes in current cluster")
-    public void listhostnames() {
-        session.listHostNames().each {
-            println it
-        }
-    }
 
 
 }

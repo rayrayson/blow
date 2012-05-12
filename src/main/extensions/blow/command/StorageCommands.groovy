@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012. Paolo Di Tommaso.
+ * Copyright (c) 2012, the authors.
  *
  *   This file is part of Blow.
  *
@@ -77,6 +77,7 @@ class StorageCommands  {
 
 
     @Cmd("listsnapshots")
+    @Synopsis("Display the list of snapshots available in the current region")
     def void listSnapshots() {
 
         def list = shell.session.blockStore.listSnapshots()

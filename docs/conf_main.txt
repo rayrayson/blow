@@ -1,0 +1,136 @@
+Blow configuration
+==================
+
+*Blow* configuration has to be defined in a file named ``blow.conf``. *Blow* will look 
+for this file in the directory where the application has been launched and in the user home, 
+the path ``$HOME/.blow/blow.conf``. If both of them exist the values in the former will 
+have an higher priority, in other words, they will override the values defined in the 
+configuration file stored in the home directory. 
+
+A common approach is to put *Blow* general properties in the ``$HOME/.blow/blow.conf``
+file, and place clusters specific properties in a file located in the different folder.
+
+The configuration file provides the definition of the clusters which are supposed to be 
+managed with *Blow*.
+
+Each *cluster* definition needs to declare some configuration attributes like: 
+the virtual machine to use, the region where the clustes will run, the number of nodes, etc. 
+
+
+Configuration file syntax
+-------------------------
+
+The *Blow* configuration file uses the HOCON syntax, a human-friendly JSON superset. 
+It provides a more easy-to-use notation that allows omitting the ``{ }`` around the root object, 
+uses ``=`` as a synonym for ``:`` character, allows unquoted strings for any keys and values, etc.
+
+In other words the ``blow.conf`` configuration file is a JSON formatted document, with a more 
+*relaxed* syntax, where some redundant delimiter characters can be omitted. 
+
+The read more about the HOCON format and more advanced features supported by this format 
+please refer to the project page available at this link http://github.com/typesafehub/config .
+
+A basic *Blow* configuration file would be as follows::
+
+  my_cluster {
+  	region-id = us-east-1
+  	image-id: ami-e565ba8c
+  	size: 9
+  }
+  
+This file defines a cluster named ``my_cluster``, composed by ``99`` nodes that will be launched in the ``us-east-1`` region.
+
+The ``blow.conf`` configuration file can contain any number of cluster declarations as seen above above.
+Each definition has to come with a unique name identifier and contain its own attributes within the curly brackets. 
+
+Attributes placed at the top of the file, outside any cluster declaration, will be considered global attributes common to all 
+clusters. They can be overridden by any cluster within the scope of its declaration. 
+
+For example::
+
+  region-id = us-east-1
+  image-id: ami-e565ba8c
+
+  cluster_one {
+  	size: 10
+  }
+  
+  cluster_two {
+  	image-id: ami-a934bb8e
+  	size: 20
+  }
+
+
+We have defined two clusters, both of them in the region ``us-east-1``. The first uses the image ``ami-e565ba8c``, 
+will run ``10`` nodes. The second launches ``20`` nodes, but will use the machine image ``ami-a934bb8e`` since it overrides 
+the global ``image-id`` attribute declaration.
+
+
+Available configuration attributes
+-----------------------------------
+
+Currently the following attributes can be defined in the ``blow.conf`` file (the ones marked with \* are mandatory):
+
+* ``access-key`` \*: The AWS account *Access Key ID*, available through the `AWS Security Credential`_ page.  
+
+* ``secret-key`` \*: The AWS account *Secret Access Key*, available through the `AWS Security Credential`_ page.
+
+* ``region-id``: The AWS *Region ID* where the cluster has to be created. If it is not specified, the region `us-east-1` 
+  will be used by default. Read more about regions in the `AWS Regions and Availability Zones`_ documentation.
+
+* ``zone-id``: The AWS *Region ID* where the cluster has to be created. If it is not specified,
+  the zone `us-east-1a` will be used by default. Read more about regions in the `AWS Regions and Availability Zones`_ documentation.
+
+* ``image-id``: The Amazon EC2 machine image ID. In other words this is the identifier of the virtual machine used 
+  to run the cluster nodes. The list of all machines is available at this page `Amazon Machine Images`_ . 
+
+* ``instance-type``: The type of the instance to launch. This attribute allows to select the features 
+  of the virtual machine i.e. the type of processor(s), the amount of memory, the platform architecture (32 - 64 bits), etc. 
+  The possible values are: ``t1.micro``, ``m1.small``, ``m1.medium``,  ``m1.large``, ``m1.xlarge``, ``m2.xlarge``, 
+  ``m2.2xlarge``, ``m2.4xlarge``, ``c1.medium``, ``c1.xlarge``, ``cc1.4xlarge``, ``cc2.8xlarge``.
+  The detailed description is available at the page `EC2 Instance Types`_. 
+
+* ``size``: The number of nodes of of which the cluster is made-up.
+
+* ``user-name``: The user name to log-in the remote nodes. If this values is not specified, the current logged user name will be used.
+
+* ``private-key``: The SSH *private* key file to access the remote nodes. If this values is not specified, the private key defined 
+  in the path ``$HOME/.ssh/id_rsa`` will be used. If this file does not exist, a new key-pair in the current directory will be created.   
+
+* ``public-key``: The SSH *public* key file required to authenticate the user remotely. If this value is not specified,
+  the public key defined in the path ``$HOME/.ssh/id_rsa.pub`` will be used. If this file does not exist, 
+  a new key-pair in the current directory will be created.   
+
+* ``plugin``: The list of *Blow* plugins to be used in this cluster definition. 
+  
+.. _`AWS Security Credential`: https://aws-portal.amazon.com/gp/aws/securityCredentials#access_credentials
+.. _`AWS Regions and Availability Zones`: http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html
+.. _`Amazon Machine Images`: https://aws.amazon.com/amis
+.. _`EC2 Instance Types`: http://aws.amazon.com/ec2/instance-types/
+
+Configuration example
+---------------------
+
+:: 
+
+  my_cluster {
+    access-key = <your access key>
+    secret-key = <yout secret key>
+    region-id = us-east-1
+    zone-id = us-east-1d
+    image-id =  ami-e565ba8c
+    instance-type = t1.micro
+    size = 2
+
+    plugin = [
+        hosts
+
+        { nfs = {
+            path: /soft
+            device: /dev/sdh1
+        }}
+
+        { sge = { root: /soft/sge6, installation-type: deploy } }
+    ]
+  }
+
