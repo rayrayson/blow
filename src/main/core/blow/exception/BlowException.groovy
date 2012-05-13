@@ -17,20 +17,15 @@
  *   along with Blow.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package blow.shell
+package blow.exception
 
-import java.lang.annotation.Target
-import java.lang.annotation.ElementType
-import java.lang.annotation.Retention
-import java.lang.annotation.RetentionPolicy
+import groovy.transform.InheritConstructors
 
 /**
- * Provide a brief description for a shell command extension
+ *  Base class for Blow exceptions
  *
- * @author Paolo Di Tommaso
+ *  @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
-@Target( ElementType.METHOD )
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Synopsis {
-    String value()
+@InheritConstructors
+class BlowException extends RuntimeException {
 }

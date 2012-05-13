@@ -22,7 +22,6 @@ package blow.command
 import blow.BlowSession
 import blow.shell.Cmd
 import blow.shell.Completion
-import blow.shell.Synopsis
 import org.jclouds.compute.domain.NodeMetadata
 
 /**
@@ -34,8 +33,7 @@ class NodesInfoCommand  {
 
     def BlowSession session
 
-    @Cmd
-    @Synopsis("List the nodes available in the current running cluster")
+    @Cmd(summary="List the nodes available in the current running cluster")
     def listnodes() {
 
         def nodes = session.listNodes() ;
@@ -50,8 +48,7 @@ class NodesInfoCommand  {
     }
 
 
-    @Cmd
-    @Synopsis("Shows the information details for the specified node")
+    @Cmd(summary="Shows the information details for the specified node")
     @Completion({ cmdline -> session.findMatchingAttributes( cmdline, "providerId" ) })
 
 	def nodeinfo ( String nodeId ) {
@@ -71,8 +68,7 @@ class NodesInfoCommand  {
 	}
 
 
-    @Cmd
-    @Synopsis("Shows the information details of the 'master' node")
+    @Cmd(summary="Shows the information details of the 'master' node")
     public void masterinfo() {
         def nodeId = session.getMasterMetadata()?.getProviderId()
         if( nodeId ) {

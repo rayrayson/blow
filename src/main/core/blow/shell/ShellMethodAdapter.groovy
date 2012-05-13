@@ -25,6 +25,7 @@ import org.apache.commons.cli.Option
 import org.apache.commons.cli.OptionBuilder
 
 import java.lang.reflect.Method
+import blow.exception.IllegalShellOptionException
 
 /**
  * This class converts a generic method marked with the {@link Cmd} annotation to be sued
@@ -68,7 +69,7 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
     private Opt[] methodOpts
 
     /** The parsed arguments */
-    private def args
+    private List<String> args
 
     private def OptionAccessor options
 
@@ -80,6 +81,8 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
     private StringWriter usageStr
 
     private BlowShell shell
+
+    private static final int LEFT_PADDING = 4
 
     /**
      * Crete the adapter for the specified method. The method parameter cannot be null and it is assumed that
@@ -100,7 +103,6 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
 
         this.cmd = method.getAnnotation(Cmd)
 
-
         /*
          * Find out all the Opt annotation declared on the method parameters
          */
@@ -108,18 +110,19 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
         for( int i=0; i<method.getParameterAnnotations().length; i++ ) {
             def it = method.getParameterAnnotations()[i]
             if( it && it[0] instanceof Opt) {
-                methodOpts[i++] = it[0]
+                methodOpts[i] = it[0]
             }
         }
 
 
-        
         /*
          * create the Command Line builder to handle CLI parameters for this command
          */
         this.usageStr = new StringWriter()
         this.cli = new CliBuilder( )
-        cli.usage = cmd.value()
+        this.cli.setFooter(cmd.description())
+        this.cli.formatter.setLeftPadding(LEFT_PADDING)
+        cli.usage = cmd?.usage() ?: getName()
         cli.writer = new PrintWriter(usageStr)
 
         for( int i=0; i<methodOpts.length; i++ ) {
@@ -127,25 +130,45 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
             if( !annotation ) continue
 
             Option option
-            if( annotation.name() ) {
-                option = new Option( annotation.name(), annotation.description() )
+
+            if( annotation.opt() ) {
+                option = new Option( annotation.opt(), annotation.description() )
                 if( annotation.longOpt() ) option.setLongOpt(annotation.longOpt())
             }
             else if( annotation.longOpt() ) {
-                option = OptionBuilder.withLongOpt(annotation).create();
-                if( annotation.description() ) option.setDescription(annotation.description())
+                option = OptionBuilder.withLongOpt(annotation.longOpt()).create();
             }
             else {
                 log.warn "Missing name parameter on shell method '${method.getName()}'"
                 continue
             }
 
+            // set the option type
             if( method.getParameterTypes()[i] != Object ) option.setType(method.getParameterTypes()[i])
-            if( annotation.required() ) option.setRequired(true)
-            if( annotation.argName() ) option.setArgName(annotation.argName())
-            if( annotation.args() ) option.setArgs(annotation.args())
-            if( annotation.optionalArg() ) option.setOptionalArg(true)
-            if( annotation.valueSeparator() ) option.setValueSeparator(annotation.valueSeparator().charAt(0))
+
+            annotation.with {
+                // set the description
+                if( description() ) option.setDescription(description())
+
+                // set the argument name , if not defined fallback to the 'long' option name
+                if( arg() ) option.setArgName(arg())
+                else if ( longOpt() && len() ) option.setArgName(longOpt())
+
+                // the number of arguments
+                if( annotation.len() ) option.setArgs(annotation.len())
+                else if( arg() ) option.setArgs(1)
+
+                // set if has optional argument value
+                if( annotation.optional() ) option.setOptionalArg(true)
+                else if( annotation.len() ) option.setOptionalArg(false)
+
+                // set if required
+                if ( annotation.required() ) option.setRequired(true)
+
+                // set the separator
+                if( annotation.sep() ) option.setValueSeparator(annotation.sep().charAt(0))
+            }
+
 
             cli << option
 
@@ -172,8 +195,6 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
             }
            
         }
-
-        
     }
 
 
@@ -181,27 +202,43 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
     // the name is defined by the annotation (if not empty) or fallback on the method name
     @Override
     public String getName() {
-        cmd.value() ?: method.getName()
+        cmd.name() ?: method.getName()
     }
 
-    @Override String getSynopsis() {
-        method.getAnnotation(Synopsis) ?. value()
+    @Override String getSummary() {
+        method.getAnnotation(Cmd) ?. summary()
     }
     
     
     @Override
     public String getHelp() { 
-        def result = []
-        if( getSynopsis() ) {
-            result.add(getSynopsis())
+        def cmd = method.getAnnotation(Cmd.class)
+        def result = new StringBuilder()
+
+        /*
+         * name + summary
+         */
+        result.append("NAME") .append("\n")
+        result.append("".padLeft(LEFT_PADDING)).append(getName())
+
+        def summary = cmd?.summary()
+        if( summary ) {
+            result.append(" -- ") .append(summary)
+            result.append("\n")
         }
 
-        if( cli ) {
-            cli.usage()
-            result.add( usageStr )
+        /*
+         * usage
+         */
+        cli.usage()
+        if( usageStr ) {
+            result.append("\n")
+            result.append("DESCRIPTION") .append("\n")
+            result.append("".padLeft(LEFT_PADDING)).append(usageStr)
+            result.append("\n")
         }
 
-        if( result ) result.join("\n")
+        return result.toString()
     }
 
     List<String> findOptions( String cmdline ) {
@@ -217,7 +254,11 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
     public void parse( def args ) {
         if( cli ) {
             this.options = cli.parse(args)
+            if( !options) {
+                throw new IllegalShellOptionException(usageStr.toString())
+            }
             this.args = options.arguments()
+
         }
         else {
             this.args = args
@@ -250,51 +291,73 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
          * CLI options defined for the method parameters
          */
         Opt opt
-        def val
         def methodArgs = new Object[ method.getParameterTypes().length ]
 
-
         for( int i=0; i<methodArgs.length; i++ ) {
+            def val = null
+            def Class type = method.getParameterTypes()[i]
+
             // if the parameter is annotated with the option annotation
             // we get the value form the CLI's option object
             if( (opt=methodOpts[i]) ) {
+
                 if( !options ) continue
-                if( opt.name() ) val = options[ opt.name() ]
+                if( opt.opt() ) val = options[ opt.opt() ]
                 else if( opt.longOpt() ) val = options[ opt.longOpt() ]
                 else val = null
 
+                if( val!=null && !type.isInstance(val) ) {
+                    val = null
+                }
             }
 
             // non-annotated param
             else {
-                def type = method.getParameterTypes()[i]
-                if( type == Object || List.isAssignableFrom(type) ) {
-                    val = args
+                if( List.isAssignableFrom(type) ) {
+                    def p=0
+                    val = new ArrayList<String>(args.size())
+                    for( def it : args) {
+                        val[p++] = it?.toString()
+                    }
                     args = []
                 }
                 else if( type.isArray() ) {
-                    val = args.toArray()
+                    def p=0
+                    val = new String[args.size()]
+                    for( def it : args) {
+                        val[p++] = it?.toString()
+                    }
+                    args = []
+
+                }
+
+                // when reach the end, but there are more than one elem in the array
+                // pass the argument as an array
+                if ( type == Object && i+1==methodArgs.length && args.size()>1 ) {
+                    val = args
                     args = []
                 }
+
+                // otherwise as a single element
                 else if( args ) {
-                    def item = args.head();
+                    def item = args.head()?.toString();
 
                     if( item && type.isAssignableFrom(item.getClass())) {
                         val = item
                         args = args.tail()
                     }
-
                 }
             }
 
             // assign the value
             methodArgs[i] = val
 
+
+            log.debug("%% declared type: ${method.getParameterTypes()[i]} :: current ${val?.getClass()} == val: ${val}")
         }
 
-
-        method.invoke( declaringObj, methodArgs )
-
+        log.debug(">>methodArgs : " + methodArgs)
+        method.invoke( declaringObj, methodArgs as Object[] )
     }
    
 

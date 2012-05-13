@@ -1,3 +1,9 @@
+2012-05-14, version 05.4
+- Added 'createsnapshots' + 'deletesnapshot' commands
+- Enanched shell api 
+- Better shell command exceptions handling
+- Added account-id in the conf file
+
 2012-05-10, version 0.5.3
 - Fixed minor issue on SSH console
 - Improved conf command

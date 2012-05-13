@@ -39,7 +39,7 @@ class BlowShellTest extends Specification {
 
 
         where:
-        args << [
+        argsCount << [
                 ['basic'],
                 ['cluster', 'listnodes'],
                 ['cluster', 'nodeinfo', 'xxx', 'yyy'],
@@ -68,7 +68,7 @@ class BlowShellTest extends Specification {
         def action = new AbstractShellCommand() {
             public String getName() { "hola" }
             public void invoke() {}
-            public String getSynopsis() {}
+            public String getSummary() {}
         };
 
         when:
@@ -101,7 +101,7 @@ class BlowShellTest extends Specification {
         cmdline <<  [ ["--debug","x"], ["-h","y"], ["--help","w", "z"], ["--debug", "hola", "-h"] ]
         debug << [ true, false, false, true ]
         help << [ false, true, true, false ]
-        args << [ ["x"], ["y"], ["w", "z"], [ "hola", "-h"] ]
+        argsCount << [ ["x"], ["y"], ["w", "z"], [ "hola", "-h"] ]
 
 
     }

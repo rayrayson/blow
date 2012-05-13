@@ -41,7 +41,7 @@ class SshCommand extends AbstractShellCommand implements CommandCompletor {
     @Override
     def String getName() { "ssh" }
 
-    def String getSynopsis() {
+    def String getSummary() {
         "Launch a SSH session with a remote node"
     }
 

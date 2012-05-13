@@ -53,11 +53,11 @@ abstract class AbstractShellCommand implements ShellCommand {
 
 
     @Override
-	public String getSynopsis() { null }
+	public String getSummary() { null }
 
 
     @Override
-    public  String getHelp() { getSynopsis() }
+    public  String getHelp() { getSummary() }
 
 
 

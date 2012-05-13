@@ -47,6 +47,7 @@ class BlowConfig {
 
 	def accessKey
 	def secretKey
+    def accountId
 
 	def regionId 
 	def zoneId 
@@ -86,6 +87,11 @@ class BlowConfig {
 		if( clusterName && conf.hasPath(clusterName) ) {
 			conf = conf.getConfig(clusterName).withFallback(conf);
 		}
+
+        /*
+         * The account ID
+         */
+        accountId = getString(conf, "account-id")
 
 		/*
 		 * credentials
@@ -298,6 +304,7 @@ class BlowConfig {
         result.put("user-name", userName)
         result.put("private-key", privateKeyFile)
         result.put("public-key", publicKeyFile)
+        result.put("account-id", accountId ?: '--')
         result.put("access-key", accessKey)
 		result.put("region-id", regionId)
 		result.put("zone-id", zoneId)

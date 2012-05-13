@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>blow</groupId>
   <artifactId>blow</artifactId>
-  <version>0.5.3</version>
+  <version>0.5.4</version>
 
   <dependencies>
   	<dependency>
@@ -66,6 +66,13 @@
         <groupId>ch.qos.logback</groupId>
         <artifactId>logback-core</artifactId>
         <version>1.0.1</version>
+    </dependency>
+
+
+    <dependency>
+        <groupId>net.schmizz</groupId>
+        <artifactId>sshj</artifactId>
+         <version>0.8.0</version>
     </dependency>
 
 	<!-- required by sshj - scp/ssh compression  -->

@@ -78,9 +78,9 @@ if( BlowShell.options?.trace ) {
     logger("blow", Level.TRACE, ['console','rolling'], false)
 }
 else  {
-    logger("blow", Level.DEBUG, ['console','rolling'],false)
+    logger("blow", Level.DEBUG, ['console','rolling'], false)
 }
 
 root(Level.INFO, ["console","rolling"])
-logger("net.schmizz.sshj", Level.WARN)
+logger("net.schmizz.sshj", Level.WARN, ["console","rolling"], false)
 

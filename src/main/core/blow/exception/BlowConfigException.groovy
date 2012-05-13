@@ -25,7 +25,7 @@ package blow.exception
  * @author Paolo Di Tommaso
  *
  */
-class BlowConfigException extends RuntimeException {
+class BlowConfigException extends BlowException {
 
 	public BlowConfigException( String message ) {
 		super(message)

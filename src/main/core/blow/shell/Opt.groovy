@@ -46,12 +46,28 @@ import java.lang.annotation.Target
 @Target( ElementType.PARAMETER )
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Opt {
-    String name()
-    String argName() default ""
+
+    /** Declares the CLI argument name */
+    String opt() default ""
+
+    /** The long name of this Option */
     String longOpt() default ""
-    int args() default 0
-    boolean optionalArg() default false
+
+    /** The argument value 'name' displayed n the usage text */
+    String arg() default ""
+
+    /** The  number of argument values this Option can take */
+    int len() default 0
+
+    /** whether this Option can have an optional argument value */
+    boolean optional() default false
+
+    /** whether this Option is mandatory */
     boolean required() default false
-    String valueSeparator() default ""
+
+    /** Defines the value separator */
+    String sep() default ""
+
+    /** The description for this option */
     String description() default ""
 }

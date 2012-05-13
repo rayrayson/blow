@@ -41,7 +41,7 @@ class TestShellMethods {
 
     def command2 () {}
 
-    @Cmd("cmd_3")
+    @Cmd(name="cmd_3")
     def command3 () { def args }
 
 }

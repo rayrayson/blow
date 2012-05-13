@@ -21,14 +21,12 @@ package blow.command
 
 import blow.BlowSession
 import blow.shell.Cmd
-import blow.shell.Synopsis
 
 class PutFilesCommand  {
 
     def BlowSession session
     
-    @Cmd
-    @Synopsis("Copy a file to the remote hosts")
+    @Cmd(summary="Copy a file to the remote hosts")
 	public void put( String fLocal, String fTarget ) {
 
 		if( !fLocal ) {

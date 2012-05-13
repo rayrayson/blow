@@ -34,5 +34,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME
 @Target( ElementType.METHOD )
 @Retention(RUNTIME)
 public @interface Cmd {
-	String value() default "";
+	String name() default "";
+    String summary() default ""
+    String usage() default ""
+    String description() default ""
 }

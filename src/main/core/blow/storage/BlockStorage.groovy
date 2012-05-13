@@ -19,16 +19,18 @@
 
 package blow.storage
 
+import blow.BlowConfig
 import groovy.util.logging.Slf4j
+import org.jclouds.aws.AWSResponseException
 import org.jclouds.compute.ComputeServiceContext
 import org.jclouds.ec2.domain.Attachment
+import org.jclouds.ec2.domain.Snapshot
 import org.jclouds.ec2.domain.Volume
+import org.jclouds.ec2.options.CreateSnapshotOptions
+import org.jclouds.ec2.options.DescribeSnapshotsOptions
 import org.jclouds.ec2.services.ElasticBlockStoreClient
 
 import java.util.concurrent.TimeoutException
-
-import blow.BlowConfig
-import org.jclouds.ec2.domain.Snapshot
 
 /**
  * Abstraction on (Amazon) Block Store 
@@ -134,6 +136,24 @@ class BlockStorage {
 	   */
 	  vol = waitForVolumeAvail( vol )
    }
+
+    def createSnapshot( String volumeId, String description, boolean waitForCompleted = true ) {
+        assert volumeId, "The argument 'volumeId' cannot be empty"
+
+
+        def options = []
+        if( description ) {
+            options.add(CreateSnapshotOptions.Builder.withDescription(description))
+        }
+
+        def snapshot = ebs.createSnapshotInRegion(conf.regionId, volumeId, options as CreateSnapshotOptions[] )
+
+        if( !waitForCompleted ) {
+            return snapshot
+        }
+
+        return waitForSnapshotCompleted(snapshot)
+    }
    
    /**
     * Find all the volumes attached to the specified {@code instanceId} 
@@ -178,7 +198,7 @@ class BlockStorage {
 	  if( snapshotId && snapshotId != vol.getSnapshotId() ) {
 		  log.warn "Snapshot id (${vol.getSnapshotId()}) does not match with the declared one (${snapshotId}) for volume: {volumeId}. Volume deleting skipped.";
 		  return
-		  }
+	  }
 	  
 	  /*
 	   * Before detach the volume 
@@ -198,7 +218,31 @@ class BlockStorage {
 	 
 	   
    }
-   
+
+//    def Volume deleteVolumeNoWait( String volumeId ) {
+//
+//        Volume vol = findVolume(volumeId)
+//        if( !vol ) return null
+//
+//        if( vol.getStatus() == Volume.Status.)
+//        /*
+//         * Before detach the volume
+//         * Note: detaching EBS volume could take a lot of time
+//         */
+//        log.debug "Detaching volume: '${volumeId}' "
+//        ebs.detachVolumeInRegion(conf.regionId, volumeId, true, null)
+//        try {
+//            waitForVolumeAvail(vol, 10 * 60 * 1000)
+//            log.debug "Deleting volume: '${volumeId}' "
+//            ebs.deleteVolumeInRegion( conf.regionId, volumeId )
+//        }
+//        catch( TimeoutException e ) {
+//            log.warn( e.getMessage() );
+//            log.warn("Detaching volume: '${volumeId}' is requiring too much time. Volume has not been deleted. YOU WILL HAVE TO DELETE IT MANUALLY!!")
+//        }
+//
+//    }
+//
    
    def waitForVolumeAvail( Volume vol, long timeout = 5 * 60 * 1000 ) {
 	   
@@ -221,19 +265,108 @@ class BlockStorage {
    }
 
 
-   def Set<Volume> listVolumes() {
+    def waitForSnapshotCompleted( Snapshot snap, long timeout = 5 * 60 * 1000 ) {
 
-       ebs.describeVolumesInRegion( conf.regionId )
+        /*
+         * check for a valid status
+         */
+        def startTime = System.currentTimeMillis();
+        while( snap.getStatus() != Snapshot.Status.COMPLETED && (System.currentTimeMillis()-startTime < timeout) ) {
+            log.debug "Snapshot status: ${snap.getStatus()}"
+            sleep(25000)
+            snap = ebs.describeSnapshotsInRegion(conf.regionId, snap.getId()).find()
+        }
 
+        if( snap?.getStatus() != Snapshot.Status.COMPLETED ) {
+            def message = "Waiting for COMPLETED status for snapshot '${snap.getId()}' but it is in a unexpected status: '${snap.getStatus()}'"
+            throw new TimeoutException(message)
+        }
+
+        return snap
+    }
+
+    /**
+     * @return The list of all volumes in the current region
+     */
+   def Set<Volume> listVolumes(List<String> volumeIds=null, String regionId=null) {
+       if( !regionId ) {
+            regionId = conf.regionId
+       }
+
+       try {
+            ebs.describeVolumesInRegion( regionId, volumeIds as String[] )
+       }
+       catch( AWSResponseException e ) {
+           log.debug("Error on listVolumes method", e)
+           return null
+       }
    }
 
 
-    def Set<Snapshot> listSnapshots() {
-
-        ebs.describeSnapshotsInRegion( conf.regionId )
+    /**
+     * Find out the information for the specified volume id
+     * @param volumeId The unique ID for the volume e.g. vol-12345
+     * @return The {@link Volume} instance for the specified volume on {@code null} if does not exist
+     */
+    def Volume findVolume(String volumeId) {
+        try {
+            return ebs.describeVolumesInRegion(conf.regionId, volumeId)?.find()
+        }
+        catch( AWSResponseException e ) {
+            log.debug("Error on findVolume method", e)
+            return null
+        }
 
     }
 
 
-	
+    /**
+     * @return The list of all snapshots in the current region
+     */
+    def Set<Snapshot> listSnapshots(List<String> snapshotIds ) {
+
+        def options = []
+
+        if( snapshotIds ) {
+            options.add(DescribeSnapshotsOptions.Builder.snapshotIds(snapshotIds as String[]))
+        }
+        else if( conf.accountId ) {
+            options.add(DescribeSnapshotsOptions.Builder.ownedBy(conf.accountId))
+        }
+
+        ebs.describeSnapshotsInRegion( conf.regionId, options as DescribeSnapshotsOptions[] )
+    }
+
+
+    /**
+     * Find out the information for the specified snapshot id
+     * @param volumeId The unique ID for the volume e.g. vol-12345
+     * @return The {@link Volume} instance for the specified volume on {@code null} if does not exist
+     */
+    def Snapshot findSnapshot(String snapshotId) {
+        assert snapshotId, "Argument 'snapshotId' cannot be empty"
+
+        try {
+            def opt = DescribeSnapshotsOptions.Builder.snapshotIds(snapshotId)
+            ebs.describeSnapshotsInRegion(conf.regionId, opt)?.find()
+        }
+        catch( AWSResponseException e ) {
+            log.debug("Error on 'findSnapshot'", e)
+            return null
+        }
+    }
+
+
+    def Snapshot deleteSnapshot( String snapshotId ) {
+        log.debug("Deleting snapshot: '$snapshotId'")
+
+        Snapshot snap = findSnapshot(snapshotId)
+        if( snap ) {
+            ebs.deleteSnapshotInRegion(conf.regionId, snapshotId)
+            return snap
+        }
+
+        return null
+    }
+
 }

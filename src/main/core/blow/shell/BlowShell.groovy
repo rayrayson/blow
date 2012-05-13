@@ -20,6 +20,10 @@
 package blow.shell
 
 import blow.exception.BlowConfigException
+import blow.exception.IllegalShellOptionException
+import blow.exception.MissingKeyException
+import blow.util.CmdLine
+import blow.util.KeyPairBuilder
 import com.google.inject.Guice
 import com.typesafe.config.ConfigFactory
 import jline.Completor
@@ -27,9 +31,6 @@ import jline.ConsoleReader
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import blow.*
-import blow.util.CmdLine
-import blow.exception.MissingKeyException
-import blow.util.KeyPairBuilder
 
 /**
  * The Pilot shell runner 
@@ -127,12 +128,12 @@ class BlowShell {
 			println ""
 			availableCommands.each {
 				name, _action -> 
-				println " ${name.padRight(max)} ${_action.getSynopsis()?.trim() ?: ''}"
+				println " ${name.padRight(max)} ${_action.getSummary()?.trim() ?: ''}"
 			}
 		} 
 
 		@Override
-		public String getSynopsis() {
+		public String getSummary() {
 			"Print this help"
 		}
 
@@ -163,7 +164,7 @@ class BlowShell {
 		}
 
 		@Override
-		public String getSynopsis() {
+		public String getSummary() {
 			"Switch to a different cluster configuration"
 		} } 
 	
@@ -174,7 +175,7 @@ class BlowShell {
 
 		public String getName() { "exit" }
 
-        public String getSynopsis() { "Quit the current shell session" }
+        public String getSummary() { "Quit the current shell session" }
 
 		@Override
 		public void invoke() {
@@ -435,14 +436,21 @@ class BlowShell {
 	
 	/**
 	 * Execute the requested command
-	 * 
 	 */
 	def void execute( String command, def args ) {
 
         def cmdObj = availableCommands[command]
         if( cmdObj ) {
-            cmdObj.parse(args)
-            cmdObj.invoke()
+            try {
+                cmdObj.parse(args)
+                cmdObj.invoke()
+            }
+            catch( ShellExit exit ) { throw exit }
+            catch( IllegalShellOptionException e ) { println e.getMessage() }
+            catch( Throwable e ) {
+                def message = e.getMessage() ?: (e.getCause()?.getMessage() ?: e.toString())
+                log.warn(message, e)
+            }
         }
         else {
             println "Unknown command: ${command}"
@@ -475,7 +483,7 @@ class BlowShell {
             }
             else if( availableCommands.containsKey( mainCommand.name ) ) {
                 print "${mainCommand.name}: "
-                println availableCommands[mainCommand.name].getSynopsis() ?: "(no help available)"
+                println availableCommands[mainCommand.name].getSummary() ?: "(no help available)"
             }
             else {
                 println "Unknown command: '${mainCommand.name}'"
@@ -552,16 +560,20 @@ class BlowShell {
      * Wait for an the user console input. Only the entries specified as the second
      * parameters will be accepted as valid.
      *
-     * @param query The string value to show on the input prompt
+     * @param text The string value to show on the input prompt
      * @param options A list of valid entries that will accepted, otherwise
      * it will continue to prompt for an answer
      */
-    def String prompt ( String query, List<String> options  ) {
+    def String prompt ( String text, List<String> options  ) {
         assert options, "You should provide at least one entry in the 'options' list parameter"
 
-        def show = (query ?: "") + " [${options.join('/')}]"
+        def show = (text ?: "") + " [${options.join('/')}]"
         prompt( show ) { it in options }
 
+    }
+
+    def String promptYesOrNo( String query ) {
+         prompt(query,['y','n'])
     }
 	
 	def void printUsage() {

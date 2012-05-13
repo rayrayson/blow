@@ -17,48 +17,16 @@
  *   along with Blow.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package blow.shell
-
-import blow.BlowSession;
+package blow.exception
 
 /**
- * Shell command have to implement this interface
+ *  Thrown when something is wrong on the CLI options
+ *
+ *  @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
-public interface ShellCommand {
+class IllegalShellOptionException extends BlowException {
 
-	BlowSession getSession()
-	
-	
-	/**
-	 * Define the shell command name
-	 * 
-	 * @return the string to be entered into the shell to invoke this command
-	 */
-	String getName();
-
-
-    /**
-     * @return One line description for the command
-     */
-    public String getSummary()
-
-    /**
-     * @return The help string for this command
-     */
-    public String getHelp()
-	
-	/**
-	 * Parse the command arguments provided by the user
-	 * 
-	 * @param args
-	 */
-	void parse( def args );
-	
-	/**
-	 * Run the command
-	 */
-	void invoke();
-	
-
-	
+    IllegalShellOptionException(String message) {
+        super(message)
+    }
 }
