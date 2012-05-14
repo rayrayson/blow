@@ -26,7 +26,7 @@ to the download *JAR* file, using the following command::
 2. The configuration file
 --------------------------------
 
-Create a file named ``blow.conf`` with the content showed below. Save it in the same directory 
+Create a file named ``blow.conf`` with the content shown below. Save it in the same directory
 where the ``blow.jar`` was downloaded. ::
 
 
@@ -78,7 +78,7 @@ specify the following command::
 If a SSH key-pair cannot be found in the current directory or in the ``$HOME/.ssh/`` path it will prompt to create a new key pair.
 Answer ``y`` and press enter to proceed. 
 
-When done you will get the *Blow* prompt as showed below::
+When done you will get the *Blow* prompt as shown below::
 
      ___  __
     / _ )/ /__ _    __
@@ -88,7 +88,7 @@ When done you will get the *Blow* prompt as showed below::
   blow [blow_simple_cluster] $ 
 
 Before launch the cluster you may verify its configuration entering the ``conf`` command on the *Blow* prompt. 
-It will result something similar to the output showed below::
+It will result something similar to the output shown below::
 
   blow [blow_simple_cluster] $ conf
   cluster: blow_simple_cluster
@@ -138,7 +138,7 @@ your screen will show something similar the following output::
 --------------------------------
 
 Use the command ``listnodes`` on the *Blow* prompt to get the list of all running launched nodes in the cluster. 
-You will get a list similar to the one showed below:: 
+You will get a list similar to the one shown below::
 
   blow [blow_simple_cluster] $ listnodes 
   i-ddd162bb;   23.20.217.171; RUNNING; blow_simple_cluster; master
@@ -160,7 +160,7 @@ address of the node you want to access::
   
 When connected to the remote node, you may want to verify that the *SGE* scheduler has been 
 correctly installed. At the shell prompt of the remote system enter the command ``qhost``.
-It should print a list of similar to the one showed below::
+It should print a list of similar to the one shown below::
 
   [domU-12-31-38-04-10-03 ~]$ qhost
   HOSTNAME                ARCH         NCPU  LOAD  MEMTOT  MEMUSE  SWAPTO  SWAPUS

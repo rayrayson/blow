@@ -25,7 +25,7 @@ to the downloaded *JAR* file, with the following command::
 2. The configuration file
 --------------------------------
 
-Create a file named ``blow.conf`` with the content showed below. Save it in the same directory 
+Create a file named ``blow.conf`` with the content shown below. Save it in the same directory
 where the ``blow.jar`` was downloaded. ::
 
 

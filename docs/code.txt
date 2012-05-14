@@ -1,7 +1,7 @@
 Getting the code 
 ================
 
-*Blow* framework is hosted on Github using the Git version control system at the following link 
+*Blow* framework is hosted on Github using the Git version control system at the following link:
 https://github.com/paoloditommaso/blow .  
 
 You can get the code with the following command::
@@ -12,15 +12,15 @@ You can get the code with the following command::
 Build from sources
 ------------------
 
-The build procedure has the following dependencies 
+The build procedure has the following dependencies:
 
 * Java JDK 6 or higher version 
 * Groovy 1.8.6 or higher version.
-* Make sure the variable GROOVY_HOME is defined. 
+* Make sure the variable ``GROOVY_HOME`` is defined.
 
-The build script is written on Groovy and uses the Ant Builder feature to build the project. 
-All required dependencies are defined in the Maven pom.xml file, and all the required libraries will be download automatically by the script 
-using the provided Maven Ant task integration.
+The build script is written in the Groovy language and uses the Ant Builder feature to build the project.
+All required dependencies are defined in the Maven ``pom.xml`` file, and all the required libraries will
+be download automatically by the script using the provided Maven Ant task integration.
 
 Launch the build script running the following command in the project root::
 
@@ -47,7 +47,7 @@ Our commitment is to support the most common used Linux distributions (RedHat, U
 
 Reporting bugs
 --------------
-Please use issue tracker provided in the Github repository at this link https://github.com/paoloditommaso/blow/issues.
+Please use issue tracker provided in the Github repository at this link: https://github.com/paoloditommaso/blow/issues.
  
 Bug reports are incredibly helpful, so please feel free to take the time to 
 report bugs and request features. And we're always grateful for patches to Blow’s code. 
@@ -61,5 +61,6 @@ License
 The *Blow* framework source code is released under the `GNU General Public License v3`_.
 
 .. _`GNU General Public License v3`: http://www.gnu.org/licenses/gpl.html
+
 
 

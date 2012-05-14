@@ -125,7 +125,7 @@ The new resulting volume, is not deleted on the cluster shut-down, and its conte
 next restart.
  
 It this is not required, you can delete it on the cluster termination,
-adding the attribute ``delete-on-terminate`` as showed below:: 
+adding the attribute ``delete-on-terminate`` as shown below::
 
   my_cluster {
     image-id: ..
