@@ -20,4 +20,5 @@ export PATH="$PATH:$BASE/blast3.pe.linux26-x64"
 export PATH="$PATH:$BASE/chr_subseq"
 export PATH="$PATH:$BASE/exonerate-2.2.0-x86_64/bin"
 export PATH="$PATH:$DIR_4_TCOFFEE/bin"
+export PATH="$PATH:$BASE/rnamap5"
 
