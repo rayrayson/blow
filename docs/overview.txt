@@ -1,7 +1,7 @@
 Overview
 ========
 
-*Blow* is an open source free toolkit to simplify the process of configuring and deploying 
+*Blow* is an open source free toolkit created to simplify the process of configuring and deploying
 clusters of virtual machines in public clouds. 
 
 The cluster properties are specified in a simple configuration file. *Blow* manages automatically 
@@ -10,7 +10,7 @@ the various installation tasks, making the overall process faster, safer and rep
 *Blow* has been designed to be an open and easily extensible framework. Users can implement 
 their own plugins to support special requirements and custom use-cases. 
 
-It currently support the Amazon AWS cloud services, but in future releases it aims to support 
+It currently supports the Amazon AWS cloud services, but in future releases, it aims to support
 more public cloud providers.
 
 

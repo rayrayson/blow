@@ -4,7 +4,7 @@ Network File System (NFS) configuration
 The most common way to share resources in a cluster is by using a shared network file system (NFS) 
 accessible from all the nodes making-up the cluster. 
 
-Configuring a Linux NFS is not a trivil task, in particular when the clients are dinamically created 
+Configuring a Linux NFS is not a trivial task, in particular when the clients are dinamically created
 in a virtual environment. 
 
 *Blow* simplifies this task by only requiring a short declaration in the *cluster* configuration file.
@@ -28,7 +28,7 @@ attribute of the ``nfs`` plugin. For example::
 
 
 The above declaration will create the ``/scratch`` directory in the master node, start the NFS daemon 
-and export that folder to the client nodes. Also it will create the same directory on all client nodes 
+and export that folder to the client nodes. Also it will create the same directory on all the client nodes
 and mount the network shared folder.  
 
 It is possible to share more than one NFS folder by simply repeating the ``nfs`` entry as many times as the folders are to be exported. 
@@ -47,18 +47,18 @@ For example::
   }
 
 
-When you start an Amazon EC2 instance, you get a certain amount of storage that depends by the instance type. 
-This storage is defined as *ephemeral* because it is persisted on the system termination. In other words 
+When you start an Amazon EC2 instance, you get a certain amount of storage that depends on the instance type.
+This storage is defined as *ephemeral* because it is NOT persisted on the system shut-down. In other words
 you lose all your data when the machine is switched off. 
 
 To save your data indefinitely you have to use the `Amazon Elastic Block Store`_ (EBS) service. Amazon EBS volumes 
-provides storage that persists independently from the life of an instance, and can be attached to a running 
+provide storage that persists independently from the life of an instance, and can be attached to a running
 Amazon EC2 instance and exposed as a Linux device within the instance. 
 
 .. _`Amazon Elastic Block Store`: http://aws.amazon.com/ebs/
    
 
-Mount and Share an EBS volume
+Mount and share an EBS volume
 -----------------------------
 
 Once you have created an EBS volume, to get it configured in your cluster all you need to do is to specify the 
@@ -77,8 +77,9 @@ property ``volume-id`` in the ``nfs`` configuration. For example::
 The above configuration will attach the specified volume to the *master* node, mount it and configure
 the NFS sharing. The content of the EBS volume will be accessible on all nodes using the path ``/data``. 
 
-To create a new empty volume, just provide the value ``new`` for the attribute ``volume-id``. The new volume
-size can be specified providing the attribute ``size`` which specify the number of GB required. For example:: 
+To create a new empty volume, just provide the value ``new`` for the attribute ``volume-id``.
+To specify the size of the new volume, just provide the attribute ``size`` with the number
+of GB required. For example::
 
   my_cluster {
     image-id: ..
@@ -90,13 +91,13 @@ size can be specified providing the attribute ``size`` which specify the number 
   }  
 
 
-If omitted it will created a 10 GB volume by default. 
+If the attribute ``size`` is omitted it will create a 10 GB volume by default.
 
 .. attention::
-  This creates a new volume each time you will launch a new instance. 
+  This creates a new volume each time you launch a new instance.
 
 
-Mount Share an EBS snapshot
+Mount and share an EBS snapshot
 ---------------------------
 
 Amazon EBS also provides the ability to create point-in-time snapshots of volumes, 
@@ -106,9 +107,10 @@ new Amazon EBS volumes, and protect data for long-term durability.
 A common use case is to create a new EBS volume with the content of a previously saved snapshot. 
 
 Using *Blow* this can be done by simply replacing the ``volume-id`` with the attribute ``snapshot-id`` 
-in the ``nfs`` plugin configuration, and specifying the ID of a snashot previously created. Optionally 
-can be provided the size in GB of the newly create volume.  For example:: 
+in the ``nfs`` plugin configuration, and providing the identifier of a the snapshot previously created.
 
+Optionally, you can specify the size of the new volume, just providing the attribute ``size`` with the number
+of GB required.  For example::
 
   my_cluster {
     image-id: ..
@@ -119,9 +121,10 @@ can be provided the size in GB of the newly create volume.  For example::
     ]
   }  
 
-The new resulting volume, is not deleted on the system termination and its content is preserved across instances restarts.
+The new resulting volume, is not deleted on the cluster shut-down, and its content can re reused later on the
+next restart.
  
-It this is not required, it is posible to specify to delete the newly created volume on the cluster termination, 
+It this is not required, you can delete it on the cluster termination,
 adding the attribute ``delete-on-terminate`` as showed below:: 
 
   my_cluster {
