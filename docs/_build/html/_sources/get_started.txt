@@ -122,6 +122,18 @@ your screen will show something similar the following output::
   blow [blow_simple_cluster] $ 
 
 
+.. attention::
+  If the following message is displayed
+
+  ``WARN: Disabling high-strength ciphers: cipher strengths apparently limited by JCE policy``
+
+  you will need to install the *Java Cryptography Extension (JCE)* for high-strength ciphers.
+  This is not included by default due to US export restrictions. This is available in the `Java download`_ at
+  the bottom of the page.
+
+.. _`Java download`: http://www.oracle.com/technetwork/java/javase/downloads/index.html
+
+
 4. Access the remote master node
 --------------------------------
 

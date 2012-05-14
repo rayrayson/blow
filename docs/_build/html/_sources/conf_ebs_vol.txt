@@ -1,2 +1,2 @@
-Share an EBS volumes
-=====================
+Configure EBS volumes
+---------------------

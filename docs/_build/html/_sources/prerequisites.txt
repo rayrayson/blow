@@ -1,18 +1,2 @@
 Prerequisites
 =============
-
-All you need to use *Blow* are: 
-
-* Java SE or SDK, version 6 or higher, installed your machine.
-
-* The Amazon AWS *Access Key ID* and the *Secret Access Key*. These are available 
-  in the `Security Credentials`_ page of your Amazon AWS account.
-  
-
-.. attention:: 
-  Currently *Blow* has been tested only on Linux and Mac OSX, systems. You may expect some
-  problems using different operating systems.
-
-  
-  
-.. _`Security Credentials`: https://aws-portal.amazon.com/gp/aws/securityCredentials

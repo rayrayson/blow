@@ -148,6 +148,14 @@ your screen will show something similar the following output:</p>
 ~ Configuring OpenGridEngine (SGE)
 blow [blow_simple_cluster] $</pre>
 </div>
+<div class="admonition attention">
+<p class="first admonition-title">Attention</p>
+<p>If the following message is displayed</p>
+<p><tt class="docutils literal"><span class="pre">WARN:</span> <span class="pre">Disabling</span> <span class="pre">high-strength</span> <span class="pre">ciphers:</span> <span class="pre">cipher</span> <span class="pre">strengths</span> <span class="pre">apparently</span> <span class="pre">limited</span> <span class="pre">by</span> <span class="pre">JCE</span> <span class="pre">policy</span></tt></p>
+<p class="last">you will need to install the <em>Java Cryptography Extension (JCE)</em> for high-strength ciphers.
+This is not included by default due to US export restrictions. This is available in the <a class="reference external" href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java download</a> at
+the bottom of the page.</p>
+</div>
 </div>
 <div class="section" id="access-the-remote-master-node">
 <h2>4. Access the remote master node<a class="headerlink" href="#access-the-remote-master-node" title="Permalink to this headline">¶</a></h2>
