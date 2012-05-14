@@ -37,11 +37,11 @@ Currently Blow is able to configure:
 Configure your cluster in 5 minutes
 -----------------------------------
 
-#### Prerequisites
+#### 0. Prerequisites
 * You need a JRE/JDK 6 installed on your machine
 * An Amazon AWS account (the account key and the secret key)
 
-#### Download Blow
+#### 1. Download Blow
 
 Download the <a href="http://dl.dropbox.com/u/376524/blow/blow.jar">Blow executable package here</a> and
 store it somewhere on your machine.
@@ -55,7 +55,7 @@ If you are running a Windows OS, you will have to use the following syntax to ru
 
     java -jar blow.jar [program arguments]
 
-#### Provide the cluster configuration
+#### 2. Provide the cluster configuration
 
 Create a file named `blow.conf` with the following properties and copy it
 to the path where you downloaded Blow.
@@ -87,7 +87,7 @@ This will create a cluster with two nodes, based on the `Amazon Linux 2012.03 (x
 `/etc/hosts` file, a shared NFS and install the <a href="http://gridscheduler.sourceforge.net" target="_blank">Open Grid Engine</a>,
 formerly Sun Grid Engine (SGE) batch-queuing system for distributed resource management.
 
-### Create the cluster
+### 3. Start the cluster
 
 Move the folder that contains the configuration file and the download Blow binary file.
 
@@ -110,6 +110,8 @@ Launch the cluster by entering the command `start` at the Blow prompt. It will t
 the ami instances and configure them. You may monitor the instances creation in the
 <a href="https://console.aws.amazon.com" target="_blank">Amazon management console</a>.
 
+### 4. Access the remote nodes
+
 When the configuration is complete, you can access any nodes in the cluster using any SSH client or the integrated SSH client.
 In the Blow shell terminal enter the command `listnodes` to get IP address of each nodes.
 A list similar to the one shown below will be displayed:
@@ -127,7 +129,7 @@ To access any node in the cluster, simply enter the following command in the Blo
 (obviously replacing the IP address with the one available in your cluster).
 
 
-### Terminate the cluster
+### 5. Terminate the cluster
 
 When you have done, remember to stop you cluster nodes using the command `terminate` from the Blow shell.
 
