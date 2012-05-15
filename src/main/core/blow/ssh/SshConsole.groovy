@@ -21,9 +21,11 @@ package blow.ssh
 
 import groovy.util.logging.Slf4j
 import net.schmizz.sshj.SSHClient
+import net.schmizz.sshj.connection.channel.ChannelOutputStream
 import net.schmizz.sshj.connection.channel.direct.PTYMode
 import net.schmizz.sshj.connection.channel.direct.Session
 import net.schmizz.sshj.transport.verification.HostKeyVerifier
+import org.fusesource.jansi.AnsiConsole
 import sun.misc.Signal
 import sun.misc.SignalHandler
 
@@ -39,6 +41,8 @@ import java.security.PublicKey
  */
 @Slf4j
 class SshConsole {
+
+    static final boolean isWindowsOS = System.getProperty("os.name")?.startsWith("Windows")
 
     /** The remote host name to which connect */
     String host;
@@ -59,18 +63,21 @@ class SshConsole {
     boolean useCompression = true;
 
     /** The terminal type to use e.g {@code ansi}, {@code vt100}, {@code vt220}, {@code vt320} */
-    String term = "ansi"
+    String term = "vt100"
 
 
     private SSHClient ssh;
     private Session session;
 
+    private jline.ConsoleReader console
+    private int rows
+    private int cols
 
     public void launch() throws IOException {
 
-        final jline.ConsoleReader console = new jline.ConsoleReader();
-        int rows = console.getTermheight();
-        int cols = console.getTermwidth();
+        console = new jline.ConsoleReader();
+        rows = console.getTermheight();
+        cols = console.getTermwidth();
 
         ssh = new SSHClient();
         if( useCompression ) {
@@ -125,11 +132,11 @@ class SshConsole {
             /*
              * redirect the remote shell i/o to the current system console
              */
-            new StreamPump(shell.getInputStream(), System.out) {  public boolean abort() { !shell.isOpen() }}
+            new StreamPump(shell.getInputStream(), AnsiConsole.out) {  public boolean abort() { !shell.isOpen() }}
                     .bufSize(shell.getLocalMaxPacketSize())
                     .spawn("stdout")
 
-            new StreamPump(shell.getErrorStream(), System.err) {  public boolean abort() { !shell.isOpen() }}
+            new StreamPump(shell.getErrorStream(), AnsiConsole.err) {  public boolean abort() { !shell.isOpen() }}
                     .bufSize(shell.getLocalMaxPacketSize())
                     .spawn("stderr");
 
@@ -137,50 +144,32 @@ class SshConsole {
             // note: it uses a custom loop instead of the stream pump because the latter
             // was blocking on the read method and so the underlying thread won't terminate
             // as the user logout from the remote shell
+
+            def reader = isWindowsOS ? this.&consoleReaderForWindows : this.&consoleReaderForLinux
+
             keyboardListener = new Thread() {
-
-                @Override
                 public void run() {
-                    OutputStream _out = shell.getOutputStream()
-                    InputStream _in = Channels.newInputStream((new FileInputStream(FileDescriptor.in)).getChannel())
 
-                    // define a buffer in a safe way
-                    int maxPacketSize = shell.getRemoteMaxPacketSize()
-                    log.debug("Ptty remoteMaxPacketSize: $maxPacketSize")
-                    byte[] buf = new byte[maxPacketSize];
-
-                    // read the inout from the keyboard and sent to the ptty
                     try {
-                        while( shell.isOpen() ) {
-                            int len = _in.read(buf)
-                            if( len ) {
-                                // Hack!! Java returns 0xA (line feed) pressing the enter key, but some terminal application
-                                // does not work properly. It seems better to replace it with 0xD (carriage return)
-                                if( len==1 && buf[0]==0xA ) buf[0]=0xD
-
-                                _out.write(buf,0,len)
-                                _out.flush()
-                            }
-                        }
+                        reader(shell)
                     }
                     catch( InterruptedIOException e ) {
-                        log.debug "Keyboard listener thread InterruptedIOException"
+                        log.debug "SSH Console reader InterruptedIOException"
                     }
                     catch( InterruptedException e ) {
-                        log.debug "Keyboard listener thread InterruptedException"
+                        log.debug "SSH Console reader InterruptedException"
                     }
                     catch( Throwable e ) {
-                        log.debug("Keyboard listener unknown exception",e)
+                        log.debug("SSH Console reader exception",e)
                     }
                 }
-
-            }.start()
-
+            }
+            .start()
 
             /*
-             * While the connection is established, change the remote shell size as
-             * the console terminal resize
-             */
+            * While the connection is established, change the remote shell size as
+            * the console terminal resize
+            */
             while( shell.isOpen() ) {
 
                 int _rows = console.getTermheight();
@@ -191,14 +180,14 @@ class SshConsole {
                     shell.changeWindowDimensions(cols, rows, 0, 0);
                 }
 
-                Thread.sleep(500);
+                Thread.sleep(800);
             }
 
         }
         finally {
+            try { keyboardListener.interrupt() } catch( Exception e ) {}
             try { if( session && session.isOpen() ) { session.close() } } catch( Exception e ) {}
             try { ssh.disconnect(); } catch( Exception e ) { }
-            try { keyboardListener.interrupt() } catch( Exception e ) {}
 
             if( prevSigStop ) Signal.handle(new Signal("TSTP"), prevSigStop )
             if( prevSigInt ) Signal.handle(new Signal("INT"), prevSigInt )
@@ -207,7 +196,7 @@ class SshConsole {
 
     private installSignalHandlerForCtrl_Z(def shell) {
 
-        if( System.getProperty("os.name")?.startsWith("Windows")) {
+        if( isWindowsOS ) {
             log.trace "Skipping ctrl+z signal handler on Windows"
             return
         }
@@ -221,6 +210,80 @@ class SshConsole {
         }
         catch( Exception e ) {
             log.warn("Cannot install term signal handler 'TSTP'", e)
+        }
+
+    }
+
+    private void consoleReaderForWindows( Session.Shell shell ) {
+        OutputStream _out = shell.getOutputStream()
+        InputStream _in = Channels.newInputStream((new FileInputStream(FileDescriptor.in)).getChannel())
+
+        // define a buffer in a safe way
+        int maxPacketSize = shell.getRemoteMaxPacketSize()
+        log.debug("Ptty remoteMaxPacketSize: $maxPacketSize")
+        byte[] buf = new byte[maxPacketSize];
+
+        // read the input from the keyboard and sent to the ptty
+        while( shell.isOpen() ) {
+            int ch = _in.read()
+            if( ch == -1 ) {
+                log.debug("Keyboard listener terminated")
+                break
+            }
+
+            // Hack!! Java returns 0xA (line feed) pressing the enter key, but some terminal application
+            // does not work properly. It seems better to replace it with 0xD (carriage return)
+            if( ch ==0xA ) { ch=0xD }
+
+            _out.write(ch)
+            if( !_in.available() ) {
+                _out.flush()
+            }
+        }
+
+    }
+
+    private void consoleReaderForLinux( Session.Shell shell ) {
+        ChannelOutputStream _out = shell.getOutputStream()
+        InputStream _in = System.in
+
+        // define a buffer in a safe way
+        int maxPacketSize = shell.getRemoteMaxPacketSize()
+        log.debug("Ptty remoteMaxPacketSize: $maxPacketSize")
+
+        // read input from the keyboard and sent to the ptty
+        while( !_out.closed && shell.isOpen() ) {
+            if( _in.available() <= 0 ) {
+                Thread.sleep(40)
+                continue
+            }
+
+            int ch = _in.read()
+            if( ch == -1 ) {
+                log.debug("Keyboard listener terminated")
+                break
+            }
+
+            // Hack!! Java returns 0xA (line feed) pressing the enter key, but some terminal application
+            // does not work properly. It seems better to replace it with 0xD (carriage return)
+            if( ch ==0xA ) { ch=0xD }
+
+            _out.write(ch)
+            if( _in.available() <= 0 ) {
+                _out.flush()
+
+                /*
+                * resize the terminal if required
+                */
+                int _rows = console.getTermheight();
+                int _cols = console.getTermwidth();
+
+                if( rows != _rows || cols != _cols ) {
+                    rows = _rows; cols = _cols;
+                    shell.changeWindowDimensions(cols, rows, 0, 0);
+                }
+
+            }
         }
 
     }

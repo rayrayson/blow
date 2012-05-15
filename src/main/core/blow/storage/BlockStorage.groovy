@@ -170,7 +170,46 @@ class BlockStorage {
 	   }
 
    }
-   
+
+   def void deleteVolume( String volumeId ) {
+       assert volumeId
+
+       Volume vol = ebs.describeVolumesInRegion(conf.regionId, volumeId).find()
+       assert vol, "Cannot find volume: ${volumeId} in region: ${conf.regionId}"
+
+       log.debug("DeleteVoume: '${volumeId}' - current status: ${vol.getStatus().toString()}")
+
+       /*
+        * Detach the volume if it is used
+        */
+
+       if( vol.getStatus() == Volume.Status.IN_USE ) {
+
+           log.debug "Detaching volume: '${volumeId}' "
+           ebs.detachVolumeInRegion(conf.regionId, volumeId, false, null)
+           try {
+               waitForVolumeAvail(vol, 10 * 60 * 1000)
+           }
+           catch( TimeoutException e ) {
+               log.warn( e.getMessage() );
+               log.warn("Detaching volume: '${volumeId}' is requiring too much time. Volume has not been deleted. YOU WILL HAVE TO DELETE IT MANUALLY!!")
+           }
+       }
+
+
+       if( vol.getStatus() == Volume.Status.AVAILABLE ) {
+           log.debug "Deleting volume: '${volumeId}' "
+           ebs.deleteVolumeInRegion( conf.regionId, volumeId )
+       }
+       else if( vol.getStatus() == Volume.Status.DELETING ) {
+           log.debug("Volume ${volumeId} is in DELETING status ")
+       }
+       else {
+           log.warn("Volume ${volumeId} is in a wrong status: ${vol.getStatus().toString()}. CANNOT DELETE IT.")
+       }
+
+   }
+
    def void deleteVolume( String instanceId, String device, String volumeId, String snapshotId ) {
 	   
 	   log.debug "Deleting volume attached to: '$device' for instance: '${instanceId}' "
@@ -274,7 +313,8 @@ class BlockStorage {
         while( snap.getStatus() != Snapshot.Status.COMPLETED && (System.currentTimeMillis()-startTime < timeout) ) {
             log.debug "Snapshot status: ${snap.getStatus()}"
             sleep(25000)
-            snap = ebs.describeSnapshotsInRegion(conf.regionId, snap.getId()).find()
+            def opt = DescribeSnapshotsOptions.Builder.snapshotIds(snap.getId())
+            snap = ebs.describeSnapshotsInRegion(conf.regionId, opt).find()
         }
 
         if( snap?.getStatus() != Snapshot.Status.COMPLETED ) {

@@ -90,15 +90,15 @@ class DynLoaderFactory {
 		}
 
 		// add the below path in the user $HOME if exist
-		File userHomeScript = new File( System.getProperty("user.home"), ".blow/plugins" )
-		if( userHomeScript.exists() && userHomeScript.isDirectory() ) {
-			defaultPaths.add(userHomeScript);
+		File userHomeScripts = new File( System.getProperty("user.home"), ".blow/plugins" )
+		if( userHomeScripts.exists() && userHomeScripts.isDirectory() ) {
+			defaultPaths.add(userHomeScripts);
 		}
 		
 		// add the 'plugins' path in the current folder if exist
-		File currentFolderPlugin = new File("./plugins")
-		if( currentFolderPlugin.exists() && currentFolderPlugin.isDirectory() ) {
-			defaultPaths.add(currentFolderPlugin)
+		File currentFolderScripts = new File("./plugins")
+		if( currentFolderScripts.exists() && currentFolderScripts.isDirectory() ) {
+			defaultPaths.add(currentFolderScripts)
 		}
 
 		log.debug("Creating DynLoader using the following path(s): $defaultPaths")

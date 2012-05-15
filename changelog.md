@@ -1,4 +1,14 @@
-2012-05-14, version 05.4
+2012-05-15, version 0.5.5
+- Improved exception handling in the plugin system
+- Using the OrderedEventBus
+- Improved notification for user extensions script errors
+- Improved SSH console
+- Improved 'listvolumes' command. Not it is possible to show the creation snapshot + filter by instance-id and snapshot-id
+- New attribute 'make-snapshot-on-termination' on NFS plugin. It creates a volume snapshot on cluster termination.
+- Improved NFS plugin. It ask for confirmation before delete a volume on termination.
+- Improved plugin validation system. The validator method can accept the configuration as parameter.
+
+2012-05-14, version 0.5.4
 - Added 'createsnapshots' + 'deletesnapshot' commands
 - Enanched shell api 
 - Better shell command exceptions handling

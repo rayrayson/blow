@@ -6,5 +6,5 @@ package blow
  */
 final class Project {
     final static def name = "blow"
- final static def number = "0.5.4"
+ final static def number = "0.5.5"
 }

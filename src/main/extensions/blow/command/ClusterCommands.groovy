@@ -51,7 +51,7 @@ class ClusterCommands {
     @Cmd(summary="Terminate the current cluster")
     public void terminate() {
 
-        def answer = shell.prompt("Please confirm that you want to termiante cluster named ${shell.session.clusterName} [y/n]") {
+        def answer = shell.prompt("Please confirm that you want to terminate cluster named ${shell.session.clusterName} [y/n]") {
             ['y','n'].contains(it)
         }
 

@@ -22,10 +22,11 @@ package blow.plugin
 import blow.BlowSession
 import blow.events.OnAfterClusterCreateEvent
 import blow.events.OnAfterClusterTerminationEvent
+import blow.events.OnBeforeClusterTerminationEvent
 import blow.util.TraceHelper
 import com.google.common.eventbus.Subscribe
 import groovy.util.logging.Slf4j
-import blow.events.OnBeforeClusterTerminationEvent
+import blow.util.PromptHelper
 
 /**
  * Manage NFS configuration 
@@ -34,6 +35,7 @@ import blow.events.OnBeforeClusterTerminationEvent
  *
  */
 @Slf4j
+@Mixin(PromptHelper)
 @Plugin("nfs")
 class Nfs {
 
@@ -64,7 +66,9 @@ class Nfs {
 	
 	@Conf("delete-on-termination") 
 	def String deleteOnTermination = "false"
-	
+
+    @Conf("make-snapshot-on-termination")
+    def String makeSnapshotOnTermination = "false"
 
 	private String masterInstanceId 
 	private userName 
@@ -82,7 +86,6 @@ class Nfs {
         assert device, "You need to define the 'device' attribute in the NFS configuraton"
 
     }
-
 
 
 	@Subscribe
@@ -131,11 +134,36 @@ class Nfs {
          */
         def boolean needToDelete = (deleteOnTermination == "true") && ( snapshotId || volumeId );
 
-        if( !needToDelete ) { return }
 
+        /*
+         * Create a new snapshot before terminate
+         */
+        if( volumeId && makeSnapshotOnTermination == "true" ) {
+            log.info("Creating a snapshot for volume: ${volumeId} as requested by configuration")
+            def message = "Snapshot for volume ${volumeId} - Blow"
+            def snapshot = event.session.blockStore.createSnapshot(volumeId, message, needToDelete)
+            log.info("Created snapshot: ${snapshot.getId()} for volume: ${volumeId}")
+        }
+
+        if( !needToDelete ) {
+            if( volumeId ) {
+                log.warn("The volume ${volumeId} will NOT be deleted.")
+            }
+            return
+        }
+
+
+        println "The volume ${volumeId} is going be DELETED."
+        if( promptYesOrNo("Do you confirm the deletion?") != 'y' ) {
+            return
+        }
+
+        /*
+         * Delete the volume
+         */
         TraceHelper.debugTime( "Delete attached volume", {
 
-            event.session.getBlockStore().deleteVolume(masterInstanceId, device, volumeId, snapshotId)
+            event.session.getBlockStore().deleteVolume(volumeId)
 
         })
 

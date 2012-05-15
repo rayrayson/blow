@@ -351,12 +351,9 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
 
             // assign the value
             methodArgs[i] = val
-
-
-            log.debug("%% declared type: ${method.getParameterTypes()[i]} :: current ${val?.getClass()} == val: ${val}")
         }
 
-        log.debug(">>methodArgs : " + methodArgs)
+        log.debug("command arguments: ${methodArgs}")
         method.invoke( declaringObj, methodArgs as Object[] )
     }
    

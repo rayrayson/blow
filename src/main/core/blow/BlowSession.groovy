@@ -19,10 +19,13 @@
 
 package blow
 
+import blow.eventbus.OrderedEventBus
+import blow.exception.PluginAbortException
+import blow.ssh.ScpClient
+import blow.storage.BlockStorage
 import com.google.common.base.Predicate
 import com.google.common.base.Predicates
 import com.google.common.collect.ImmutableSet
-import com.google.common.eventbus.EventBus
 import com.google.inject.Module
 import groovy.util.logging.Slf4j
 import org.jclouds.Constants
@@ -36,10 +39,13 @@ import org.jclouds.compute.domain.TemplateBuilder
 import org.jclouds.compute.options.TemplateOptions
 import org.jclouds.compute.reference.ComputeServiceConstants
 import org.jclouds.enterprise.config.EnterpriseConfigurationModule
+import org.jclouds.logging.slf4j.config.SLF4JLoggingModule
 import org.jclouds.scriptbuilder.domain.Statement
 import org.jclouds.scriptbuilder.statements.login.AdminAccess
 import org.jclouds.sshj.config.SshjSshClientModule
-import blow.ssh.ScpClient
+
+import java.lang.reflect.InvocationTargetException
+
 import blow.events.*
 
 import java.util.concurrent.*
@@ -47,8 +53,7 @@ import java.util.concurrent.*
 import static com.google.common.base.Predicates.not
 import static org.jclouds.compute.predicates.NodePredicates.TERMINATED
 import static org.jclouds.compute.predicates.NodePredicates.inGroup
-import blow.storage.BlockStorage
-import org.jclouds.logging.slf4j.config.SLF4JLoggingModule
+import blow.util.PromptHelper
 
 /**
  * Base session initializer
@@ -58,6 +63,7 @@ import org.jclouds.logging.slf4j.config.SLF4JLoggingModule
  */
 
 @Slf4j
+@Mixin(PromptHelper)
 class BlowSession {
 
 	final ComputeServiceContext context;
@@ -66,7 +72,7 @@ class BlowSession {
 	
 	final String clusterName
 	
-	final EventBus eventBus
+	final OrderedEventBus eventBus
 	
 	Map<String,ExecResponse> response = [:]
     Map<String,ExecResponse> errors = [:]
@@ -106,7 +112,7 @@ class BlowSession {
 		 * create the event bus for the plugin system
 		 * and register all the plugins
 		 */
-		eventBus = new EventBus()
+		eventBus = new OrderedEventBus()
 		conf.plugins.each { eventBus.register(it) } 
 	} 
 	
@@ -146,6 +152,31 @@ class BlowSession {
 
 	public BlockStorage getBlockStore() { blockstore }
 
+    /**
+     * Submit the specified event to the registered plugins
+     *
+     * @param event
+     */
+    protected void postEvent( def event ) {
+        assert event
+
+        try {
+            eventBus.post(event)
+        }
+        catch( Exception e ) {
+            if( e instanceof InvocationTargetException ) {
+                e = e.getCause()
+            }
+            log.error("${event.getClass().getSimpleName()} raised an exception. Cause: " + (e.getMessage()?:e.toString()), e )
+
+            // ask to the user if want to continue
+            println "\nIt is strongly suggested to stop the process and review the cluster configuration!"
+            if( promptYesOrNo("Do you want to continue?") == 'n' ) {
+                throw new PluginAbortException()
+            }
+        }
+    }
+
 	/**
 	 * Create an instance of the specific cluster 
 	 * 
@@ -156,7 +187,7 @@ class BlowSession {
 		/*
 		 * send the cluster create event
 		 */
-		eventBus.post( new OnBeforeClusterCreationEvent(session: this, clusterName: clusterName) )
+		postEvent( new OnBeforeClusterCreationEvent(session: this, clusterName: clusterName) )
 	
 		/* 
 		 * Get the compute service 
@@ -168,14 +199,14 @@ class BlowSession {
 		template.locationId( conf.zoneId )
 				
 
-		/* 
-		 * create the master node 
+		/*
+		 * create the master node
 		 */
 		def allNodes = new TreeSet()
 		log.info("Creating the 'master' node")
 		masterMetadata = startNodes(template, 1, "master").find()
 		allNodes.add(masterMetadata)
-		
+
 		/*
 		 * create the 'worker' nodes
 		 */
@@ -183,7 +214,7 @@ class BlowSession {
 		if( workerCount ) {
 			log.info("Creating ${workerCount} worker node(s)")
 			def nodes = startNodes( template, workerCount, "worker" )
-			
+
 			allNodes.addAll( nodes )
 		}
 		else {
@@ -194,7 +225,7 @@ class BlowSession {
 		/*
 		 * notify the cluster creation 	
 		 */
-		eventBus.post( new OnAfterClusterCreateEvent(session: this, clusterName:clusterName, nodes: allNodes) )
+		postEvent( new OnAfterClusterCreateEvent(session: this, clusterName:clusterName, nodes: allNodes) )
 	}
 
 	private startNodes( TemplateBuilder template, int numberOfNodes, String role ) {
@@ -215,7 +246,7 @@ class BlowSession {
 		/*
 		 * send the before creation event
 		 */
-		eventBus.post( new OnBeforeNodeStartEvent(
+		postEvent( new OnBeforeNodeStartEvent(
 			session: this,
 			clusterName: clusterName, 
 			numberOfNodes: numberOfNodes, 
@@ -231,7 +262,7 @@ class BlowSession {
 		/*
 		 * send the after creation event
 		 */
-		eventBus.post( new OnAfterNodeStartEvent(
+		postEvent( new OnAfterNodeStartEvent(
 			session: this,
 			clusterName: clusterName, 
 			numberOfNodes: numberOfNodes, 
@@ -259,7 +290,7 @@ class BlowSession {
 		/*
 		 * notify the event
 		 */
-		eventBus.post( new OnBeforeClusterTerminationEvent(session: this, clusterName: groupName) );
+		postEvent( new OnBeforeClusterTerminationEvent(session: this, clusterName: groupName) );
 		
 		/*
 		 * apply the command
@@ -272,7 +303,7 @@ class BlowSession {
 		/*
 		 * sent the complete notification
 		 */
-		eventBus.post( new OnAfterClusterTerminationEvent(session: this, clusterName: groupName, nodes: result) );
+		postEvent( new OnAfterClusterTerminationEvent(session: this, clusterName: groupName, nodes: result) );
 		
 		return result
 	}

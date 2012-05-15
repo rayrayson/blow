@@ -20,6 +20,7 @@
 package blow
 
 import blow.exception.BlowConfigException
+import blow.exception.MissingKeyException
 import blow.plugin.PluginFactory
 import blow.plugin.Validate
 import com.google.common.base.Charsets
@@ -31,9 +32,8 @@ import com.typesafe.config.ConfigValue
 import groovy.util.logging.Slf4j
 import org.jclouds.domain.LoginCredentials
 
-import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
-import blow.exception.MissingKeyException
+import java.lang.reflect.InvocationTargetException
 
 /**
  * Contains all configuration required to handle a cluster 
@@ -77,6 +77,13 @@ class BlowConfig {
 
     @Lazy
 	PluginFactory pluginFactory = { new PluginFactory( DynLoaderFactory.get() ) }()
+
+
+    /** Protected constructor used only for testing purpose */
+    protected BlowConfig () {
+
+    }
+
 
 	public BlowConfig( String conf, String clusterName = null ) {
 		this( ConfigFactory.parseString(conf), clusterName )	
@@ -239,34 +246,8 @@ class BlowConfig {
              * and invoke them
              */
             def validators = plugin.getClass().getMethods() ?. findAll {  Method method -> method.getAnnotation(Validate) }
-            try {
-                validators.each {
-                    Method method -> invokeValidator(plugin,method)
-                }
-            }
-            catch( InvocationTargetException e ) {
-                /*
-                 * Normalize the exception class
-                 */
-                def cause = e.getCause();
-                switch( cause?.getClass() ) {
-                    case AssertionError:
-                        throw new BlowConfigException("Failed validation: " + cause.getMessage(), cause)
-                        break;
-
-                    case BlowConfigException:
-                        throw cause;
-                        break;
-
-                    default:
-                        throw BlowConfig(cause);
-                }
-            }
-            catch( BlowConfigException e ) {
-                throw e;
-            }
-            catch( Throwable e ) {
-                throw new BlowConfigException(e);
+            validators.each {
+                Method method -> invokeValidator(plugin,method)
             }
         }
 
@@ -274,13 +255,53 @@ class BlowConfig {
 
     def void invokeValidator(Object plugin, Method method) {
 
-        Object[] args = new Object[ method.getParameterTypes().length ];
-        if( args .length > 0 ) {
-            log.warn("Plugin '${plugin.getClass().getSimpleName()}.${method.getName()}' should not declare any argument");
+        def types=method.getParameterTypes()
+        Object[] args = new Object[ types.length ];
+
+        /*
+         * check if the method defines some a parameters
+         */
+        if( types.length > 0 ) {
+
+            if(  types[0]==BlowConfig.class || types[0]==Object.class) {
+                args[0] = this
+            }
+
+            if( args[0]==null || types.length>1 ) {
+                log.warn("Plugin '${plugin.getClass().getSimpleName()}.${method.getName()}' should declare at most one parameter of type BlowConfig");
+            }
         }
 
-        method.invoke(plugin,args)
+        /*
+         * invoke the validator
+         */
+        try {
+            method.invoke(plugin,args)
+        }
+        catch( InvocationTargetException e ) {
+            /*
+            * Normalize the exception class
+            */
+            def cause = e.getCause();
+            switch( cause?.getClass() ) {
+                case AssertionError:
+                    throw new BlowConfigException("Failed validation: " + cause.getMessage(), cause)
+                    break;
 
+                case BlowConfigException:
+                    throw cause;
+                    break;
+
+                default:
+                    throw BlowConfig(cause);
+            }
+        }
+        catch( BlowConfigException e ) {
+            throw e;
+        }
+        catch( Throwable e ) {
+            throw new BlowConfigException(e);
+        }
     }
 
 	

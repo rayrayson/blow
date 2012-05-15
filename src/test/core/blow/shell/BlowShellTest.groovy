@@ -39,7 +39,7 @@ class BlowShellTest extends Specification {
 
 
         where:
-        argsCount << [
+        args << [
                 ['basic'],
                 ['cluster', 'listnodes'],
                 ['cluster', 'nodeinfo', 'xxx', 'yyy'],
@@ -101,7 +101,7 @@ class BlowShellTest extends Specification {
         cmdline <<  [ ["--debug","x"], ["-h","y"], ["--help","w", "z"], ["--debug", "hola", "-h"] ]
         debug << [ true, false, false, true ]
         help << [ false, true, true, false ]
-        argsCount << [ ["x"], ["y"], ["w", "z"], [ "hola", "-h"] ]
+        args << [ ["x"], ["y"], ["w", "z"], [ "hola", "-h"] ]
 
 
     }

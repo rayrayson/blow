@@ -160,9 +160,13 @@ public class DynLoader {
 			roots.each { loader.addClasspath(it.getAbsolutePath()) }
 			foundGroovySources.each { 
 				log.trace "Loading source: '$it' "
-				result.add(loader.parseClass(it)) 
-				
-			} 
+                try {
+				  result.add(loader.parseClass(it))
+                }
+                catch( Exception e ) {
+                    log.warn "Cannot add extension class: '$it'. Cause: " + e.getMessage()
+                }
+			}
 			
 			log. trace "//Loaded groovy sources"
 		}

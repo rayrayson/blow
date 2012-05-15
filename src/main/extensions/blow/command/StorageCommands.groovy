@@ -27,12 +27,14 @@ import blow.shell.Opt
 import org.jclouds.ec2.domain.Attachment
 import org.jclouds.ec2.domain.Snapshot
 import org.jclouds.ec2.domain.Volume
+import groovy.util.logging.Slf4j
 
 /**
  * Shell command managing EBS volumes and snapshots
  *
  * @author Paolo Di Tommaso
  */
+@Slf4j
 class StorageCommands  {
 
     // injected by the framework
@@ -45,9 +47,9 @@ class StorageCommands  {
      * @param regionId
      *      The region for which list the volumes, if null will be listed the volumes
      *      for the current configured region
-     * @param attachments
+     * @param printAttachments
      *      If true it will print the attachment (if any) for the volume
-     * @param zone
+     * @param printZone
      *      The zone in which the volumes is allocated
      * @param volumeIds
      *      Shows only the volumes which matches the specified ids
@@ -60,20 +62,58 @@ class StorageCommands  {
     def void listVolumes(
             @Opt(opt="r", longOpt="region", arg="region-id", description="Specify a different region")
             String regionId,
-            @Opt(opt='a',longOpt='attachment', description='Include the attachments in thge report')
-            Boolean attachments,
+            @Opt(opt='a',longOpt='attachment', description='Include the attachments in the report')
+            Boolean printAttachments,
             @Opt(opt='z', longOpt='zone', description='Include the availability zone in the report')
-            Boolean zone,
+            Boolean printZone,
+            @Opt(opt='s', longOpt='snapshot', description="Include the snapshot from which the volume has been created")
+            Boolean printSnapshot,
+            @Opt(opt='I', longOpt='filter-by-instance', optional=true, len=1, description='Show only volumes used by the specified instance. If the instance-id is not specified, it shows the volumes used to the current master node')
+            def instanceId,
+            @Opt(opt='S', longOpt='filter-by-snapshot', arg='snapshot-id', description='Show only volumes created by the specified spanshot-id.')
+            String snapshotId,
             List<String> volumeIds )
     {
 
         def list = shell.session.blockStore.listVolumes(volumeIds, regionId)
 
+        /*
+         * filter by snapshot
+         */
+        if( snapshotId ) {
+            list = list.findAll{  Volume vol -> vol.getSnapshotId() == snapshotId }
+        }
+
+
+        /*
+         * apply the instance-id restriction if specified
+         */
+        if( instanceId != null && instanceId == true ) {
+            // if the instance-id is not specified by the user
+            // retrieve the one of the master node
+            instanceId = session.getMasterMetadata()?.getProviderId()
+        }
+
+        if( instanceId ) {
+            list = list.findAll { Volume vol ->
+                // the attachment getId property returns the instance id to which the volume is attached
+                // in this way we get only the volumes that are attached to the specified instanceid
+                (vol.getAttachments() *. getId()) .contains(instanceId)
+            }
+        }
+
+        /*
+         * any volume found
+         */
         if( !list ) {
             println "(no volumes found)"
             return
         }
 
+
+        /*
+         * print the volumes found
+         */
         list.each() { Volume vol ->
             def line = new StringBuilder()
             line.append(vol.id).append("; ")
@@ -81,13 +121,19 @@ class StorageCommands  {
             line.append(vol.getCreateTime()?.format('yyyy-MM-dd HH:mm')) .append("; ")
             line.append(vol.getStatus()?.toString().padLeft(9) ) .append("; ")
 
+
             // print out the availability zone
-            if( zone ) {
+            if( printZone ) {
                 line.append(vol.getAvailabilityZone()) .append('; ')
             }
 
+            if( printSnapshot && vol.getSnapshotId()) {
+                line.append( vol.getSnapshotId() ).append("; ")
+            }
+
+
             // print out the attachments if required
-            if( attachments ) {
+            if( printAttachments ) {
                 vol.getAttachments().each { Attachment att ->
 
                     line.append("\n  > attached to: ")

@@ -1,3 +1,22 @@
+/*
+ * Copyright (c) 2012, the authors.
+ *
+ *   This file is part of Blow.
+ *
+ *   Blow is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   Blow is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with Blow.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package blow.eventbus;
 
 import com.google.common.annotations.Beta;
@@ -7,11 +26,7 @@ import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
 import com.google.common.eventbus.DeadEvent;
 
 import java.lang.reflect.InvocationTargetException;
@@ -23,9 +38,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * NOTE: THIS FILE IS A DERIVATIVE WORK OF THE GOOGLE GUAVA LIBRARY
+ *
+ *
+ * @author Paolo Di Tommaso
+ */
 
 @Beta
 public class OrderedEventBus {
@@ -163,7 +183,7 @@ public class OrderedEventBus {
    *
    * @param event  event to post.
    */
-  public void post(Object event) {
+  public void post(Object event) throws InvocationTargetException {
     Set<Class<?>> dispatchTypes = flattenHierarchy(event.getClass());
 
     boolean dispatched = false;
@@ -198,7 +218,7 @@ public class OrderedEventBus {
    * Drain the queue of events to be dispatched. As the queue is being drained,
    * new events may be posted to the end of the queue.
    */
-  protected void dispatchQueuedEvents() {
+  protected void dispatchQueuedEvents() throws InvocationTargetException {
     // don't dispatch if we're already dispatching, that would allow reentrancy
     // and out-of-order events. Instead, leave the events to be dispatched
     // after the in-progress dispatch is complete.
@@ -229,13 +249,8 @@ public class OrderedEventBus {
    * @param event  event to dispatch.
    * @param wrapper  wrapper that will call the handler.
    */
-  protected void dispatch(Object event, EventHandler wrapper) {
-    try {
+  protected void dispatch(Object event, EventHandler wrapper) throws InvocationTargetException {
       wrapper.handleEvent(event);
-    } catch (InvocationTargetException e) {
-      logger.log(Level.SEVERE,
-          "Could not dispatch event: " + event + " to handler " + wrapper, e);
-    }
   }
 
   /**

@@ -40,7 +40,7 @@ class CmdLineHelperTest extends Specification {
             " x 'pp qqq' z "
         ]
 
-        argsCount << [
+        args << [
             ["-a", "-b", "c"],
             ["-a", 'x', 'y'],
             ['a', 'bb ccc', 'd'],

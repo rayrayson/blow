@@ -19,13 +19,12 @@
 
 package blow.plugin
 
-import com.google.common.eventbus.Subscribe;
-
-import groovy.util.logging.Slf4j
-import blow.util.TraceHelper
-
-import blow.events.OnAfterClusterCreateEvent
+import blow.BlowConfig
 import blow.BlowSession
+import blow.events.OnAfterClusterCreateEvent
+import blow.util.TraceHelper
+import com.google.common.eventbus.Subscribe
+import groovy.util.logging.Slf4j
 
 /**
  * Handles Sun Grid Engine deployment and configuration 
@@ -87,7 +86,7 @@ class Sge {
 	private BlowSession session
 
     @Validate
-    def validation( ) {
+    def validation( BlowConfig config ) {
         assert clusterName
         assert root
         assert qmasterPort
@@ -95,6 +94,7 @@ class Sge {
         assert execdPort
         assert execdPort.isInteger()
         assert cell
+        assert config?.size > 1, "SGE plugin requires at least TWO nodes"
 
     }
 

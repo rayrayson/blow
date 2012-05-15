@@ -30,7 +30,11 @@ import jline.Completor
 import jline.ConsoleReader
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+
+import java.lang.reflect.InvocationTargetException
+
 import blow.*
+import blow.exception.PluginAbortException
 
 /**
  * The Pilot shell runner 
@@ -445,13 +449,31 @@ class BlowShell {
                 cmdObj.parse(args)
                 cmdObj.invoke()
             }
-            catch( ShellExit exit ) { throw exit }
-            catch( IllegalShellOptionException e ) { println e.getMessage() }
-            catch( Throwable e ) {
+            /*
+             * handles the various exceptions
+             */
+            catch( ShellExit e ) {
+                throw e
+            }
+            catch( IllegalShellOptionException e ) {
+                println e.getMessage()
+            }
+            catch( InvocationTargetException e ) {
+                if( e.getCause() instanceof PluginAbortException ) {
+                    println "Operation aborted: '${cmdObj.getName()}'"
+                }
+                else {
+                   println e.getCause()?.getMessage() ?: (e.getMessage() ?: e.toString())
+                }
+            }
+            catch( Exception e ) {
                 def message = e.getMessage() ?: (e.getCause()?.getMessage() ?: e.toString())
                 log.warn(message, e)
             }
         }
+        /*
+         * User entered an unknown command
+         */
         else {
             println "Unknown command: ${command}"
         }

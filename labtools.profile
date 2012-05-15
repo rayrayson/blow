@@ -21,4 +21,4 @@ export PATH="$PATH:$BASE/chr_subseq"
 export PATH="$PATH:$BASE/exonerate-2.2.0-x86_64/bin"
 export PATH="$PATH:$DIR_4_TCOFFEE/bin"
 export PATH="$PATH:$BASE/rnamap5"
-
+export PATH="$PATH:$BASE/R-2.15/bin"

@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>blow</groupId>
   <artifactId>blow</artifactId>
-  <version>0.5.4</version>
+  <version>0.5.5</version>
 
   <dependencies>
   	<dependency>
@@ -86,6 +86,12 @@
           <groupId>com.jcraft</groupId>
           <artifactId>jsch</artifactId>
           <version>0.1.48</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.fusesource.jansi</groupId>
+        <artifactId>jansi</artifactId>
+        <version>1.8</version>
     </dependency>
   	
     <dependency>

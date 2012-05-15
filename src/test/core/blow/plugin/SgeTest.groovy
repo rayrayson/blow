@@ -19,7 +19,8 @@
 
 package blow.plugin
 
-import spock.lang.*
+import spock.lang.Specification
+import blow.BlowConfig
 
 class SgeTest extends Specification {
 
@@ -140,7 +141,7 @@ class SgeTest extends Specification {
 
     public void testValidationOK() {
         when:
-        new Sge().validation()
+        new Sge().validation(new BlowConfig(size:2))
 
         then:
         notThrown( AssertionError )
