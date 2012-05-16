@@ -122,7 +122,7 @@ can be provided the size in GB of the newly create volume.  For example::
 The new resulting volume, is not deleted on the system termination and its content is preserved across instances restarts.
  
 It this is not required, it is posible to specify to delete the newly created volume on the cluster termination, 
-adding the attribute ``delete-on-terminate`` as showed below:: 
+adding the attribute ``delete-on-terminate`` as shown below::
 
   my_cluster {
     image-id: ..

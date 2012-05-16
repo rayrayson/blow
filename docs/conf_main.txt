@@ -2,19 +2,19 @@ Blow configuration
 ==================
 
 *Blow* configuration has to be defined in a file named ``blow.conf``. *Blow* will look 
-for this file in the directory where the application has been launched and in the user home, 
+for this file in the directory where the application has been launched and in the user home i.e.
 the path ``$HOME/.blow/blow.conf``. If both of them exist the values in the former will 
 have an higher priority, in other words, they will override the values defined in the 
 configuration file stored in the home directory. 
 
 A common approach is to put *Blow* general properties in the ``$HOME/.blow/blow.conf``
-file, and place clusters specific properties in a file located in the different folder.
+file, and place cluster specific properties in a file located in a different folder.
 
 The configuration file provides the definition of the clusters which are supposed to be 
 managed with *Blow*.
 
-Each *cluster* definition needs to declare some configuration attributes like: 
-the virtual machine to use, the region where the clustes will run, the number of nodes, etc. 
+Each *cluster* definition needs to declare some configuration attributes, for example:
+which virtual machine to use, the region where the cluster will run, the number of nodes, etc.
 
 
 Configuration file syntax
@@ -27,8 +27,8 @@ uses ``=`` as a synonym for ``:`` character, allows unquoted strings for any key
 In other words the ``blow.conf`` configuration file is a JSON formatted document, with a more 
 *relaxed* syntax, where some redundant delimiter characters can be omitted. 
 
-The read more about the HOCON format and more advanced features supported by this format 
-please refer to the project page available at this link http://github.com/typesafehub/config .
+To know more about the HOCON format and more advanced features supported by it,
+please refer to the project page available at this link: http://github.com/typesafehub/config .
 
 A basic *Blow* configuration file would be as follows::
 
@@ -40,8 +40,8 @@ A basic *Blow* configuration file would be as follows::
   
 This file defines a cluster named ``my_cluster``, composed by ``99`` nodes that will be launched in the ``us-east-1`` region.
 
-The ``blow.conf`` configuration file can contain any number of cluster declarations as seen above above.
-Each definition has to come with a unique name identifier and contain its own attributes within the curly brackets. 
+The ``blow.conf`` configuration file can contain any number of cluster declarations as seen above.
+Each definition must have a unique name identifier and contain its own attributes within the curly brackets.
 
 Attributes placed at the top of the file, outside any cluster declaration, will be considered global attributes common to all 
 clusters. They can be overridden by any cluster within the scope of its declaration. 
@@ -61,7 +61,7 @@ For example::
   }
 
 
-We have defined two clusters, both of them in the region ``us-east-1``. The first uses the image ``ami-e565ba8c``, 
+Here we have defined two clusters, both of them in the region ``us-east-1``. The first uses the image ``ami-e565ba8c`` and
 will run ``10`` nodes. The second launches ``20`` nodes, but will use the machine image ``ami-a934bb8e`` since it overrides 
 the global ``image-id`` attribute declaration.
 
@@ -84,7 +84,7 @@ Currently the following attributes can be defined in the ``blow.conf`` file (the
 * ``image-id``: The Amazon EC2 machine image ID. In other words this is the identifier of the virtual machine used 
   to run the cluster nodes. The list of all machines is available at this page `Amazon Machine Images`_ . 
 
-* ``instance-type``: The type of the instance to launch. This attribute allows to select the features 
+* ``instance-type``: The type of the instance to launch. This attribute allows you to select the features
   of the virtual machine i.e. the type of processor(s), the amount of memory, the platform architecture (32 - 64 bits), etc. 
   The possible values are: ``t1.micro``, ``m1.small``, ``m1.medium``,  ``m1.large``, ``m1.xlarge``, ``m2.xlarge``, 
   ``m2.2xlarge``, ``m2.4xlarge``, ``c1.medium``, ``c1.xlarge``, ``cc1.4xlarge``, ``cc2.8xlarge``.
@@ -92,9 +92,9 @@ Currently the following attributes can be defined in the ``blow.conf`` file (the
 
 * ``size``: The number of nodes of of which the cluster is made-up.
 
-* ``user-name``: The user name to log-in the remote nodes. If this values is not specified, the current logged user name will be used.
+* ``user-name``: The user name to log-in the remote nodes. If this value is not specified, the current logged user name will be used.
 
-* ``private-key``: The SSH *private* key file to access the remote nodes. If this values is not specified, the private key defined 
+* ``private-key``: The SSH *private* key file to access the remote nodes. If this value is not specified, the private key defined
   in the path ``$HOME/.ssh/id_rsa`` will be used. If this file does not exist, a new key-pair in the current directory will be created.   
 
 * ``public-key``: The SSH *public* key file required to authenticate the user remotely. If this value is not specified,

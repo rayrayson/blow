@@ -1,20 +1,19 @@
 Getting Started
 ===============
 
-This short tutorial shows how configure and run a 5 nodes SGE cluster in the Amazon public clouds. 
+This short tutorial shows how to configure and run a 5 nodes SGE cluster in the Amazon public cloud.
 
-In this tutorial it is assumed that you have a knowledge of the basic *SGE* commands. The description
-of the *SGE* resource manager is out of the scope of this manual. 
+In this tutorial it is assumed that you have a basic knowledge of the *SGE* resource manages workflow.
 
 
 1. Download the *Blow* executable distribution
 ----------------------------------------------
 
-The lastest *Blow* executable distribution is available at `this link`_. Download and 
-save it somewhere to your machine. 
+The latest *Blow* executable distribution is available at `this link`_. Download and
+save it somewhere on your machine.
 
-If you a running a \*nix system (Linux, Mac OS X, etc.) give the execute permission 
-to the download *JAR* file, using the following command::
+If you are running a \*nix system (Linux, Mac OS X, etc.) grant the execute permission
+to the downloaded *JAR* file, with the following command::
 
   # chmod +x blow.jar 
   
@@ -26,7 +25,7 @@ to the download *JAR* file, using the following command::
 2. The configuration file
 --------------------------------
 
-Create a file named ``blow.conf`` with the content showed below. Save it in the same directory 
+Create a file named ``blow.conf`` with the content shown below. Save it in the same directory
 where the ``blow.jar`` was downloaded. ::
 
 
@@ -48,7 +47,7 @@ where the ``blow.jar`` was downloaded. ::
   }
 
 
-This configuration will deploy a cluster made up of file nodes. It uses the Amazon Linux AMI 2012.03 (x86_64) with ID ``ami-e565ba8c``. 
+This configuration will deploy a cluster made up of 5 nodes. It uses the Amazon Linux AMI 2012.03 (x86_64) with ID ``ami-e565ba8c``.
 
 It installs the SGE resource manager in the shared path ``/soft/sge6`` and a second shared path named ``/scratch`` is created.
 
@@ -60,7 +59,7 @@ The *Blow* command needs to be executed using the command line interface. It has
 
   blow.jar [blow options] <cluster name> [command name [command parameters] ] 
 
-If the *command* is omitted it will run in the *interactive* mode, waiting for a command to be executed. 
+If the *command name* is omitted it will run in the *interactive* mode, waiting for a command to be executed.
 
 .. note::
   Windows users need to launch the *Blow* application with the *Java* interpreter. So the above syntax must be replaced 
@@ -70,15 +69,16 @@ If the *command* is omitted it will run in the *interactive* mode, waiting for a
      
 
 For the sake of this example start *Blow* in the interactive mode. Open a terminal window, 
-move to the directory where the configuration file and the blow executable have been saved and 
+move to the directory where the configuration file and the *Blow* executable have been saved and
 specify the following command::
 
   # ./blow.jar blow_simple_cluster
   
-If a SSH key-pair cannot be found in the current directory or in the ``$HOME/.ssh/`` path it will prompt to create a new key pair.
+If a SSH key-pair cannot be found in the current directory or in the ``$HOME/.ssh/`` path,
+it will prompt you to create a new key pair.
 Answer ``y`` and press enter to proceed. 
 
-When done you will get the *Blow* prompt as showed below::
+When done you will get the *Blow* prompt as shown below::
 
      ___  __
     / _ )/ /__ _    __
@@ -87,8 +87,8 @@ When done you will get the *Blow* prompt as showed below::
 
   blow [blow_simple_cluster] $ 
 
-Before launch the cluster you may verify its configuration entering the ``conf`` command on the *Blow* prompt. 
-It will result something similar to the output showed below::
+Before launching the cluster you may verify its configuration by entering the ``conf`` command on the *Blow* prompt.
+Something similar to example shown below will appear on your screen::
 
   blow [blow_simple_cluster] $ conf
   cluster: blow_simple_cluster
@@ -102,14 +102,14 @@ It will result something similar to the output showed below::
   instance-type: t1.micro
   size: 5
 
-When ready, launch the cluster entering the command ``start``::
+When ready, launch the cluster by entering the command ``start``::
 
 
   blow [blow_simple_cluster] $ start
   
   
-It will take some minutes to launch the virtual machines, configure them and install the SGE daemons. When it will complete
-your screen will show something similar the following output::
+It will take a few minutes to start the virtual machines, configure them and install the SGE daemons.
+When it is finished something similar to the following output will appear on your screen::
 
   blow [blow_simple_cluster] $ start
   ~ Creating cluster: blow_simple_cluster
@@ -137,8 +137,8 @@ your screen will show something similar the following output::
 4. Access the remote master node
 --------------------------------
 
-Use the command ``listnodes`` on the *Blow* prompt to get the list of all running launched nodes in the cluster. 
-You will get a list similar to the one showed below:: 
+Use the command ``listnodes`` on the *Blow* prompt to get the list of all running nodes in the cluster.
+A list similar to the one shown below will appear on your screen::
 
   blow [blow_simple_cluster] $ listnodes 
   i-ddd162bb;   23.20.217.171; RUNNING; blow_simple_cluster; master
@@ -148,19 +148,19 @@ You will get a list similar to the one showed below::
   i-59d7643f;    23.20.152.41; RUNNING; blow_simple_cluster; worker
 
 
-Any nodes is accesible using a SSH client. *Blow* comes with an integrated SSH client.
+Any node is accessible using an SSH client. *Blow* comes with an integrated SSH client.
 To connect to a remote node on the prompt just enter the ``ssh`` command followed by the IP 
 address of the node you want to access::
 
   ssh 23.20.217.171
 
 .. attention::
-  The integrated SSH client manages automatically the access credentials. Using a different 
-  SSH client you will need to specify the user name and identity file (the private key).  
+  The integrated SSH client automatically manages access credentials. Using a different
+  SSH client you will need to specify the user name and the identity file (the private key).
   
 When connected to the remote node, you may want to verify that the *SGE* scheduler has been 
-correctly installed. At the shell prompt of the remote system enter the command ``qhost``.
-It should print a list of similar to the one showed below::
+installed correctly. At the shell prompt of the remote system enter the command ``qhost``.
+It should print a list similar to the one shown below::
 
   [domU-12-31-38-04-10-03 ~]$ qhost
   HOSTNAME                ARCH         NCPU  LOAD  MEMTOT  MEMUSE  SWAPTO  SWAPUS
@@ -177,7 +177,7 @@ It should print a list of similar to the one showed below::
 5. Run a simple job and terminate the cluster  
 ---------------------------------------------
 
-Move to the ``/scratch`` folder, create a the job script and submit it to the *SGE* for the execution. 
+Move to the ``/scratch`` folder, create a job script and submit it to the *SGE* for execution.
 For the sake of this tutorial, you could run these commands::
 
   cd /scratch 
@@ -185,7 +185,7 @@ For the sake of this tutorial, you could run these commands::
   qsub -cwd -sync y test.sh 
   
 
-When the *SGE* complete the execution of the submitted job, your find the following content in the 
+When the job has been executed by the *SGE*, your will find the following content in the
 current directory::
 
   $ ls -la 
@@ -199,7 +199,7 @@ current directory::
 6. Terminate the cluster session
 --------------------------------
 
-When you have done, don't forget to shutdown the cluster and all the running instances. 
+When you have done this, don't forget to shutdown the cluster and all the running instances.
 
-Log out from the remote node using the ``exit`` command and stop the cluster entering the command ``terminate`` 
-on the *Blow* prompt.
+Log out from the remote node using the ``exit`` command and stop the cluster, by entering
+the command ``terminate`` on the *Blow* prompt.

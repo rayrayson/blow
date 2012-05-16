@@ -2,16 +2,14 @@ Open Grid Engine (SGE) configuration
 ====================================
 
 Open Grid Scheduler/Grid Engine is a free and open-source batch-queuing system for distributed resource management. 
-OGS/GE is based on Sun Grid Engine, and maintained by the same group of external (i.e. non-Sun) developers who started contributing 
-code since 2001. 
+OGS/GE is based on the Sun Grid Engine, and maintained by the same group of external (i.e. non-Sun) developers
+who started contributing code since 2001.
 
-Here is explained how to get the *SGE* resource manager installed and configured automatically 
-in a cluster managed by *Blow*. A full description of the *SGE* installation and configuration 
-procedure is out of the scope of this manual. 
+This page explain how install and configure automatically a *SGE* instance in a cluster managed by *Blow*.
 
-Read more about the Open Grid Scheduler project at the following lik http://gridscheduler.sourceforge.net
+A full description of the *SGE* installation and configuration procedure is out of the scope of this manual.
 
-
+Read more about the Open Grid Scheduler project at the following link: http://gridscheduler.sourceforge.net
 
 
 Basic SGE configuration
@@ -38,7 +36,7 @@ in the ``sge`` plugin configuration. For example::
 
 In the above example, it is installed a shared directory named ``/soft``. The *SGE* is installed in the sub-directory 
 ``/soft/sge6``, moreover the ``sge`` plugin starts the required daemon(s) both on the master node and the workers nodes 
-as well as configure the enviorment variables. 
+as well as configure the environment variables.
 
 When the installation complete, wou will able to log-in in any remote node using a SSH client and verify 
 that the *SGE* installation process has been completed successfully with the command ``qhost``. It will display 
@@ -55,7 +53,7 @@ SGE configuration attributes
 * ``installation-mode``: The type of installation
 
 * ``tmp``: The temporary path used during the installation process. If it is not specified, the path ``/tmp``
-  will used by defualt. 
+  will used by default.
 
 * ``cluster-name``: The name for the cluster installation. If it is not specified, the value ``cloud_sge``
   will used by default.
