@@ -443,6 +443,8 @@ class BlowShell {
 	 */
 	def void execute( String command, def args ) {
 
+        def message
+
         def cmdObj = availableCommands[command]
         if( cmdObj ) {
             try {
@@ -456,18 +458,20 @@ class BlowShell {
                 throw e
             }
             catch( IllegalShellOptionException e ) {
-                println e.getMessage()
+                message = e.getMessage()
+                log.warn(message,e)
             }
             catch( InvocationTargetException e ) {
                 if( e.getCause() instanceof PluginAbortException ) {
-                    println "Operation aborted: '${cmdObj.getName()}'"
+                    message = "Operation aborted: '${cmdObj.getName()}'"
                 }
                 else {
-                   println e.getCause()?.getMessage() ?: (e.getMessage() ?: e.toString())
+                   message = e.getCause()?.getMessage() ?: (e.getMessage() ?: e.toString())
                 }
+                log.warn(message,e)
             }
             catch( Exception e ) {
-                def message = e.getMessage() ?: (e.getCause()?.getMessage() ?: e.toString())
+                message = e.getMessage() ?: (e.getCause()?.getMessage() ?: e.toString())
                 log.warn(message, e)
             }
         }
@@ -627,8 +631,8 @@ class BlowShell {
          */
         CliBuilder cli = new CliBuilder()
         cli.usage = "blow [options] cluster-config"
-        cli._( longOpt: "debug", "Print debug level information")
-        cli._( longOpt: "trace", "Print trace level information")
+        cli._( longOpt: "debug", "Print debug level information", args:1, optionalArg:true)
+        cli._( longOpt: "trace", "Print trace level information", args:1, optionalArg:true)
         cli.h( longOpt: "help", "Show this help")
 
         options = cli.parse(args)

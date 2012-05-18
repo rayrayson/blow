@@ -40,7 +40,20 @@ import blow.util.PrettyConsoleLayout
 /**
  * Defines the console appender level on program cmdline arguments
  */
+
+def debugPackages = []
+def tracePackages = []
+
 def consoleLevel = {
+
+    if( BlowShell.options?.debug instanceof String ) {
+        debugPackages = BlowShell.options.debug.split(',')
+    }
+
+    if( BlowShell.options?.trace instanceof String ) {
+        tracePackages = BlowShell.options.trace.split(',')
+    }
+
 
     if( BlowShell.options?.trace ) { return Level.TRACE }
     else if( BlowShell.options?.debug ) { return Level.DEBUG }
@@ -84,3 +97,13 @@ else  {
 root(Level.INFO, ["console","rolling"])
 logger("net.schmizz.sshj", Level.WARN, ["console","rolling"], false)
 
+/*
+ * Add packages to debug or trace declared dynamically on the command line
+ */
+debugPackages.each {
+    logger(it, Level.DEBUG, ["console","rolling"], false)
+}
+
+tracePackages.each {
+    logger(it, Level.TRACE, ["console","rolling"], false)
+}
