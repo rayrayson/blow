@@ -3,7 +3,9 @@ Getting Started
 
 This short tutorial shows how to configure and run a 5 nodes SGE cluster in the Amazon public cloud.
 
-In this tutorial it is assumed that you have a basic knowledge of the *SGE* resource manages workflow.
+It is assumed that you have a basic knowledge of the *SGE* resource manages workflow.
+
+A detailed explanation of *SGE* concepts and commands is available at this link: http://gridscheduler.sourceforge.net/howto/howto.html
 
 
 1. Download the *Blow* executable distribution
