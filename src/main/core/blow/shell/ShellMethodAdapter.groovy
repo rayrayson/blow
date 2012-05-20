@@ -84,6 +84,9 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
 
     private static final int LEFT_PADDING = 4
 
+    /* This flags is used to mark that the 'help' option has to be handled automatically by this method */
+    private boolean showsDefaultHelp
+
     /**
      * Crete the adapter for the specified method. The method parameter cannot be null and it is assumed that
      * it is marked with the {@link Cmd} annotation.
@@ -118,12 +121,13 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
         /*
          * create the Command Line builder to handle CLI parameters for this command
          */
-        this.usageStr = new StringWriter()
+
         this.cli = new CliBuilder( )
         this.cli.setFooter(cmd.description())
         this.cli.formatter.setLeftPadding(LEFT_PADDING)
+
         cli.usage = cmd?.usage() ?: getName()
-        cli.writer = new PrintWriter(usageStr)
+
 
         for( int i=0; i<methodOpts.length; i++ ) {
             Opt annotation = methodOpts[i]
@@ -171,11 +175,16 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
 
 
             cli << option
-
         }
 
-        if( cli.options.options.size() == 0 ) {
-            cli = null // we don't need it
+        /*
+         * Add an help options by default if not specified
+         */
+        if( cli && (!cli.options.hasOption('h') && !cli.options.hasOption('help') )) {
+            def opt = new Option( 'h', 'Show the help for this commnad' )
+            opt.setLongOpt('help')
+            cli << opt
+            showsDefaultHelp = true
         }
 
     }
@@ -230,7 +239,12 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
         /*
          * usage
          */
+        cli.writer = new PrintWriter( usageStr = new StringWriter() )
+        if( shell.getWidth() > cli.formatter.defaultWidth ) {
+            cli.width = shell.getWidth()-4
+        }
         cli.usage()
+
         if( usageStr ) {
             result.append("\n")
             result.append("DESCRIPTION") .append("\n")
@@ -252,6 +266,7 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
      * the command line arguments provided by the user
      */
     public void parse( def args ) {
+
         if( cli ) {
             this.options = cli.parse(args)
             if( !options) {
@@ -272,6 +287,14 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
      */
     @Override
     void invoke() {
+
+        /*
+         * Check if the help has been invoked
+         */
+        if ( options?.hasOption('help') && showsDefaultHelp ) {
+            print getHelp()
+            return
+        }
 
         /*
          * Inject the shell object
@@ -353,7 +376,7 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
             methodArgs[i] = val
         }
 
-        log.debug("command arguments: ${methodArgs}")
+        log.debug("${getName()} (${methodArgs})")
         method.invoke( declaringObj, methodArgs as Object[] )
     }
    

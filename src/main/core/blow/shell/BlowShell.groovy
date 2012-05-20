@@ -442,6 +442,7 @@ class BlowShell {
 	 * Execute the requested command
 	 */
 	def void execute( String command, def args ) {
+        log.debug("# ${command} ${args}")
 
         def message
 
@@ -604,7 +605,21 @@ class BlowShell {
 	
 	def void printUsage() {
 		println "usage: ${Project.name} <clustername> [command [..]]"
-	} 	
+	}
+
+    /**
+     * @return The current shell terminal width (characters)
+     */
+    def getWidth() {
+        console ? console.getTermwidth() : 0
+    }
+
+    /**
+     * @return The current shell terminal height (characters)
+     */
+    def getHeight() {
+        console ? console.getTermheight() : 0
+    }
 	
 	/**
 	 * Shell entry point 
