@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>blow</groupId>
   <artifactId>blow</artifactId>
-  <version>0.5.5</version>
+  <version>0.5.6</version>
 
   <dependencies>
   	<dependency>
@@ -67,7 +67,6 @@
         <artifactId>logback-core</artifactId>
         <version>1.0.1</version>
     </dependency>
-
 
     <dependency>
         <groupId>net.schmizz</groupId>
