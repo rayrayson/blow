@@ -90,8 +90,12 @@ class BlowConfig {
 	}
 	
 	public BlowConfig( Config conf, String clusterName = null ) {
-		
-		if( clusterName && conf.hasPath(clusterName) ) {
+		assert conf
+
+		if( clusterName ) {
+            if( !conf.hasPath(clusterName) ) {
+                throw new BlowConfigException("Unknwon cluster name: '${clusterName}'")
+            }
 			conf = conf.getConfig(clusterName).withFallback(conf);
 		}
 
