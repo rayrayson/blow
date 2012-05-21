@@ -177,7 +177,7 @@ class BlockStorage {
        Volume vol = ebs.describeVolumesInRegion(conf.regionId, volumeId).find()
        assert vol, "Cannot find volume: ${volumeId} in region: ${conf.regionId}"
 
-       log.debug("DeleteVoume: '${volumeId}' - current status: ${vol.getStatus().toString()}")
+       log.debug("Delete volume: '${volumeId}' - current status: ${vol.getStatus().toString()}")
 
        /*
         * Detach the volume if it is used
@@ -195,6 +195,9 @@ class BlockStorage {
                log.warn("Detaching volume: '${volumeId}' is requiring too much time. Volume has not been deleted. YOU WILL HAVE TO DELETE IT MANUALLY!!")
            }
        }
+       else {
+           log.debug("Volume: '${volumeId}' was in status:  '${vol.getStatus().toString()}' so it was not detached")
+       }
 
 
        if( vol.getStatus() == Volume.Status.AVAILABLE ) {
@@ -205,7 +208,7 @@ class BlockStorage {
            log.debug("Volume ${volumeId} is in DELETING status ")
        }
        else {
-           log.warn("Volume ${volumeId} is in a wrong status: ${vol.getStatus().toString()}. CANNOT DELETE IT.")
+           log.warn("Volume ${volumeId} is in a wrong status: '${vol.getStatus().toString()}'. CANNOT DELETE IT.")
        }
 
    }

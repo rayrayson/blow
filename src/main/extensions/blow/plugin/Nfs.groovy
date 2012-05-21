@@ -147,7 +147,7 @@ class Nfs {
 
         if( !needToDelete ) {
             if( volumeId ) {
-                log.warn("The volume ${volumeId} will NOT be deleted.")
+                log.info("The following volume: '${volumeId}' is still available.")
             }
             return
         }

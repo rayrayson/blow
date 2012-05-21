@@ -359,7 +359,8 @@ class BlowShell {
 	 */
 	
 	def void useCluster( String clusterName ) {
-		
+		log.debug("Using cluster: ${clusterName}")
+
 		/*
 		 * The configuration files use the following strategy
 		 * - the configuration file is named 'blow.conf'
@@ -372,7 +373,9 @@ class BlowShell {
 		
 		def currentPathConf = new File("./blow.conf")
 		def homePathConf = new File( System.getProperty("user.home"), ".blow/blow.conf" )
-		
+
+        log.debug( "User conf file [${currentPathConf.exists()}]: " + currentPathConf )
+        log.debug( "Home conf file [${homePathConf.exists()}]: " + homePathConf )
 		
 		def confObj 
 		if( currentPathConf.exists() && homePathConf.exists() ) {
@@ -442,7 +445,7 @@ class BlowShell {
 	 * Execute the requested command
 	 */
 	def void execute( String command, def args ) {
-        log.debug("# ${command} ${args}")
+        log.debug("** ${command} ${args}")
 
         def message
 
@@ -658,7 +661,15 @@ class BlowShell {
         Guice.createInjector();
 		BlowShell shell = new BlowShell();
         // trace the command line
-        shell.log.debug "~~~ ${Project.name} \"${args?.join(' ') ?: ''}\""
+        shell.log.debug "**** Launching ${Project.name} - ver ${Project.number} ****"
+        shell.log.debug "cmdline: \"${args?.join(' ') ?: ''}\""
+
+        /*
+         * Shutdown runtime
+         */
+        Runtime.getRuntime().addShutdownHook {
+            shell?.log?.debug "---- Finalizing ${Project.name} ----"
+        }
 
         /*
          * start the shell
