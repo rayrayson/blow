@@ -90,7 +90,7 @@ class Nfs {
 
 	@Subscribe
 	public void configureNFS( OnAfterClusterCreateEvent event ) {
-		log.info "Configuring NFS file system"
+		log.info "Configuring NFS file system for shared path '${path}'"
 
 		TraceHelper.debugTime( "Configure NFS") {
             doConfigureNFS(event.session)
