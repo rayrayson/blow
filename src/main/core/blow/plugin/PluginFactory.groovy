@@ -21,15 +21,12 @@ package blow.plugin
 
 import com.typesafe.config.ConfigObject as ConfigObject
 
+import blow.DynLoader
+import blow.exception.BlowConfigException
+import blow.exception.UnknownPluginException
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValue
 import groovy.util.logging.Slf4j
-
-import blow.exception.BlowConfigException
-
-import java.lang.reflect.Field
-import blow.exception.UnknownPluginException
-import blow.DynLoader
 
 /**
  * Create and initialize a plugin instance
@@ -39,6 +36,7 @@ import blow.DynLoader
  */
 
 @Slf4j
+@Mixin(ConfHelper)
 class PluginFactory {
 	
 	/**
@@ -122,15 +120,6 @@ class PluginFactory {
             }
 		}
 
-//        /*
-//         * memoize the initialized values in the plugin itself
-//         */
-//        def init_values = [:]
-//        result.getMetaClass().getProperties().each { MetaProperty property ->
-//            init_values.put( property.getName(), property.getProperty(result) )
-//        }
-//        log.debug( "Memoizing values for ${name} <- ${init_values}" )
-//        //result['__init_values']= init_values
 
 		return result
 	} 
@@ -178,62 +167,6 @@ class PluginFactory {
 			
 	}
 	
-	
-	/**
-	 * Look out all the plugin properties annotated with the 'Conf' annotation 
-	 * 
-	 * @param clazz the plugin class 
-	 * @return a list of {@link Field} instances, or an empty list if any field is annotated
-	 */
-	static List<Field> getConfFields( Class clazz, List<Field> fields = [] ) {
-		List<Field> result = clazz.getDeclaredFields().findAll { it.getAnnotation(Conf.class) }
-		fields.addAll(result);
 
-		return (clazz.getSuperclass() != Object.class)  ? getConfFields(clazz.getSuperclass(),fields) : fields
-	}
-	
-	/**
-	 * The configuration properties are defined by the Plugin through the 'Conf' annotation
-	 * <p>
-	 * This method look for all the attributes defined in the plugin that need to inject with 
-	 * values coming from the configuration file
-	 * 
-	 * @param clazz the plugin class 
-	 * @return A map associating the plugin properties with the relative configuration attributes.
-     * For example:
-     *
-     * <pre>
-     * class Bean {
-     *
-     *   Conf("image-id") def imageId
-     *   Conf("region-id") def regionId
-     *   Conf("zone-id") def zoneId
-     *
-     *
-     * }
-     * </pre>
-     *
-     * <pre>
-     *   [
-     *        "image-id": imageId
-     *        "region-id": regionId
-     *        "zone-id": zoneId
-     *   ]
-     * </pre>
-	 */
-	static Map<String,String> getConfProperties(Class clazz) {
-			List<Field> fields = getConfFields(clazz);
-			Map<String,String> result = [:]
-			fields.each { 
-				def configName = it.getName();
-				Conf aa = it.getAnnotation(Conf.class)
-				if( aa.value() ) {
-					configName = aa.value()	
-				}
-				result.putAt(configName,it.getName())
-			 }
-			
-			return result
-	}
 
 }

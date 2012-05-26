@@ -18,6 +18,7 @@
  */
 
 import blow.BlowConfigTest;
+import blow.BlowSessionTest;
 import blow.DynLoaderFactoryTest;
 import blow.DynLoaderTest;
 import blow.command.SshCommandTest;
@@ -45,7 +46,8 @@ import util.TypesafeConfigTest;
  */
 
 @RunWith(Suite.class)
-@SuiteClasses({ 
+@SuiteClasses({
+    BlowSessionTest.class,
 	BlowConfigTest.class,
 	DynLoaderTest.class,
 	DynLoaderTest.class,

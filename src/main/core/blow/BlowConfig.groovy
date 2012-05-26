@@ -32,8 +32,8 @@ import com.typesafe.config.ConfigValue
 import groovy.util.logging.Slf4j
 import org.jclouds.domain.LoginCredentials
 
-import java.lang.reflect.Method
 import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Method
 
 /**
  * Contains all configuration required to handle a cluster 
@@ -59,8 +59,10 @@ class BlowConfig {
 	File publicKeyFile
 	File privateKeyFile
 
+    /** The list of all plugin defined in the configuration */
 	List plugins
-	
+
+    /** The {@link org.jclouds.domain.LoginCredentials} object */
 	@Lazy LoginCredentials credentials = {
 		log.debug "> Creating lazy credential"
 
@@ -75,8 +77,9 @@ class BlowConfig {
 			
 	}()
 
+    /** The plugin factory   */
     @Lazy
-	PluginFactory pluginFactory = { new PluginFactory( DynLoaderFactory.get() ) }()
+	private PluginFactory pluginFactory = { new PluginFactory( DynLoaderFactory.get() ) }()
 
 
     /** Protected constructor used only for testing purpose */
@@ -186,7 +189,8 @@ class BlowConfig {
 			if( !plugin ) {
 				throw new BlowConfigException( "Invalid plugin declaration for: " + it.render() )
 			}
-			
+
+            // add to the plugin list
 			pluginList.add( plugin )
 		}
 		

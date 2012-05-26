@@ -358,14 +358,14 @@ class BlowShell {
 	 * define the cluster to be used 
 	 */
 	
-	def void useCluster( String clusterName ) {
+	def BlowSession useCluster( String clusterName ) {
 		log.debug("Using cluster: ${clusterName}")
 
 		/*
 		 * The configuration files use the following strategy
 		 * - the configuration file is named 'blow.conf'
 		 * - it can be in the current directory as well as in the $HOME/.blow/ path
-		 * - when both of them exist, the one in current path is consierated the main configurtion file, 
+		 * - when both of them exist, the one in current path is considered the main configuration file,
 		 *   and the one under the use home is used for fallback values
 		 * - if one of them exists, it is used as the main configuration file
 		 * - when none of them exist an error is reported
@@ -407,7 +407,7 @@ class BlowShell {
             try {
                 config = new BlowConfig(confObj, clusterName)
                 config.checkValid()
-                // configuration validated -> exit from teh loop
+                // configuration validated -> exit from the loop
                 break
             }
             catch( MissingKeyException e ) {
@@ -439,6 +439,9 @@ class BlowShell {
 		
 		// set the current cluster name 
 		currentCluster = clusterName
+
+        // return the session
+        return session
 	} 
 	
 	/**

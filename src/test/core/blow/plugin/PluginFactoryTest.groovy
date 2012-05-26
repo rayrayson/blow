@@ -67,7 +67,7 @@ public class PluginFactoryTest extends Specification {
 			plugin != null
 			plugin.value1 == 10
 			plugin.value2 == "20"
-			plugin.basevalue == "hola"
+			plugin.baseValue == "hola"
 		
 	}
 

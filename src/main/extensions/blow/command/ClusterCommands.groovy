@@ -38,12 +38,19 @@ class ClusterCommands {
 
 	@Cmd( summary = "Create and launch the cluster using the settings provided in the configuration file" )
 	public void start() {
+        if( session.dirty ) {
+            log.info("Reloading session .. ")
+            session = shell.useCluster( session.clusterName )
+        }
+
         def size = session.conf.size
-        def answer = shell.prompt("Please confirm that you want to start ${size} node(s) [y/n]") { ['y','n'].contains(it) }
+        def answer = shell.prompt("Please confirm that you want to start ${size} node(s) cluster [y/n]") { ['y','n'].contains(it) }
 
         if( answer == 'y' ) {
+
 		    session.createCluster();
         }
+
 	}
 
 

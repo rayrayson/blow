@@ -11,7 +11,7 @@ import blow.plugin.Conf;
  */
 class TestPluginBase {
 
-	@Conf def basevalue;
+	@Conf def baseValue;
 	
 	
 }

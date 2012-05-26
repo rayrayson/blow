@@ -20,9 +20,11 @@
 package blow
 
 import blow.eventbus.OrderedEventBus
+import blow.exception.DirtySessionException
 import blow.exception.PluginAbortException
 import blow.ssh.ScpClient
 import blow.storage.BlockStorage
+import blow.util.PromptHelper
 import com.google.common.base.Predicate
 import com.google.common.base.Predicates
 import com.google.common.collect.ImmutableSet
@@ -53,7 +55,6 @@ import java.util.concurrent.*
 import static com.google.common.base.Predicates.not
 import static org.jclouds.compute.predicates.NodePredicates.TERMINATED
 import static org.jclouds.compute.predicates.NodePredicates.inGroup
-import blow.util.PromptHelper
 
 /**
  * Base session initializer
@@ -82,7 +83,7 @@ class BlowSession {
 	
 	@Lazy
 	private BlockStorage blockstore = new BlockStorage(context,conf)
-	
+
 	/*
 	 * The thread pool to handle ssh upload / download 
 	 */
@@ -93,6 +94,23 @@ class BlowSession {
 	 * The metadata for the master node
 	 */
 	private NodeMetadata masterMetadata
+
+    /** Mark the session dirty as soon as the cluster is created */
+    private boolean dirty
+
+    private def devicesMap = [
+            "/dev/sdf":0,
+            "/dev/sdg":0,
+            "/dev/sdh":0,
+            "/dev/sdi":0,
+            "/dev/sdj":0,
+            "/dev/sdk":0,
+            "/dev/sdl":0,
+            "/dev/sdm":0,
+            "/dev/sdn":0,
+            "/dev/sdo":0,
+            "/dev/sdp":0
+    ]
 	
 	/**
 	 * The Pilot core object creator
@@ -103,19 +121,26 @@ class BlowSession {
 	BlowSession(BlowConfig conf, String clusterName) {
 		assert conf, "Argument 'conf' cannot be null on PilotBase constructor"
 		assert clusterName, "Argument 'clusterName' cannot be empty"
-		
+
+        log.debug("Creating BlowSession for cluster: '${clusterName}'")
 		this.conf = conf;
 		this.clusterName = clusterName
 		this.context = createContext(conf)
-		
+
 		/*
 		 * create the event bus for the plugin system
 		 * and register all the plugins
 		 */
 		eventBus = new OrderedEventBus()
-		conf.plugins.each { eventBus.register(it) } 
+		conf.plugins.each { eventBus.register(it) }
 	} 
-	
+
+    /** Only for test */
+    protected BlowSession() {
+
+    }
+
+
 	protected ComputeServiceContext createContext(BlowConfig conf) {
 		
 		/*
@@ -183,21 +208,29 @@ class BlowSession {
 	 */
 	public void createCluster() {
 		log.info("Creating cluster: $clusterName")
-		
+
+        /*
+         * make sure that the session can be started one and only one time
+         */
+        if( dirty ) {
+            throw new DirtySessionException()
+        }
+        dirty = true
+
 		/*
 		 * send the cluster create event
 		 */
 		postEvent( new OnBeforeClusterCreationEvent(session: this, clusterName: clusterName) )
-	
-		/* 
-		 * Get the compute service 
+
+		/*
+		 * Get the compute service
 		 */
 		def template = compute.templateBuilder()
-		
+
 		template.hardwareId( conf.instanceType )
 		template.imageId( "${conf.regionId}/${conf.imageId}" )
 		template.locationId( conf.zoneId )
-				
+
 
 		/*
 		 * create the master node
@@ -220,7 +253,7 @@ class BlowSession {
 		else {
 			log.debug("(no worker nodes required)")
 		}
-		
+
 	
 		/*
 		 * notify the cluster creation 	
@@ -701,7 +734,49 @@ class BlowSession {
 
         return list?.size() > 0 ? list.find() : null
 
+    }
 
+    /**
+     * @return The first available deviceName
+     */
+    def String getNextDevice( ) {
+
+        synchronized (devicesMap) {
+            // find the first device that has been never assigned (count == 0)
+            def entry = devicesMap.find { device, count -> count == 0 }
+            if( entry ) {
+                entry.value++
+                return entry.key
+            }
+            return null
+        }
+
+    }
+
+    /**
+     * Mark a device name as used.
+     *
+     * @param device The Linux device name e.g {@code /dev/sdf}
+     * @return {@code true} if the device was not used before and it is marked as used successfully
+     */
+    def boolean markDevice( String device ) {
+
+        synchronized (devicesMap) {
+            // normalize to the device '/dev/xvd?' to '/dev/sd?'
+            if( device =~ /\/dev\/xvd([f-p])/) {
+                device = '/dev/sd' + device[-1]
+            }
+
+            if( devicesMap.containsKey(device) ) {
+                devicesMap[device] ++
+
+            }
+            else {
+                devicesMap[device] = 1
+            }
+
+            return devicesMap[device] == 1
+        }
     }
 	
 }
