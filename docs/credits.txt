@@ -9,11 +9,11 @@ Credits
 
 *Blow* is only possible due to the open source community and in particular the following OSS projects:
 
-  * `Groovy`_ - The scripting language that put the fun back into the Java programming
-  * `JClouds`_ - Provides the cloud connection for Amazon AWS as well as for many other providers
-  * `Typesafe Config`_ - Used to handle the application configuration files
-  * `SSHJ`_ - A pure Java SSH client implementation
-  * `Spock Framework`_ - Unit testing made simple
+  * `Groovy`_ -- The scripting language that put the fun back into the Java programming
+  * `JClouds`_ -- Provides the cloud connection for Amazon AWS as well as for many other providers
+  * `Typesafe Config`_ -- Used to handle the application configuration files
+  * `SSHJ`_ -- A pure Java SSH client implementation
+  * `Spock Framework`_ -- Unit testing made simple
 
 
 .. _`Groovy`: http://groovy.codehaus.org/
