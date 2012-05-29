@@ -70,7 +70,7 @@ class ClusterCommands {
     @Cmd(summary="Shows the list of the current running clusters")
     def listclusters() {
 
-        def clusters = session.listClusters()
+        def clusters = shell.listClusters()
         if( clusters ) {
             clusters.each { println "${it}"  }
         }

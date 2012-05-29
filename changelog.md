@@ -1,3 +1,20 @@
+2012-0529, version 0.6.0
+- Added support for GlusterFS
+- Inject BlowSession instance in Operation object
+- Inject BlowSession and BlowShell instances in Command objects
+- Force session reloading on cluster restarts
+- Added CLI option -c to specify the cluster-name to use
+- Added CLI option -conf to specify the configuration file to use
+- Added confirmation on volume deletion
+- Fix issue on deleting volume on termination
+- NSF device names are handled automatically and can be omitted in the configuration
+- Renamed 'Plugin' to 'Operation'
+- Renamed 'Hosts' to 'Hostname'
+- Refactored Operations event system
+- Enhancement in the log system
+- Enhancement in the commands help
+- Improved sanity checks on
+
 2012-05-15, version 0.5.5
 - Improved exception handling in the plugin system
 - Using the OrderedEventBus

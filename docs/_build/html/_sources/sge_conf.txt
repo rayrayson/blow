@@ -1,3 +1,0 @@
-Open Grid Engine (SGE) configuration
-====================================
-

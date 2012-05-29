@@ -22,7 +22,7 @@ import blow.BlowSessionTest;
 import blow.DynLoaderFactoryTest;
 import blow.DynLoaderTest;
 import blow.command.SshCommandTest;
-import blow.plugin.*;
+import blow.operation.*;
 import blow.shell.BlowShellTest;
 import blow.ssh.ScpClientTest;
 import blow.util.CmdLineHelperTest;
@@ -63,7 +63,7 @@ import util.TypesafeConfigTest;
 	SgeTest.class,
     PilotHelpTest.class,
 
-	PluginFactoryTest.class,
+	OperationFactoryTest.class,
 	ScpClientTest.class,
 
 	TypesafeConfigTest.class

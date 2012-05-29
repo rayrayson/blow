@@ -177,7 +177,7 @@ class BlockStorage {
        Volume vol = ebs.describeVolumesInRegion(conf.regionId, volumeId).find()
        assert vol, "Cannot find volume: ${volumeId} in region: ${conf.regionId}"
 
-       log.debug("Delete volume: '${volumeId}' - current status: ${vol.getStatus().toString()}")
+       log.debug("Delete volume: '${volumeId}' - current status: ${vol.getStatus()}")
 
        /*
         * Detach the volume if it is used
@@ -188,7 +188,7 @@ class BlockStorage {
            log.debug "Detaching volume: '${volumeId}' "
            ebs.detachVolumeInRegion(conf.regionId, volumeId, false, null)
            try {
-               waitForVolumeAvail(vol, 10 * 60 * 1000)
+               vol = waitForVolumeAvail(vol, 10 * 60 * 1000)
            }
            catch( TimeoutException e ) {
                log.warn( e.getMessage() );

@@ -22,9 +22,11 @@ package blow.shell
 import blow.exception.BlowConfigException
 import blow.exception.IllegalShellOptionException
 import blow.exception.MissingKeyException
+import blow.exception.OperationAbortException
 import blow.util.CmdLine
 import blow.util.KeyPairBuilder
 import com.google.inject.Guice
+import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import jline.Completor
 import jline.ConsoleReader
@@ -34,7 +36,6 @@ import org.slf4j.LoggerFactory
 import java.lang.reflect.InvocationTargetException
 
 import blow.*
-import blow.exception.PluginAbortException
 
 /**
  * The Pilot shell runner 
@@ -53,12 +54,16 @@ class BlowShell {
     @Lazy
     Logger log = { LoggerFactory.getLogger(BlowShell) }()
 
-
 	private BlowSession session;
 	
 	private ConsoleReader console 
 
 	private DynLoader loader;
+
+    private File userConfigFile = new File("./blow.conf")
+
+    @Lazy
+    private Config configObj = { parseConfigFile() } ()
 
     /**
      * The map of the {@link  ShellCommand} available in this shell instance
@@ -89,6 +94,11 @@ class BlowShell {
     static def options
 
     /**
+     * The Commad Line Interface object
+     */
+    static def CliBuilder cli
+
+    /**
      * The cluster name currently in use
      */
     def String currentCluster;
@@ -112,7 +122,6 @@ class BlowShell {
             
             if( !cmd ) {
                 printUsage()
-                listCommands()
             }
             else if( availableCommands[cmd] ) {
                 def help = availableCommands[cmd].getHelp()?.trim()
@@ -123,19 +132,6 @@ class BlowShell {
             }
 		}
 		
-		def listCommands() {
-			// get the longest command string
-			def max = availableCommands.keySet().max { it.length() }
-			max = max.length() // <-- note: the above returns the longest item, so now we get the real max value
-			
-			// print the 'help' for each command			
-			println ""
-			availableCommands.each {
-				name, _action -> 
-				println " ${name.padRight(max)} ${_action.getSummary()?.trim() ?: ''}"
-			}
-		} 
-
 		@Override
 		public String getSummary() {
 			"Print this help"
@@ -334,18 +330,23 @@ class BlowShell {
 	 * 
 	 * @param args
 	 */
-	def void init( List<String> args = [] ) {
+	def void init( List<String> args = [], String confFileName = null, String clusterName = null ) {
 
         /*
-         * parse the command arguments, they should on the following sequence
-         * 1 - cluster config name
-         * 2 - command to execute and its arguments (optional)
+         * Check if a custom configuration file name has been provided
          */
-        if( args.size()>0 ) {
-		    mainEntry = args.head()
-            args = args.tail()
+        if( confFileName ) {
+            userConfigFile = new File(confFileName)
+            if( !userConfigFile.exists() ) {
+                println "The specified configuration file does not exists: '${userConfigFile}'"
+                System.exit(1)
+            }
         }
 
+        // define the cluyster name as the 'main' entry
+        mainEntry = clusterName
+
+        // the first argument as the command to execute
         if( args.size()>0 ) {
             mainCommand = [:]
             mainCommand.name = args.head()
@@ -353,7 +354,62 @@ class BlowShell {
         }
 
 	}
-	
+
+    /**
+     * @return The list of cluster names defined in the current used configuration file
+     */
+    def List<String> listClusters() {
+        BlowConfig.getClusterNames(configObj)
+    }
+
+
+    /**
+     * Parse the configuration file(s) and return the {@link Config} object.
+     * This is meant for low-level operation.
+     *
+     * The configuration files use the following strategy
+     * - the configuration file is named 'blow.conf'
+     * - it can be in the current directory as well as in the $HOME/.blow/ path
+     * - when both of them exist, the one in current path is considered the main configuration file,
+     *   and the one under the use home is used for fallback values
+     * - if one of them exists, it is used as the main configuration file
+     * - when none of them exist an error is reported
+     *
+     *
+     * See {@link BlowConfig}
+     */
+    protected Config parseConfigFile( ) {
+
+
+        def currentPathConfig = userConfigFile
+        def homePathConfig = new File( System.getProperty("user.home"), ".blow/blow.conf" )
+
+        log.debug( "User conf file [${currentPathConfig.exists()}]: " + currentPathConfig )
+        log.debug( "Home conf file [${homePathConfig.exists()}]: " + homePathConfig )
+
+        Config result
+        if( currentPathConfig.exists() && homePathConfig.exists() ) {
+            result = ConfigFactory.parseFile(currentPathConfig).withFallback( ConfigFactory.parseFile(homePathConfig)  )
+        }
+        else if( currentPathConfig.exists() ) {
+            result = ConfigFactory.parseFile(currentPathConfig)
+        }
+        else if( homePathConfig.exists() ) {
+            result = ConfigFactory.parseFile(homePathConfig)
+        }
+        else {
+            System.err.println """\
+								Missing configuration file. Configuration have to be specified using one (or both) the following paths:
+								 - '$currentPathConfig'
+								 - '$homePathConfig'
+								""" .stripIndent()
+
+            System.exit(1)
+        }
+
+        return result
+    }
+
 	/**
 	 * define the cluster to be used 
 	 */
@@ -361,43 +417,26 @@ class BlowShell {
 	def BlowSession useCluster( String clusterName ) {
 		log.debug("Using cluster: ${clusterName}")
 
-		/*
-		 * The configuration files use the following strategy
-		 * - the configuration file is named 'blow.conf'
-		 * - it can be in the current directory as well as in the $HOME/.blow/ path
-		 * - when both of them exist, the one in current path is considered the main configuration file,
-		 *   and the one under the use home is used for fallback values
-		 * - if one of them exists, it is used as the main configuration file
-		 * - when none of them exist an error is reported
-		 */
-		
-		def currentPathConf = new File("./blow.conf")
-		def homePathConf = new File( System.getProperty("user.home"), ".blow/blow.conf" )
+        /*
+         * If not clusted has been specified try to use the default one
+         */
+        if( !clusterName ) {
+            def names = BlowConfig.getClusterNames(configObj)
+            if( names.size() == 1 ) {
+                clusterName = names[0]
+                log.debug("Choosing by default cluster: ${clusterName} ")
+            }
+            else {
+                if( names.size() == 0 ) {
+                    log.warn("The provided configuration file(s) does not contain any cluyster definition")
+                }
+                else {
+                    log.info("Use the command 'listclusters' to view the list of available cluster definitions")
+                }
+                return null
+            }
+        }
 
-        log.debug( "User conf file [${currentPathConf.exists()}]: " + currentPathConf )
-        log.debug( "Home conf file [${homePathConf.exists()}]: " + homePathConf )
-		
-		def confObj 
-		if( currentPathConf.exists() && homePathConf.exists() ) {
-			confObj = ConfigFactory.parseFile(currentPathConf).withFallback( ConfigFactory.parseFile(homePathConf)  )
-		}  
-		else if( currentPathConf.exists() ) {
-			confObj = ConfigFactory.parseFile(currentPathConf)
-		} 
-		else if( homePathConf.exists() ) {
-			confObj = ConfigFactory.parseFile(homePathConf)
-		}
-		else {
-			System.err.println """\
-								Missing configuration file. Configuration have to be specified using one (or both) the following paths:
-								 - '$currentPathConf' 
-								 - '$homePathConf'
-								"""
-								.stripIndent()
-								
-			System.exit(1)
-		}
-		
 		/* 
 		 * read and validate the configuration 
 		 */
@@ -405,7 +444,7 @@ class BlowShell {
 		BlowConfig config
         while( true ) {
             try {
-                config = new BlowConfig(confObj, clusterName)
+                config = new BlowConfig(configObj, clusterName)
                 config.checkValid()
                 // configuration validated -> exit from the loop
                 break
@@ -419,7 +458,7 @@ class BlowShell {
                             .store()
                 }
                 else {
-                    println "Blow requires a valid asymmetric key-pair to continue. Configure them in the blow.conf file."
+                    println "Blow requires a valid asymmetric key-pair to continue. Configure them in the '${userConfigFile}' file."
                     System.exit 2
                 }
             }
@@ -469,7 +508,7 @@ class BlowShell {
                 log.warn(message,e)
             }
             catch( InvocationTargetException e ) {
-                if( e.getCause() instanceof PluginAbortException ) {
+                if( e.getCause() instanceof OperationAbortException ) {
                     message = "Operation aborted: '${cmdObj.getName()}'"
                 }
                 else {
@@ -498,28 +537,20 @@ class BlowShell {
 	public void run() {
 
         /*
-        * if not cluster has been specified, exit with an error
-        */
-        if( !mainEntry ) {
-            System.err.println "Please specify the cluster name on your command"
-            printUsage()
-            System.exit (1)
-        }
-
-        /*
          * as special case, if the 'help' string is entered, the
          * command usage string is printed
          */
-        if( mainEntry == "help" ) {
-            if( !mainCommand ) {
+        if( mainCommand?.name == "help" ) {
+            def cmdName = mainCommand?.args && mainCommand.args.size()>0 ? mainCommand.args[0] : null
+            if(  !cmdName ) {
                 printUsage()
             }
-            else if( availableCommands.containsKey( mainCommand.name ) ) {
-                print "${mainCommand.name}: "
-                println availableCommands[mainCommand.name].getSummary() ?: "(no help available)"
+            else if( availableCommands.containsKey( cmdName ) ) {
+                print "${cmdName}: "
+                println availableCommands[cmdName].getSummary() ?: "(no help available)"
             }
             else {
-                println "Unknown command: '${mainCommand.name}'"
+                println "Unknown command: '${cmdName}'"
             }
             System.exit(0)
         }
@@ -608,10 +639,37 @@ class BlowShell {
     def String promptYesOrNo( String query ) {
          prompt(query,['y','n'])
     }
-	
+
+    /**
+     * Print the shell usage help
+     */
 	def void printUsage() {
-		println "usage: ${Project.name} <clustername> [command [..]]"
+        // set the formatter size
+        if( getWidth() > cli.formatter.defaultWidth ) {
+            cli.width = getWidth()-4
+        }
+
+        // print out the usage info
+        cli.usage()
+
+        // the list of command
+        println "\ncommands:"
+        printCommandsList()
 	}
+
+    def printCommandsList() {
+        // get the longest command string
+        def max = availableCommands.keySet().max { it.length() }
+        max = max.length() // <-- note: the above returns the longest item, so now we get the real max value
+
+        // print the 'help' for each command
+        availableCommands.each {
+            name, _action ->
+            println " ${name.padRight(max)} ${_action.getSummary()?.trim() ?: ''}"
+        }
+    }
+
+
 
     /**
      * @return The current shell terminal width (characters)
@@ -650,10 +708,12 @@ class BlowShell {
         /*
          * parse the command line options
          */
-        CliBuilder cli = new CliBuilder()
-        cli.usage = "blow [options] cluster-config"
-        cli._( longOpt: "debug", "Print debug level information", args:1, optionalArg:true)
-        cli._( longOpt: "trace", "Print trace level information", args:1, optionalArg:true)
+        BlowShell.cli = new CliBuilder()
+        cli.usage = "usage: ${Project.name} [options] [command [arguments..]]"
+        cli._( longOpt: "debug", "Print debug level information", args:1, optionalArg:true, argName: 'package(s)')
+        cli._( longOpt: "trace", "Print trace level information", args:1, optionalArg:true, argName: 'package(s)')
+        cli._( longOpt: "conf", "Specify a configuration file othen than 'blow.conf'", args: 1, optionalArg: false, argName:  'file name')
+        cli.c( longOpt: "cluster", "Specify the cluster name to be used", args:1, optionalArg: false, argName: 'clusterName')
         cli.h( longOpt: "help", "Show this help")
 
         options = cli.parse(args)
@@ -674,11 +734,19 @@ class BlowShell {
             shell?.log?.debug "---- Finalizing ${Project.name} ----"
         }
 
+        def confFileName = options?.conf ?: null
+        def clusterName = options?.cluster ?: null
+
+        if( options.help ) {
+            shell.printUsage()
+            System.exit(0)
+        }
+
         /*
          * start the shell
          */
-		shell.init(options.arguments());
-		shell.run( );
+		shell.init(options.arguments(), confFileName, clusterName);
+		shell.run();
 		shell.close()
 	}
 }

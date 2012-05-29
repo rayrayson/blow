@@ -7,6 +7,10 @@ the path ``$HOME/.blow/blow.conf``. If both of them exist the values in the form
 have an higher priority, in other words, they will override the values defined in the 
 configuration file stored in the home directory. 
 
+A different configuration file can be provided using the CLI option ``--conf``. For example::
+
+  blow.jar --conf myconf.txt
+
 A common approach is to put *Blow* general properties in the ``$HOME/.blow/blow.conf``
 file, and place cluster specific properties in a file located in a different folder.
 
@@ -101,7 +105,7 @@ Currently the following attributes can be defined in the ``blow.conf`` file (the
   the public key defined in the path ``$HOME/.ssh/id_rsa.pub`` will be used. If this file does not exist, 
   a new key-pair in the current directory will be created.   
 
-* ``plugin``: The list of *Blow* plugins to be used in this cluster definition. 
+* ``operations``: The list of *Blow* operations to be applied in this cluster definition.
   
 .. _`AWS Security Credential`: https://aws-portal.amazon.com/gp/aws/securityCredentials#access_credentials
 .. _`AWS Regions and Availability Zones`: http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html
@@ -122,8 +126,8 @@ Configuration example
     instance-type = t1.micro
     size = 2
 
-    plugin = [
-        hosts
+    operations = [
+        hostname
 
         { nfs = {
             path: /soft

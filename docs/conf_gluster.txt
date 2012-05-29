@@ -1,0 +1,53 @@
+GlusterFS file system configuration
+===================================
+
+*GlusterFS* is an open source, clustered file system capable of scaling to several petabytes and handling thousands of
+clients. It could be a valid and more alternative the the standard Linux *NFS*.
+
+*GlusterFS* server can be configured to work in different modality, supporting complex file system organization.
+
+Currently *Blow* comes with a basic support for the GlusterFS file system and is able to install and configure a single
+server running a volume on the instance ephemeral storage or alternatively to an attached EBS volume.
+
+Read more about the GlusterFS file system at the following link: http://www.gluster.org
+
+
+The GlusterFS operation
+-----------------------
+
+The GlusterFS setup is carried out by the *operation* named ``glusterfs``. This operation has to be added to
+the ``operations`` attribute in the cluster definition. It creates and starts a Gluster *volume* on the *master* node
+in the configured cluster. It also starts the Gluster server and export the volume using the *path* specified with the ``path``
+attribute in the *operation* configuration. For example::
+
+  my_cluster {
+    image-id: ..
+    :
+    operations [
+      hostname
+      { gluster: { path: /scratch  }}
+    ]
+  }
+
+
+The above declaration creates the ``/scratch`` directory in the master node, start the NFS daemon
+and export that folder to the client nodes. Also it will create the same directory on all the client nodes
+and mount the network shared folder.  
+
+It is possible to share more than one Gluster volume by simply repeating the ``glusterfs`` entry as many times as the
+volumes are to be exported.
+
+For example:: 
+
+  my_cluster {
+    image-id: ..
+    :
+    operations [
+      hostname
+      { nfs: { path: /scratch }}
+      { nfs: { path: /data  }}
+    ]
+  }
+
+
+ 

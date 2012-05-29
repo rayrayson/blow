@@ -26,6 +26,7 @@ Currently Blow is able to configure:
 
 * /etc/hosts file
 * NFS shares
+* GlusterFS shares
 * Password-less SSH
 * Security group
 * User account
@@ -69,8 +70,8 @@ to the path where you downloaded Blow.
         size = 2
         instance-type = t1.micro
 
-        plugin = [
-            hosts
+        operations = [
+            hostname
 
             { nfs = {
                 path: /soft
@@ -93,15 +94,13 @@ Move the folder that contains the configuration file and the download Blow binar
 
 Start the Blow shell entering the command:
 
-    ./blow.jar mycluster
+    ./blow.jar
 
 
 Note: Windows users have to use the syntax:
 
-    java -jar blow.jar mycluster
+    java -jar blow.jar
 
-
-Where `mycluster` is the name used in the configuration file to identify this configuration.
 
 If you don't a key-pair in your $HOME/.ssh pair, it will ask you to create a new key-pair in the current local directory.
 Confirm entering `y` and press enter to continue.

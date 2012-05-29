@@ -1,2 +1,0 @@
-Network File System (NFS) configuration
-=======================================

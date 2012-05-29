@@ -16,26 +16,26 @@ Basic SGE configuration
 -----------------------
 
 
-The SGE configuration requires the plugin ``sge`` to be added in the ``plugin`` attribute 
+The SGE configuration requires the operation ``sge`` to be added in the ``operations`` attribute
 in the cluster configuration file. 
 
 Currently is it required to install the *SGE* binary files in a directory shared by all nodes in the clusters. 
 This directory is the defined as the ``root`` installation directory and it needs to be specified as an attribute 
-in the ``sge`` plugin configuration. For example::
+in the ``sge`` operation configuration. For example::
 
   my_cluster {
   
     image-id: ami_xxx
     :
-    plugin [
-      hosts
+    operations [
+      hostname
       {nfs { path: /soft }}
       {sge { root: /soft/sge6 } }
     ]
   }
 
 In the above example, it is installed a shared directory named ``/soft``. The *SGE* is installed in the sub-directory 
-``/soft/sge6``, moreover the ``sge`` plugin starts the required daemon(s) both on the master node and the workers nodes 
+``/soft/sge6``, moreover the ``sge`` operation starts the required daemon(s) both on the master node and the workers nodes
 as well as configure the environment variables.
 
 When the installation complete, wou will able to log-in in any remote node using a SSH client and verify 

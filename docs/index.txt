@@ -11,10 +11,12 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   overview 
-   get_started
+   intro
+   install
+   tutorial
    conf_main
    conf_nfs
+   conf_gluster
    conf_sge
    code
    

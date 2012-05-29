@@ -19,13 +19,9 @@
 
 package blow
 
-import spock.lang.*
-
-import com.typesafe.config.ConfigFactory;
-
-
-import blow.exception.BlowConfigException;
-
+import blow.exception.BlowConfigException
+import com.typesafe.config.ConfigFactory
+import spock.lang.Specification
 
 class BlowConfigTest extends Specification {
 	
@@ -36,8 +32,8 @@ class BlowConfigTest extends Specification {
 		BlowConfig conf = new BlowConfig("")
 		
 		expect: 
-			conf.pluginFactory != null
-			conf.pluginFactory.loader != null
+			conf.operationFactory != null
+			conf.operationFactory.loader != null
 			//conf.pluginFactory.loader.pluginClasses.size() > 0
 		
 	}
@@ -78,7 +74,7 @@ class BlowConfigTest extends Specification {
 		expect:	
 			"us-east-1" == conf.regionId
 			"us-east-1a" == conf.zoneId
-			[] == conf.plugins
+			[] == conf.operations
 	} 
 	
 	public void testAllProperties() {
@@ -102,12 +98,12 @@ class BlowConfigTest extends Specification {
 				instance-type = micro.1
 				user-name = illo
 
-				plugin = [ trace, nfs, sge ]
+				operations = [ trace, nfs, sge ]
 			}
 
 
 			second-cluster {
-				plugin = hosts
+				operations = hostname
 			}
 			"""
 			
@@ -118,7 +114,7 @@ class BlowConfigTest extends Specification {
 			image == conf.imageId
 			type == conf.instanceType
 			user == conf.userName
-			plugins == conf.plugins .collect { it.getClass().getSimpleName() }
+			operations == conf.operations .collect { it.getClass().getSimpleName() }
 
 		
 		where: 
@@ -128,7 +124,7 @@ class BlowConfigTest extends Specification {
 			image << [ "1234", "def-image" ]
 			type << [ "micro.1", "def-type" ]
 			user << [ "illo", System.getProperty("user.name") ]
-			plugins << [ [ "TracePlugin", "Nfs", "Sge" ], [ "Hosts" ]]
+			operations << [ [ "TracePlugin", "Nfs", "Sge" ], [ "Hosts" ]]
 			
 			
 	}
@@ -141,8 +137,8 @@ class BlowConfigTest extends Specification {
 			"""
 				my-cluster {
 	
-					plugin = [
-						hosts,
+					operations = [
+						hostname,
 						{nfs { path: /scratch, device: /dev/sdx }} 
 						{nfs { volume-id: vol-8814f7e4, path: /data, device: /dev/sdh }} 
 						{sge { root: /scratch/sge6, compile: false }}
@@ -154,23 +150,23 @@ class BlowConfigTest extends Specification {
 			def conf = new BlowConfig(CONF, "my-cluster" )
 
 		expect: 		
-			// first plugin 
-			"Hosts" == conf.plugins.get(0).getClass().getSimpleName()
+			// first operation
+			"Hostname" == conf.operations.get(0).getClass().getSimpleName()
 			
-			// second plugin
-			"Nfs" ==  conf.plugins.get(1).getClass().getSimpleName()
-			"/scratch" == conf.plugins.get(1).path
-			"/dev/sdx" == conf.plugins.get(1).device
+			// second operation
+			"Nfs" ==  conf.operations.get(1).getClass().getSimpleName()
+			"/scratch" == conf.operations.get(1).path
+			"/dev/sdx" == conf.operations.get(1).device
 
-			// third plugin
-			"Nfs" ==  conf.plugins.get(2).getClass().getSimpleName()
-			"/data" == conf.plugins.get(2).path
-			"/dev/sdh" == conf.plugins.get(2).device
-			"vol-8814f7e4" == 	 conf.plugins.get(2).volumeId
+			// third operation
+			"Nfs" ==  conf.operations.get(2).getClass().getSimpleName()
+			"/data" == conf.operations.get(2).path
+			"/dev/sdh" == conf.operations.get(2).device
+			"vol-8814f7e4" == 	 conf.operations.get(2).volumeId
 
-			// fourth plugin
-			"Sge" ==  conf.plugins.get(3).getClass().getSimpleName()
-			"/scratch/sge6" == conf.plugins.get(3).root
+			// fourth operation
+			"Sge" ==  conf.operations.get(3).getClass().getSimpleName()
+			"/scratch/sge6" == conf.operations.get(3).root
 
 	} 
 	
@@ -192,12 +188,12 @@ class BlowConfigTest extends Specification {
 				instance-type = micro.1
 				size = 99
 	
-				plugin = [ nfs, sge ]
+				operation = [ nfs, sge ]
 			}
 	
 	
 			second-cluster {
-				plugin = hosts
+				operation = hostname
 			}
 			"""
 			
@@ -226,7 +222,7 @@ class BlowConfigTest extends Specification {
 					size: 99
 					image-id: abc
 
-					plugin = [ { nfs { path: /alpha, device: beta }} ]
+					operation = [ { nfs { path: /alpha, device: beta }} ]
 				}
 	
 				test-FAIL {
@@ -253,7 +249,7 @@ class BlowConfigTest extends Specification {
 					size: 99
 					image-id: abc
 
-					plugin = [ nfs ]
+					operations = [ nfs ]
 				}
 
 				test-FAIL {
@@ -295,6 +291,22 @@ class BlowConfigTest extends Specification {
 				
 	}
 
+
+    public void testGetClusterNames() {
+
+        setup:
+        String CONF = """\
+        a = 1
+        b = hola
+        c = { x: 1, y: 2, w: [a, b], z: {alpha:1} }
+        d = [ ]
+        g = { beta: -1 }
+        """
+
+        expect:
+        BlowConfig.getClusterNames(CONF) == ['c','g']
+
+    }
 
 
 }

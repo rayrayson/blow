@@ -26,7 +26,7 @@ class PutFilesCommand  {
 
     def BlowSession session
     
-    @Cmd(summary="Copy a file to the remote hosts")
+    @Cmd(summary="Copy a file to the remote hostname")
 	public void put( String fLocal, String fTarget ) {
 
 		if( !fLocal ) {

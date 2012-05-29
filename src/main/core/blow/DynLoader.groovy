@@ -19,7 +19,6 @@
 
 package blow;
 
-import blow.plugin.Plugin;
 
 import groovy.util.logging.Slf4j
 
@@ -30,6 +29,7 @@ import java.util.zip.ZipInputStream
 import blow.shell.ShellCommand
 import java.lang.reflect.Method
 import blow.shell.Cmd
+import blow.operation.Operation
 
 /**
  * Load all the class defined dynamically 
@@ -117,12 +117,12 @@ public class DynLoader {
     
     
 	/**
-	 * All and only one classes the are annotated with {@link Plugin}
+	 * All and only one classes the are annotated with {@link Operation}
 	 */
 	@Lazy 
-	def List<Class> pluginClasses = {
+	def List<Class> operationsClasses = {
 		log.trace "Before pluginClasses"
-		def result = allClasses.findAll { Class clazz -> clazz.isAnnotationPresent(Plugin.class) }
+		def result = allClasses.findAll { Class clazz -> clazz.isAnnotationPresent(Operation.class) }
 		log.trace "// After pluginClasses: $result"
 		return result
 	}()

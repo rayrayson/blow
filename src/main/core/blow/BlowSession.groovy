@@ -21,7 +21,7 @@ package blow
 
 import blow.eventbus.OrderedEventBus
 import blow.exception.DirtySessionException
-import blow.exception.PluginAbortException
+
 import blow.ssh.ScpClient
 import blow.storage.BlockStorage
 import blow.util.PromptHelper
@@ -55,6 +55,8 @@ import java.util.concurrent.*
 import static com.google.common.base.Predicates.not
 import static org.jclouds.compute.predicates.NodePredicates.TERMINATED
 import static org.jclouds.compute.predicates.NodePredicates.inGroup
+import blow.exception.OperationAbortException
+import blow.util.InjectorHelper
 
 /**
  * Base session initializer
@@ -65,6 +67,7 @@ import static org.jclouds.compute.predicates.NodePredicates.inGroup
 
 @Slf4j
 @Mixin(PromptHelper)
+@Mixin(InjectorHelper)
 class BlowSession {
 
 	final ComputeServiceContext context;
@@ -128,11 +131,14 @@ class BlowSession {
 		this.context = createContext(conf)
 
 		/*
-		 * create the event bus for the plugin system
+		 * create the event bus for the operation system
 		 * and register all the plugins
 		 */
 		eventBus = new OrderedEventBus()
-		conf.plugins.each { eventBus.register(it) }
+		conf.operations.each {
+            eventBus.register(it)
+            injectFields(it, [this])
+        }
 	} 
 
     /** Only for test */
@@ -197,7 +203,7 @@ class BlowSession {
             // ask to the user if want to continue
             println "\nIt is strongly suggested to stop the process and review the cluster configuration!"
             if( promptYesOrNo("Do you want to continue?") == 'n' ) {
-                throw new PluginAbortException()
+                throw new OperationAbortException()
             }
         }
     }
@@ -220,7 +226,7 @@ class BlowSession {
 		/*
 		 * send the cluster create event
 		 */
-		postEvent( new OnBeforeClusterCreationEvent(session: this, clusterName: clusterName) )
+		postEvent( new OnBeforeClusterStartEvent(session: this, clusterName: clusterName) )
 
 		/*
 		 * Get the compute service
@@ -258,7 +264,7 @@ class BlowSession {
 		/*
 		 * notify the cluster creation 	
 		 */
-		postEvent( new OnAfterClusterCreateEvent(session: this, clusterName:clusterName, nodes: allNodes) )
+		postEvent( new OnAfterClusterStartedEvent(session: this, clusterName:clusterName, nodes: allNodes) )
 	}
 
 	private startNodes( TemplateBuilder template, int numberOfNodes, String role ) {
@@ -279,7 +285,7 @@ class BlowSession {
 		/*
 		 * send the before creation event
 		 */
-		postEvent( new OnBeforeNodeStartEvent(
+		postEvent( new OnBeforeNodeLaunchEvent(
 			session: this,
 			clusterName: clusterName, 
 			numberOfNodes: numberOfNodes, 
@@ -295,7 +301,7 @@ class BlowSession {
 		/*
 		 * send the after creation event
 		 */
-		postEvent( new OnAfterNodeStartEvent(
+		postEvent( new OnAfterNodeLaunchEvent(
 			session: this,
 			clusterName: clusterName, 
 			numberOfNodes: numberOfNodes, 

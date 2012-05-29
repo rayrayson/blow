@@ -96,7 +96,7 @@ class DynLoaderFactory {
 		}
 		
 		// add the 'plugins' path in the current folder if exist
-		File currentFolderScripts = new File("./plugins")
+		File currentFolderScripts = new File("./blow-plugins")
 		if( currentFolderScripts.exists() && currentFolderScripts.isDirectory() ) {
 			defaultPaths.add(currentFolderScripts)
 		}

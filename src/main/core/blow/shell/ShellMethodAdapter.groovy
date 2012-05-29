@@ -26,6 +26,7 @@ import org.apache.commons.cli.OptionBuilder
 
 import java.lang.reflect.Method
 import blow.exception.IllegalShellOptionException
+import blow.util.InjectorHelper
 
 /**
  * This class converts a generic method marked with the {@link Cmd} annotation to be sued
@@ -54,6 +55,7 @@ import blow.exception.IllegalShellOptionException
  */
 
 @Slf4j
+@Mixin(InjectorHelper)
 private class ShellMethodAdapter extends AbstractShellCommand implements CommandCompletor {
 
     /** The object instance declaring the method */
@@ -189,25 +191,6 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
 
     }
 
-    /**
-     * Inject the {@link BlowShell} and {@link BlowSession} instances in the method's declaring object
-     */
-    private void injectFields(def obj) {
-
-        obj.getMetaClass().getProperties().each { MetaProperty field ->
-
-            if( field.type == BlowShell ) {
-                field.setProperty(obj, this.shell)
-            }
-            else if( field.type == BlowSession ) {
-                field.setProperty(obj, this.shell.session)
-            }
-           
-        }
-    }
-
-
-
     // the name is defined by the annotation (if not empty) or fallback on the method name
     @Override
     public String getName() {
@@ -257,7 +240,7 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
 
     List<String> findOptions( String cmdline ) {
         if( completion ) {
-            injectFields(declaringObj)
+            injectFields( declaringObj, [shell, shell.session] )
             completion.call(cmdline)
         }
     }
@@ -299,7 +282,7 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
         /*
          * Inject the shell object
          */
-        injectFields(declaringObj)
+        injectFields( declaringObj, [shell, shell.session] )
 
         /*
          * When the method does not declare any parameter, just invoke it

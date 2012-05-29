@@ -21,8 +21,8 @@ package blow
 
 import blow.exception.BlowConfigException
 import blow.exception.MissingKeyException
-import blow.plugin.PluginFactory
-import blow.plugin.Validate
+import blow.operation.OperationFactory
+import blow.operation.Validate
 import com.google.common.base.Charsets
 import com.google.common.io.Files
 import com.typesafe.config.Config
@@ -34,6 +34,7 @@ import org.jclouds.domain.LoginCredentials
 
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
+import com.typesafe.config.ConfigValueType
 
 /**
  * Contains all configuration required to handle a cluster 
@@ -59,8 +60,8 @@ class BlowConfig {
 	File publicKeyFile
 	File privateKeyFile
 
-    /** The list of all plugin defined in the configuration */
-	List plugins
+    /** The list of all operation defined in the configuration */
+	List operations
 
     /** The {@link org.jclouds.domain.LoginCredentials} object */
 	@Lazy LoginCredentials credentials = {
@@ -77,9 +78,9 @@ class BlowConfig {
 			
 	}()
 
-    /** The plugin factory   */
+    /** The operation factory   */
     @Lazy
-	private PluginFactory pluginFactory = { new PluginFactory( DynLoaderFactory.get() ) }()
+	private OperationFactory operationFactory = { new OperationFactory( DynLoaderFactory.get() ) }()
 
 
     /** Protected constructor used only for testing purpose */
@@ -156,45 +157,45 @@ class BlowConfig {
 		//size = conf.hasPath("size") ? conf.getIn
 		
 		/*
-		 * Fetch all the plugin declared. Plugins can be declared 
-		 * as a single item or a list of plugins configuration
+		 * Fetch all the operation declared. Operations can be declared
+		 * as a single item or a list of operations configuration
 		 */
-		def pluginsConfs 
-		if( conf.hasPath("plugin") ) {
+		def operationsConfig
+		if( conf.hasPath("operations") ) {
 			
-			// we try first to read a list, if the user need just one plugin it can be entered 
+			// we try first to read a list, if the user need just one operation it can be entered
 			// omitting the list syntax
-			def val = conf.getValue("plugin")
-			pluginsConfs = val instanceof ConfigList ? val : [ val ]
+			def val = conf.getValue("operations")
+			operationsConfig = val instanceof ConfigList ? val : [ val ]
 			
 		}
 		else {
-			pluginsConfs = []	
+			operationsConfig = []
 		}
 		
 		/*
-		 * create an instance for each declared plugin
+		 * create an instance for each declared operation
 		 */
-		def pluginList = []
-		pluginsConfs.each {
+		def operationsList = []
+		operationsConfig.each {
 			
 			if( !( it instanceof ConfigValue ) ) {
-				throw new BlowConfigException( "Invalid plugin declaration for: " + it )
+				throw new BlowConfigException( "Invalid operation declaration for: " + it )
 			}
 			
 			/*
-			 * create an instance for defined plugin
+			 * create an instance for defined operation
 			 */
-			def plugin = pluginFactory.createWithConf( it );
-			if( !plugin ) {
-				throw new BlowConfigException( "Invalid plugin declaration for: " + it.render() )
+			def op = operationFactory.createWithConf( it );
+			if( !op ) {
+				throw new BlowConfigException( "Invalid operation declaration for: " + it.render() )
 			}
 
-            // add to the plugin list
-			pluginList.add( plugin )
+            // add to the operation list
+			operationsList.add( op )
 		}
 		
-		this.plugins = pluginList
+		this.operations = operationsList
 	}
 		
 	
@@ -238,30 +239,30 @@ class BlowConfig {
         }
 
         /*
-         * validate plugins
+         * validate operations
          */
-        checkPlugins()
+        checkOperations()
 
 	}
 
-    def void checkPlugins() {
+    def void checkOperations() {
 
-        if( !plugins ) return;
+        if( !operations ) return;
 
-        plugins.each { plugin ->
+        operations.each { op ->
             /*
              * Find all the validator method (marked with the annotation 'Validate'
              * and invoke them
              */
-            def validators = plugin.getClass().getMethods() ?. findAll {  Method method -> method.getAnnotation(Validate) }
+            def validators = op.getClass().getMethods() ?. findAll {  Method method -> method.getAnnotation(Validate) }
             validators.each {
-                Method method -> invokeValidator(plugin,method)
+                Method method -> invokeValidator(op,method)
             }
         }
 
     }
 
-    def void invokeValidator(Object plugin, Method method) {
+    def void invokeValidator(Object op, Method method) {
 
         def types=method.getParameterTypes()
         Object[] args = new Object[ types.length ];
@@ -276,7 +277,7 @@ class BlowConfig {
             }
 
             if( args[0]==null || types.length>1 ) {
-                log.warn("Plugin '${plugin.getClass().getSimpleName()}.${method.getName()}' should declare at most one parameter of type BlowConfig");
+                log.warn("Operation '${op.getClass().getSimpleName()}#${method.getName()}' should declare at most one parameter of type BlowConfig");
             }
         }
 
@@ -284,7 +285,7 @@ class BlowConfig {
          * invoke the validator
          */
         try {
-            method.invoke(plugin,args)
+            method.invoke(op,args)
         }
         catch( InvocationTargetException e ) {
             /*
@@ -378,6 +379,29 @@ class BlowConfig {
 
     }
 
+    /**
+     * Given the configuration text, parse it and find the list of names of cluster definitions
+     *
+     * @param text The configuration text
+     * @return The list of cluster names defined
+     */
+    static def getClusterNames( final String text ) {
+        
+        getClusterNames(ConfigFactory.parseString(text))
+
+    }
+
+
+    static def getClusterNames( final Config config ) {
+        def names = []
+        config.root().entrySet() .each { entry ->
+            if( entry.value.valueType() == ConfigValueType.OBJECT ) {
+                names.add(entry.key)
+            }
+        }
+
+        return names
+    }
 
 
 }

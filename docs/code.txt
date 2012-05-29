@@ -47,7 +47,8 @@ Our commitment is to support the most common used Linux distributions (RedHat, U
 
 Reporting bugs
 --------------
-Please use issue tracker provided in the Github repository at this link: https://github.com/paoloditommaso/blow/issues.
+Please use issue tracker provided in the Github repository at this link: https://github.com/paoloditommaso/blow/issues
+and include the log file named ``.blow.log`` created in your working directory, if available.
  
 Bug reports are incredibly helpful, so please feel free to take the time to 
 report bugs and request features. And we're always grateful for patches to Blow’s code. 

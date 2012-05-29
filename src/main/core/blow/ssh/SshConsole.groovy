@@ -85,7 +85,7 @@ class SshConsole {
         }
 
 
-//        final File khFile = new File(OpenSSHKnownHosts.detectSSHDir(), "known_hosts");
+//        final File khFile = new File(OpenSSHKnownHosts.detectSSHDir(), "known_hostname");
 //        ssh.addHostKeyVerifier(new ConsoleKnownHostsVerifier(khFile, System.console()));
 //
 

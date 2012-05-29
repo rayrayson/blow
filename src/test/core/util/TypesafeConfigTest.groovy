@@ -24,11 +24,33 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigList
 import com.typesafe.config.ConfigValue
 import org.junit.Test
+import com.typesafe.config.ConfigValueType
 
 class TypesafeConfigTest {
 
 	def Config conf;
 	
+
+    @Test
+    def void testSingleObjectDefinition () {
+
+        String CONF = """\
+        a = 1
+        b = hola
+        c = { x: 1, y: 2, w: [a, b], z: {alpha:1} }
+        d = [ ]
+        """
+
+        conf = ConfigFactory.parseString(CONF)
+        def names = []
+        conf.root().entrySet() .each { entry ->
+            if( entry.value.valueType() == ConfigValueType.OBJECT ) {
+                names.add(entry.key)
+            }
+        }
+
+        println names
+    }
 
 	
 	@Test 
