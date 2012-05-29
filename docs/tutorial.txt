@@ -195,7 +195,7 @@ Move to the ``/scratch`` folder, create a job script and submit it to the *SGE* 
 For the sake of this tutorial, you could run these commands::
 
   cd /scratch 
-  echo "Hello world!" > test.sh 
+  echo "echo Hello world!" > test.sh
   qsub -cwd -sync y test.sh 
   
 

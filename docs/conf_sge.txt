@@ -15,7 +15,6 @@ Read more about the Open Grid Scheduler project at the following link: http://gr
 Basic SGE configuration
 -----------------------
 
-
 The SGE configuration requires the operation ``sge`` to be added in the ``operations`` attribute
 in the cluster configuration file. 
 
