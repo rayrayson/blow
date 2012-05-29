@@ -1,3 +1,31 @@
 Credits
 =======
 
+.. epigraph::
+
+  If I have seen farther than others, it is because I was standing on the shoulders of giants.
+  -- Albert Einstein
+
+
+*Blow* is only possible due to the open source community and in particular the following OSS projects:
+
+  * `Groovy`_ - The scripting language that put the fun back into the Java programming
+  * `JClouds`_ - Provides the cloud connection for Amazon AWS as well as for many other providers
+  * `Typesafe Config`_ - Used to handle the application configuration files
+  * `SSHJ`_ - A pure Java SSH client implementation
+  * `Spock Framework`_ - Unit testing made simple
+
+
+.. _`Groovy`: http://groovy.codehaus.org/
+.. _`JClouds`: http://www.jclouds.org/
+.. _`Typesafe Config`: http://github.com/typesafehub/config
+.. _`SSHJ`: http://github.com/shikhar/sshj
+.. _`Spock Framework`: http://code.google.com/p/spock/
+
+
+If you are interested in *Blow* you may be also interested in:
+  * `StarCluster`_
+  * `CloudMan`_
+
+.. _`StarCluster`: http://web.mit.edu/star/cluster/
+.. _`CloudMan`: http://usecloudman.org/
