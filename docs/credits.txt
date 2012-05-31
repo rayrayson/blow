@@ -7,10 +7,10 @@ Credits
   -- Albert Einstein
 
 
-*Blow* is only possible due to the open source community and in particular the following OSS projects:
+*Blow* was made possible to the open source community and in particular the following OSS projects:
 
-  * `Groovy`_ -- The scripting language that put the fun back into the Java programming
-  * `JClouds`_ -- Provides the cloud connection for Amazon AWS as well as for many other providers
+  * `Groovy`_ -- The scripting language that put the fun back into Java programming
+  * `JClouds`_ -- It manages the cloud connection for Amazon AWS as well as for many other providers
   * `Typesafe Config`_ -- Used to handle the application configuration files
   * `SSHJ`_ -- A pure Java SSH client implementation
   * `Spock Framework`_ -- Unit testing made simple
@@ -23,7 +23,7 @@ Credits
 .. _`Spock Framework`: http://code.google.com/p/spock/
 
 
-If you are interested in *Blow* you may be also interested in:
+If you are interested in *Blow* you may also be interested in:
   * `StarCluster`_
   * `CloudMan`_
 

@@ -1,10 +1,9 @@
 Getting the code 
 ================
 
-*Blow* framework is hosted on Github using the Git version control system at the following link:
-https://github.com/paoloditommaso/blow .  
+The *Blow* framework source code is hosted on Github at the following link:https://github.com/paoloditommaso/blow .
 
-You can get the code with the following command::
+You can download the code with the following command::
 
   git clone git@github.com:paoloditommaso/blow.git
 
@@ -14,21 +13,21 @@ Build from sources
 
 The build procedure has the following dependencies:
 
-* Java JDK 6 or higher version 
-* Groovy 1.8.6 or higher version.
+* Java JDK 6 or higher.
+* Groovy 1.8.6 or higher.
 * Make sure the variable ``GROOVY_HOME`` is defined.
 
-The build script is written in the Groovy language and uses the Ant Builder feature to build the project.
-All required dependencies are defined in the Maven ``pom.xml`` file, and all the required libraries will
-be download automatically by the script using the provided Maven Ant task integration.
+The build script is written using the Groovy language and uses the Ant Builder feature to build the project.
+All the required dependencies are defined in the Maven ``pom.xml`` file, and all the required libraries will
+be download automatically by the script, using the included Maven Ant task integration plugin.
 
-Launch the build script running the following command in the project root::
+Launch the build script by running the following command in the project root folder::
 
   groovy ./build.groovy
   
-The script create the self-contained executable JAR package as default target.
+The build script creates the self-contained executable JAR package by default.
 
-The following other targets can be provided optionally on the build script command line:
+The following targets can be provided optionally on the build script command line:
 
 * ``info``: Print out the build variables.
 * ``clean``: Remove all temporary files in the build folder.
@@ -40,18 +39,19 @@ The following other targets can be provided optionally on the build script comma
 
 Development status
 ------------------
-Blow is in early stage of development. It has been tested with the Amazon Linux 2012.03 (x86_64) public ami (ami-e565ba8c). 
+Blow is in early stages of development. It has been tested with the Amazon Linux 2012.03 (x86_64) public ami (ami-e565ba8c).
 It may not work properly using different Linux distribution/ami.
 
-Our commitment is to support the most common used Linux distributions (RedHat, Ubuntu and Suse)
+Our commitment is to support the most commonly used Linux distributions (RedHat, Ubuntu and Suse) in future releases.
 
 Reporting bugs
 --------------
-Please use issue tracker provided in the Github repository at this link: https://github.com/paoloditommaso/blow/issues
-and include the log file named ``.blow.log`` created in your working directory, if available.
+Please reports bugs using the issue tracker provided in the Github repository, by following this link:
+https://github.com/paoloditommaso/blow/issues and include the log file named ``.blow.log`` created in the working
+directory, if available.
  
 Bug reports are incredibly helpful, so please feel free to take the time to 
-report bugs and request features. And we're always grateful for patches to Blow’s code. 
+report bugs and request features. And we're always grateful for patches for Blow’s code.
 
 Indeed, bug reports with attached patches will get fixed far quicker than those without.
 

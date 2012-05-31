@@ -1,16 +1,16 @@
 Installation
 ============
 
-*Blow* is distributed in self-contained executable package that does not require any kind of installation.
+*Blow* is distributed in a self-contained executable package that does not require any kind of installation.
 
-It is available for download at this link_ . If you are using a Linux system, you only need to save on your machine and
-grant the execute permission to the downloaded file with the command ``chmod +x blow.jar``.
-After that you can start it using the command line below::
+It is available for download at this link_ . If you are using a Linux system, you only need to download it on your
+computer, then grant the execute permission to the saved file with the command ``chmod +x blow.jar``.
+After that you can launch it using the command line below::
 
   ./blow.jar
 
 
-Windows users, does not need to grant any execute permission. Launch *Blow* just typing the command below on your
+Windows users, do not need to grant any execute permission. To launch *Blow* just type the command below on your
 command prompt::
 
    java -jar blow.jar
@@ -20,6 +20,6 @@ Please refer to the pages :doc:`conf_main` and :doc:`tutorial` for more informat
 
 
 The source code is hosted on Github at the following link: https://github.com/paoloditommaso/blow .
-For more details how download and build the source code please refers to the page :doc:`code` .
+For more details on how to download and build the source code please refer to the page :doc:`code` .
 
 .. _link: http://dl.dropbox.com/u/376524/blow/blow.jar
