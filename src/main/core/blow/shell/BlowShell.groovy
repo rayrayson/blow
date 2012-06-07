@@ -525,7 +525,7 @@ class BlowShell {
          * User entered an unknown command
          */
         else {
-            println "Unknown command: ${command}"
+            println "Unknown command: '${command}'"
         }
 
 	}
