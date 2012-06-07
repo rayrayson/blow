@@ -27,38 +27,6 @@ import spock.lang.Specification
  */
 class BlowShellTest extends Specification {
 
-    def "test init method" () {
-
-        setup:
-        def shell = new BlowShell()
-
-        expect:
-        shell.init(args)
-        shell.mainEntry == mainEntry
-        shell.mainCommand == mainCommand
-
-
-        where:
-        args << [
-                ['basic'],
-                ['cluster', 'listnodes'],
-                ['cluster', 'nodeinfo', 'xxx', 'yyy'],
-                ['help', 'hola']
-        ]
-        mainEntry << [
-                'basic',
-                'cluster',
-                'cluster',
-                'help'
-                ]
-        mainCommand << [
-                null,
-                [name:'listnodes', args:[]],
-                [name:'nodeinfo', args:['xxx','yyy']],
-                [name: 'hola', args: []]
-                ]
-
-    }
 
 
     def "test addAction method"() {
