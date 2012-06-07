@@ -96,7 +96,7 @@ else  {
 
 root(Level.INFO, ["console","rolling"])
 logger("net.schmizz.sshj", Level.WARN, ["console","rolling"], false)
-
+logger("org.jclouds.ec2.xml", Level.ERROR, ["console","rolling"], false)
 /*
  * Add packages to debug or trace declared dynamically on the command line
  */
