@@ -134,7 +134,7 @@ class BlockStorage {
 	  /*
 	   * Wait for the volume to be ready
 	   */
-	  vol = waitForVolumeAvail( vol )
+	  return waitForVolumeAvail( vol )
    }
 
     def createSnapshot( String volumeId, String description, boolean waitForCompleted = true ) {
