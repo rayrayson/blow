@@ -215,7 +215,7 @@ class BlowSession {
 	 * 
 	 */
 	public void createCluster() {
-		log.info("Creating cluster: $clusterName")
+		log.info("Starting cluster: $clusterName")
 
         /*
          * make sure that the session can be started one and only one time
@@ -301,6 +301,10 @@ class BlowSession {
         if( conf.createUser ) {
             log.debug("Creating admin access for user: '${conf.userName}'")
             template.getOptions().runScript(adminAccessScript)
+        }
+        else if( conf.keyPair ) {
+            log.debug("Setting key-pair: " + conf.keyPair)
+            template.getOptions().as(AWSEC2TemplateOptions).keyPair(conf.keyPair)
         }
         else {
             log.debug("Override login credentials: " + conf.credentials)

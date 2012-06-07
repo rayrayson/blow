@@ -56,6 +56,7 @@ class BlowConfig {
 	def userName
 	File publicKeyFile
 	File privateKeyFile
+    def keyPair
 
     def Boolean createUser
     def securityId
@@ -136,8 +137,24 @@ class BlowConfig {
 		privateKeyFile = getFile(conf,"private-key")
 		publicKeyFile = getFile(conf,"public-key")
 
+        /*
+         * The cloud provider keyPair name
+         */
+        keyPair = getString(conf, "key-pair")
+        if( keyPair && !privateKeyFile ) {
+            File keyFile = new File("./${keyPair}.pem")
+            if( !keyFile.exists() ) keyFile = new File( System.properties['user.home'], ".ssh/${keyPair}.pem")
+
+            if( keyFile.exists() ) {
+                privateKeyFile = keyFile
+                // it will be used the provider key-pair, so no user will be create
+                if( createUser == null ) createUser = false
+            }
+        }
+
+
         // if not keys has been specified fallback to the default private key
-        if ( !privateKeyFile && !publicKeyFile ) {
+        if ( !keyPair && !privateKeyFile && !publicKeyFile ) {
             privateKeyFile = getDefaultKeyFile()
             publicKeyFile = new File( privateKeyFile.toString() + ".pub" )
             // if are used the default key, the user have to be created remotely
@@ -199,6 +216,11 @@ class BlowConfig {
 		 * validate credentials
 		 */
 		checkTrue( userName, "Missing cluster user name. Please provide attribute 'user-name' in your configuration")
+
+
+        if( keyPair && (!privateKeyFile || !privateKeyFile.exists()) ) {
+            throw new BlowConfigException("Missing key file for specified keypair '${keyPair}'")
+        }
 
         /*
          * Verify keys
@@ -328,6 +350,7 @@ class BlowConfig {
 		def result = [:]
 
         result.put("user-name", userName)
+        result.put("key-pair", keyPair ?: '--')
         result.put("private-key", privateKeyFile)
         result.put("public-key", publicKeyFile ?: '--' )
         result.put("create-user", createUser ?: false )
