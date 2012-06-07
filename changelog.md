@@ -1,3 +1,10 @@
+2012-06-07, version 0.6.1
+- Fixed problem resolving environment variables
+- Fixed issue deleting a EBS volume
+- Upgrade to Typesafe Config 0.4.1
+- Added support for existing credential + security group specification
+- Fixed issue on 'Exports' operation
+
 2012-0529, version 0.6.0
 - Added support for GlusterFS
 - Inject BlowSession instance in Operation object
