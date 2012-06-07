@@ -48,11 +48,17 @@ class S3cmd {
     @Conf String encryptionPassword = ""
     @Conf String pathToGPG = ""
     @Conf String useHttps = ""
+    @Conf String version = "1.0.1"
+
+    @Validate
+    def void validation() {
+        assert version, "The 'version' attribute cannot be empty"
+    }
 
 
     @Subscribe
     public void installS3cmd( OnAfterClusterStartedEvent event ) {
-
+        log.info "Configuring s3cmd"
 
         TraceHelper.debugTime ( "Install S3Cmd", {
 
@@ -63,8 +69,8 @@ class S3cmd {
     }
 
 	public void execute(BlowSession session) {
+        assert version
 
-        blow.operation.S3cmd.log.debug "Running s3cmd"
         if( !accessKey ) accessKey = session.conf.accessKey
         if( !secretKey ) secretKey = session.conf.secretKey
 
@@ -75,7 +81,7 @@ class S3cmd {
 
         // the export path
         def export = """\
-        export PATH="\$PATH:\$HOME/s3cmd-1.1.0-beta3"
+        export PATH="\$PATH:\$HOME/s3cmd-$version"
         """
         .stripIndent()
 
@@ -90,13 +96,15 @@ class S3cmd {
          */
 		String script = """\
         sudo yum install -y wget
-		wget http://sourceforge.net/projects/s3tools/files/s3cmd/1.1.0-beta3/s3cmd-1.1.0-beta3.zip/download
-        unzip s3cmd-1.1.0-beta3.zip
-        mv s3cmd-1.1.0-beta3 \$HOME
+		wget -q http://sourceforge.net/projects/s3tools/files/s3cmd/${version}/s3cmd-${version}.zip/download
+        unzip s3cmd-${version}.zip
+        rm -rf s3cmd-${version}.zip
+        chmod +x s3cmd-${version}/s3cmd
+        mv s3cmd-${version} \$HOME
         ${export}
         cat s3conf | s3cmd --configure
         rm s3conf
-        rm s3cmd-1.1.0-beta3.zip
+        rm s3cmd-${version}.zip
 		"""
         .stripIndent()
 
