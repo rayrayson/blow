@@ -407,7 +407,7 @@ class BlowShell {
             System.exit(1)
         }
 
-        return result
+        return result.resolve()
     }
 
 	/**
@@ -745,9 +745,16 @@ class BlowShell {
         /*
          * start the shell
          */
-		shell.init(options.arguments(), confFileName, clusterName);
-		shell.run();
-		shell.close()
+        try {
+            shell.init(options.arguments(), confFileName, clusterName);
+            shell.run();
+            shell.close()
+        }
+        catch( Exception e ) {
+            shell.log.error(e.getMessage() ?: e.toString(), e)
+            System.exit(1)
+        }
+
 	}
 }
 
