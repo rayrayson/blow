@@ -42,7 +42,7 @@ class Hostname {
 	
 	@Subscribe
 	public void configureHostsFile( OnAfterClusterStartedEvent event ) {
-        log.info "Configuring hostname file"
+        log.info "Configuring cluster hostname(s)"
 
         TraceHelper.debugTime( "Configure '/etc/hosts' file") {
             configureHostsTask(event.session)
