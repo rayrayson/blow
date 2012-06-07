@@ -30,7 +30,7 @@ class PromptHelper {
      *
      * @return the entered text
      */
-    static def String prompt( String prompt = "", Closure<String> accept = null ) {
+    def String prompt( String prompt = "", Closure<String> accept = null ) {
 
         def line
         while( true ) {
@@ -52,7 +52,7 @@ class PromptHelper {
      * @param options A list of valid entries that will accepted, otherwise
      * it will continue to prompt for an answer
      */
-    static def String prompt ( String text, List<String> options  ) {
+    def String prompt ( String text, List<String> options  ) {
         assert options, "You should provide at least one entry in the 'options' list parameter"
 
         def show = (text ?: "") + " [${options.join('/')}]"
@@ -60,7 +60,7 @@ class PromptHelper {
 
     }
 
-    static def String promptYesOrNo( String query ) {
+    def String promptYesOrNo( String query ) {
         prompt(query,['y','n'])
     }
 
