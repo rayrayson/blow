@@ -1,4 +1,6 @@
 2012-06-07, version 0.6.1
+- Added support for Amazon provided KeyPair
+- Fixed issue on 3Cmd op
 - Fixed problem resolving environment variables
 - Fixed issue deleting a EBS volume
 - Upgrade to Typesafe Config 0.4.1

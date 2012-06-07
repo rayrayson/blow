@@ -24,12 +24,9 @@ import blow.events.OnAfterClusterStartedEvent
 import blow.util.TraceHelper
 
 /**
- * Created with IntelliJ IDEA.
+ * Run a BASH script on the remote hosts
  *
  * @author Paolo Di Tommaso
- * Date: 4/10/12
- * Time: 6:55 PM
- * To change this template use File | Settings | File Templates.
  */
 
 @Operation("run-script")
