@@ -21,9 +21,10 @@ package blow
 
 import blow.eventbus.OrderedEventBus
 import blow.exception.DirtySessionException
-
+import blow.exception.OperationAbortException
 import blow.ssh.ScpClient
 import blow.storage.BlockStorage
+import blow.util.InjectorHelper
 import blow.util.PromptHelper
 import com.google.common.base.Predicate
 import com.google.common.base.Predicates
@@ -31,13 +32,10 @@ import com.google.common.collect.ImmutableSet
 import com.google.inject.Module
 import groovy.util.logging.Slf4j
 import org.jclouds.Constants
+import org.jclouds.aws.ec2.compute.AWSEC2TemplateOptions
 import org.jclouds.compute.ComputeService
 import org.jclouds.compute.ComputeServiceContext
 import org.jclouds.compute.ComputeServiceContextFactory
-import org.jclouds.compute.domain.ExecResponse
-import org.jclouds.compute.domain.NodeMetadata
-import org.jclouds.compute.domain.NodeState
-import org.jclouds.compute.domain.TemplateBuilder
 import org.jclouds.compute.options.TemplateOptions
 import org.jclouds.compute.reference.ComputeServiceConstants
 import org.jclouds.enterprise.config.EnterpriseConfigurationModule
@@ -49,14 +47,13 @@ import org.jclouds.sshj.config.SshjSshClientModule
 import java.lang.reflect.InvocationTargetException
 
 import blow.events.*
+import org.jclouds.compute.domain.*
 
 import java.util.concurrent.*
 
 import static com.google.common.base.Predicates.not
 import static org.jclouds.compute.predicates.NodePredicates.TERMINATED
 import static org.jclouds.compute.predicates.NodePredicates.inGroup
-import blow.exception.OperationAbortException
-import blow.util.InjectorHelper
 
 /**
  * Base session initializer
@@ -194,6 +191,10 @@ class BlowSession {
         try {
             eventBus.post(event)
         }
+        catch( OperationAbortException e ) {
+            // just pass through
+            throw e
+        }
         catch( Exception e ) {
             if( e instanceof InvocationTargetException ) {
                 e = e.getCause()
@@ -207,6 +208,7 @@ class BlowSession {
             }
         }
     }
+
 
 	/**
 	 * Create an instance of the specific cluster 
@@ -267,21 +269,49 @@ class BlowSession {
 		postEvent( new OnAfterClusterStartedEvent(session: this, clusterName:clusterName, nodes: allNodes) )
 	}
 
-	private startNodes( TemplateBuilder template, int numberOfNodes, String role ) {
-		
-		// note this will create a user with the same name as you on the
-		// node. ex. you can connect via ssh public ip
-        def builder = new AdminAccess.Builder()
-		AdminAccess admin = builder
-                            .adminUsername( conf.userName ) 
-                            .adminPublicKey( conf.publicKeyFile )   
-                            .adminPrivateKey( conf.privateKeyFile )
-                            .build()
 
-		TemplateOptions opt = new TemplateOptions()
-		opt.runScript(admin)
-		opt.userMetadata("Role", role)
-		
+    // note this will create a user with the same name as you on the
+    // node. ex. you can connect via ssh public ip
+    @Lazy def private AdminAccess adminAccessScript = {
+
+        new AdminAccess.Builder()
+                .adminUsername( conf.userName )
+                .adminPublicKey( conf.publicKeyFile )
+                .adminPrivateKey( conf.privateKeyFile )
+                .build()
+
+    } ()
+
+    /**
+     * Start a set of nodes
+     *
+     * @param builder
+     * @param numberOfNodes
+     * @param role
+     * @return
+     */
+    private startNodes( TemplateBuilder builder, int numberOfNodes, String role ) {
+
+        Template template = builder.build()
+		template.getOptions().userMetadata("Role", role)
+
+        /*
+         * set the credential to use
+         */
+        if( conf.createUser ) {
+            log.debug("Creating admin access for user: '${conf.userName}'")
+            template.getOptions().runScript(adminAccessScript)
+        }
+        else {
+            log.debug("Override login credentials: " + conf.credentials)
+            template.getOptions().overrideLoginCredentials( conf.credentials )
+        }
+
+        // set the security group id
+        if( conf.securityId ) {
+            template.getOptions().as(AWSEC2TemplateOptions).securityGroupIds(conf.securityId)
+        }
+
 		/*
 		 * send the before creation event
 		 */
@@ -290,13 +320,13 @@ class BlowSession {
 			clusterName: clusterName, 
 			numberOfNodes: numberOfNodes, 
 			role: role, 
-			options: opt
+			options: template.getOptions()
 			) )
 		
 		/*
 		 * Start the requested nodes
 		 */
-		def setOfNodes = compute.createNodesInGroup(clusterName, numberOfNodes, template.options(opt).build())
+		def setOfNodes = compute.createNodesInGroup(clusterName, numberOfNodes, template)
 		
 		/*
 		 * send the after creation event

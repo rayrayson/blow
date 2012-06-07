@@ -23,18 +23,15 @@ import blow.exception.BlowConfigException
 import blow.exception.MissingKeyException
 import blow.operation.OperationFactory
 import blow.operation.Validate
-import com.google.common.base.Charsets
-import com.google.common.io.Files
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigList
-import com.typesafe.config.ConfigValue
 import groovy.util.logging.Slf4j
 import org.jclouds.domain.LoginCredentials
 
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
-import com.typesafe.config.ConfigValueType
+
+import com.typesafe.config.*
+import com.google.common.io.Files
+import com.google.common.base.Charsets
 
 /**
  * Contains all configuration required to handle a cluster 
@@ -60,23 +57,20 @@ class BlowConfig {
 	File publicKeyFile
 	File privateKeyFile
 
+    def Boolean createUser
+    def securityId
+
     /** The list of all operation defined in the configuration */
 	List operations
 
     /** The {@link org.jclouds.domain.LoginCredentials} object */
 	@Lazy LoginCredentials credentials = {
-		log.debug "> Creating lazy credential"
+		log.debug "Creating lazy credential for user: ${userName} - key file: '${privateKeyFile}'"
 
-		try {
-		  String privateKey = Files.toString(privateKeyFile, Charsets.UTF_8);
-		  return LoginCredentials.builder().user(userName).privateKey(privateKey).build();
-		}
-		catch (Exception e) {
-			log.error("Cannot read user private key: '${publicKeyFile}'")
-			return null;
-		}
-			
-	}()
+        String privateKey = Files.toString(privateKeyFile, Charsets.UTF_8);
+        return LoginCredentials.builder().user(userName).privateKey(privateKey).build();
+
+    }()
 
     /** The operation factory   */
     @Lazy
@@ -125,6 +119,7 @@ class BlowConfig {
 		 */
 		imageId = getString(conf, "image-id", null)
 		instanceType = getString(conf, "instance-type", "t1.micro")
+        securityId = getString(conf,"security-id")
 		
 		/*
 		 * the cluster size
@@ -136,6 +131,7 @@ class BlowConfig {
 		/*
 		 * credential 
 		 */
+        createUser = getBool(conf, "create-user")
 		userName = getString(conf, "user-name", System.getProperty("user.name")) 
 		privateKeyFile = getFile(conf,"private-key")
 		publicKeyFile = getFile(conf,"public-key")
@@ -143,19 +139,11 @@ class BlowConfig {
         // if not keys has been specified fallback to the default private key
         if ( !privateKeyFile && !publicKeyFile ) {
             privateKeyFile = getDefaultKeyFile()
-        }
-
-        // use by default the same as private + '.pub' extension
-        if( privateKeyFile && !publicKeyFile ) {
             publicKeyFile = new File( privateKeyFile.toString() + ".pub" )
+            // if are used the default key, the user have to be created remotely
+            if( createUser == null ) createUser = true
         }
 
-
-		/*
-		 * size of the cluster
-		 */
-		//size = conf.hasPath("size") ? conf.getIn
-		
 		/*
 		 * Fetch all the operation declared. Operations can be declared
 		 * as a single item or a list of operations configuration
@@ -220,22 +208,25 @@ class BlowConfig {
             throw new MissingKeyException(privateKeyFile)
         }
 
-        if( !publicKeyFile.exists() ) {
+        if( createUser && !publicKeyFile.exists() ) {
             throw new MissingKeyException(publicKeyFile)
         }
 
 
         if( !privateKeyFile.text.startsWith("-----BEGIN RSA PRIVATE KEY-----") \
-            && !privateKeyFile.text.startsWith("-----BEGIN DSA PRIVATE KEY-----") )
+            && !privateKeyFile.text.startsWith("-----BEGIN DSA PRIVATE KEY-----") \
+            && !privateKeyFile.text.startsWith("-----BEGIN PRIVATE KEY-----") )
         {
              throw new BlowConfigException("Invalid private key file format: '$privateKeyFile'")
         }
 
-
-		if( !publicKeyFile.text.startsWith("ssh-rsa") \
-		    && !publicKeyFile.text.startsWith("ssh-dss") )
-        {
-            throw new BlowConfigException("Invalid public key file format: '$publicKeyFile'")
+        if( publicKeyFile )  {
+            if( !publicKeyFile.text.startsWith("ssh-rsa") \
+		    && !publicKeyFile.text.startsWith("ssh-dss") \
+		    && !publicKeyFile.text.startsWith("ssh") )
+            {
+                throw new BlowConfigException("Invalid public key file format: '$publicKeyFile'")
+            }
         }
 
         /*
@@ -326,6 +317,11 @@ class BlowConfig {
         def val = conf.hasPath(key) ? conf.getString(key) : null
         return val ? new File(val) : defValue
     }
+
+    private Boolean getBool( Config conf, String key, Boolean defValue = null ) {
+        def val = conf.hasPath(key) ? conf.getString(key) : null
+        return val ? Boolean.parseBoolean(val?.toLowerCase()) : defValue
+    }
 	
 	def getConfMap() {
 
@@ -333,13 +329,15 @@ class BlowConfig {
 
         result.put("user-name", userName)
         result.put("private-key", privateKeyFile)
-        result.put("public-key", publicKeyFile)
+        result.put("public-key", publicKeyFile ?: '--' )
+        result.put("create-user", createUser ?: false )
         result.put("account-id", accountId ?: '--')
         result.put("access-key", accessKey)
 		result.put("region-id", regionId)
 		result.put("zone-id", zoneId)
 		result.put("image-id", imageId)
 		result.put("instance-type",instanceType)
+        result.put("security-id",securityId ?: '--')
 		result.put("size", size)
 
 
