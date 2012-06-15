@@ -20,12 +20,11 @@
 package blow.operation
 
 import blow.BlowConfig
-import blow.BlowSession
-
+import blow.events.OnAfterClusterStartedEvent
 import blow.util.TraceHelper
 import com.google.common.eventbus.Subscribe
 import groovy.util.logging.Slf4j
-import blow.events.OnAfterClusterStartedEvent
+import blow.BlowSession
 
 /**
  * Handles Sun Grid Engine deployment and configuration 
@@ -78,13 +77,25 @@ class Sge {
 	
 	@Conf("tmp")
 	String tempPath = "/tmp"
-	
-	/*
-	 * A blank-separated string containing the hostnames on which install and run the SGE nodes
-	 */
-	String nodes = ""
-	
-	private BlowSession session
+
+    /**
+     * The SGE spool directory. It could be possible to enter a local folder to improve cluster performance
+     * <p>
+     * Read more about local spool dir here
+     * http://gridscheduler.sourceforge.net/howto/nfsreduce.html
+     */
+    @Conf("spool-dir")
+    String spoolPath
+
+
+    /** The current {@link BlowSession} */
+    BlowSession session
+
+    /*
+      * A blank-separated string containing the hostnames on which install and run the SGE nodes
+      */
+	private String nodes = ""
+
 
     @Validate
     def validation( BlowConfig config ) {
@@ -103,21 +114,21 @@ class Sge {
 	public void configureSge( OnAfterClusterStartedEvent event ) {
         log.info "Configuring OpenGridEngine (SGE)"
 
-		TraceHelper.debugTime("SGE configuration") {
-            configureTask(event.session)
-        }
+		TraceHelper.debugTime("SGE configuration") { configureTask() }
 
     }
 	
-	protected void configureTask(BlowSession cloud) {
+	protected void configureTask() {
 
-		this.session = cloud
-		
-		/*
-		 * preliminary conf
-		 */
-		this.nodes = cloud.listHostNames().join(" ")
-		
+
+        // the list of nodes that make up the cluster
+		nodes = session.listHostNames().join(" ")
+
+        // if not defined use the default spool path
+        if( !spoolPath ) {
+            spoolPath = "${root}/${cell}/spool"
+        }
+
 		/*
 		 * start the installation
 		 */
@@ -272,8 +283,13 @@ class Sge {
 		
 		assert root, "Variable 'root' cannot be empty"
 		assert cell, "Variable 'cell' cannot be empty"
-		
+
+        def user = session.conf.userName
+
 		"""\
+        # Create the spool directory
+		[ ! -d ${spoolPath} ] && sudo mkdir -p ${spoolPath} && sudo chown -R ${user}:${user} ${spoolPath}
+
 		#
 		# Run the SGE the master node and the execd daemons 
 		# 
@@ -300,10 +316,15 @@ class Sge {
 		assert root, "Variable 'root' cannot be empty"
 		assert cell, "Variable 'cell' cannot be empty"
 
+        def user = session.conf.userName
+
 		"""\
+        # Create spool directory
+        [ ! -d ${spoolPath} ] && sudo mkdir -p ${spoolPath} && sudo chown -R ${user}:${user} ${spoolPath}
+
 		#
 		#  Install the 'execd' on worker nodes
-		# 
+		#
 		export SGE_ROOT="${root}"
 		cd "${root}"
 		./inst_sge -x -auto ${root}/sge.conf
@@ -337,8 +358,9 @@ class Sge {
 		SGE_ENABLE_SMF="false"
 		CELL_NAME="${cell}"
 		ADMIN_USER="${adminUser}"
-		QMASTER_SPOOL_DIR="${root}/${cell}/spool/qmaster"
-		EXECD_SPOOL_DIR="${root}/${cell}/spool"
+		EXECD_SPOOL_DIR="${spoolPath}"
+		QMASTER_SPOOL_DIR="${spoolPath}/qmaster"
+		EXECD_SPOOL_DIR_LOCAL="${spoolPath}/execd"
 		GID_RANGE="20000-20100"
 		SPOOLING_METHOD="classic"
 		DB_SPOOLING_SERVER="none"
@@ -347,7 +369,7 @@ class Sge {
 		ADMIN_HOST_LIST="${nodes}"
 		SUBMIT_HOST_LIST="${nodes}"
 		EXEC_HOST_LIST="${nodes}"
-		EXECD_SPOOL_DIR_LOCAL="${root}/${cell}/spool/exec_spool_local"
+
 		HOSTNAME_RESOLVING="true"
 		SHELL_NAME="ssh"
 		COPY_COMMAND="scp"
