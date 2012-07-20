@@ -41,7 +41,7 @@ import static com.google.common.base.Preconditions.checkNotNull
 
 @Slf4j
 @Operation("exports")
-class ProfileExports implements ConfHolder {
+class ProfileExportsOp implements ConfHolder {
 
     // holds the environment variables to be exported
     def exports = [:]

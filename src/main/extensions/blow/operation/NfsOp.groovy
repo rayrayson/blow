@@ -41,7 +41,7 @@ import groovy.util.logging.Slf4j
 @Mixin(PromptHelper)
 @Mixin(BlockStorageHelper)
 @Operation("nfs")
-class Nfs {
+class NfsOp {
 
 	/**
 	 * The volume ID of a Block Store to be mounted
@@ -202,11 +202,6 @@ class Nfs {
             return
         }
 
-
-        def question = "The volume ${volumeId} is going be DELETED. Do you confirm the deletion?"
-        if( promptYesOrNo(question) != 'y' ) {
-            return
-        }
 
         /*
          * Delete the volume

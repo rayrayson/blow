@@ -124,7 +124,7 @@ class BlowConfigTest extends Specification {
 			image << [ "1234", "def-image" ]
 			type << [ "micro.1", "def-type" ]
 			user << [ "illo", System.getProperty("user.name") ]
-			operations << [ [ "TracePlugin", "Nfs", "Sge" ], [ "Hosts" ]]
+			operations << [ [ "TracePlugin", "NfsOp", "SgeOp" ], [ "HostnameOp" ]]
 			
 			
 	}
@@ -151,21 +151,21 @@ class BlowConfigTest extends Specification {
 
 		expect: 		
 			// first operation
-			"Hostname" == conf.operations.get(0).getClass().getSimpleName()
+			"HostnameOp" == conf.operations.get(0).getClass().getSimpleName()
 			
 			// second operation
-			"Nfs" ==  conf.operations.get(1).getClass().getSimpleName()
+			"NfsOp" ==  conf.operations.get(1).getClass().getSimpleName()
 			"/scratch" == conf.operations.get(1).path
 			"/dev/sdx" == conf.operations.get(1).device
 
 			// third operation
-			"Nfs" ==  conf.operations.get(2).getClass().getSimpleName()
+			"NfsOp" ==  conf.operations.get(2).getClass().getSimpleName()
 			"/data" == conf.operations.get(2).path
 			"/dev/sdh" == conf.operations.get(2).device
 			"vol-8814f7e4" == 	 conf.operations.get(2).volumeId
 
 			// fourth operation
-			"Sge" ==  conf.operations.get(3).getClass().getSimpleName()
+			"SgeOp" ==  conf.operations.get(3).getClass().getSimpleName()
 			"/scratch/sge6" == conf.operations.get(3).root
 
 	} 
@@ -306,6 +306,13 @@ class BlowConfigTest extends Specification {
         expect:
         BlowConfig.getClusterNames(CONF) == ['c','g']
 
+    }
+
+    public void testGetPortsArray() {
+        expect:
+        BlowConfig.getPortsArrays( '80' ) == [80]
+        BlowConfig.getPortsArrays( '80,81,8080' ) == [80,81,8080]
+        BlowConfig.getPortsArrays( '80,81,90-94,8080,9000-9003' ) == [80,81,90,91,92,93,94,8080,9000,9001,9002,9003]
     }
 
 

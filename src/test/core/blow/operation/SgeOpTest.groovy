@@ -22,18 +22,19 @@ package blow.operation
 import spock.lang.Specification
 import blow.BlowConfig
 
-class SgeTest extends Specification {
+class SgeOpTest extends Specification {
 
 
 
 	public void testGetConfString() {
         when:
-		def sge = new Sge()
+		def sge = new SgeOp()
 		sge.clusterName = "test"
 		sge.nodes = "xxx"
 		sge.root = "/opt/sge_root"
 		sge.qmasterPort = "1234"
 		sge.execdPort = "4321"
+        sge.spoolPath = "/var/sge/spool"
 		def conf = sge.confTemplate()
 		
 
@@ -44,26 +45,30 @@ class SgeTest extends Specification {
 		conf.contains("SGE_EXECD_PORT=\"4321\"")
 		conf.contains("CELL_NAME=\"default\"")
 		conf.contains("ADMIN_USER=\"\"")
-		conf.contains("QMASTER_SPOOL_DIR=\"/opt/sge_root/default/spool/qmaster\"")
-		conf.contains("EXECD_SPOOL_DIR=\"/opt/sge_root/default/spool\"")
+		conf.contains("QMASTER_SPOOL_DIR=\"/var/sge/spool/qmaster\"")
+		conf.contains("EXECD_SPOOL_DIR=\"/var/sge/spool\"")
+        conf.contains("EXECD_SPOOL_DIR_LOCAL=\"/var/sge/spool/execd\"" )
 
 	}
 	
 	public void testMasterScript () {
 
         when:
-		def sge = new Sge();
-		sge.root = "/some/path"
-		sge.cell = "alpha"
+		def sge = new SgeOp();
+		sge.root = '/some/path'
+		sge.cell = 'alpha'
+        sge.user = 'goofy'
+        sge.spoolPath = '/hola'
 		def script = sge.scriptInstallMaster()
 
         then:
-		script .contains( "/some/path/alpha/common/settings.sh" )
+        script .contains( '/some/path/alpha/common/settings.sh' )
+        script .contains( '[ ! -d /hola ] && sudo mkdir -p /hola && sudo chown -R goofy:wheel /hola' )
 	}
 	
 	public void testScriptDownloadAndCompile() {
 		when:
-        def sge = new Sge()
+        def sge = new SgeOp()
 		sge.root = "/my-root"
 		sge.sourcesTarball = "file.to.download"
 		def script = sge.scriptDownloadAndCompile()
@@ -76,7 +81,7 @@ class SgeTest extends Specification {
 
     public void testScriptDowloadBinaries() {
 		when:
-        def sge = new Sge()
+        def sge = new SgeOp()
 		sge.root = "/my-root"
 		sge.binaryZipFile = "install.zip"
 		def script = sge.scriptDownloadBinaries()
@@ -92,7 +97,7 @@ class SgeTest extends Specification {
         // missing 'root' installation path
         // exception thrown
         when:
-        new Sge(root: "").validation()
+        new SgeOp(root: "").validation()
 
         then:
         thrown( AssertionError )
@@ -102,7 +107,7 @@ class SgeTest extends Specification {
     public void "test validation FAIL 2"() {
 
         when:
-        new Sge(execdPort: "alpha").validation()
+        new SgeOp(execdPort: "alpha").validation()
 
         then:
         thrown( AssertionError )
@@ -112,7 +117,7 @@ class SgeTest extends Specification {
     public void "test validation FAIL 3"() {
 
         when:
-        new Sge(qmasterPort: "alpha").validation()
+        new SgeOp(qmasterPort: "alpha").validation()
 
         then:
         thrown( AssertionError )
@@ -122,7 +127,7 @@ class SgeTest extends Specification {
     public void "test validation FAIL 4"() {
 
         when:
-        new Sge( cell: null ).validation()
+        new SgeOp( cell: null ).validation()
 
         then:
         thrown( AssertionError )
@@ -132,7 +137,7 @@ class SgeTest extends Specification {
     public void "test validation FAIL 5"() {
         // missing clusterName, exception thrown
         when:
-        new Sge( clusterName: "").validation()
+        new SgeOp( clusterName: "").validation()
 
         then:
         thrown( AssertionError )
@@ -141,7 +146,7 @@ class SgeTest extends Specification {
 
     public void testValidationOK() {
         when:
-        new Sge().validation(new BlowConfig(size:2))
+        new SgeOp().validation(new BlowConfig(size:2))
 
         then:
         notThrown( AssertionError )
@@ -152,20 +157,23 @@ class SgeTest extends Specification {
 	public void testWorkerScript () {
 
         when:
-		def sge = new Sge();
-		sge.root = "/some/path"
-		sge.cell = "beta"
+		def sge = new SgeOp();
+		sge.root = '/some/path'
+		sge.cell = 'beta'
+        sge.user = 'goofy'
+        sge.spoolPath = '/hola'
 		def script = sge.scriptInstallWorker()
 
         then:
-		script .contains( "/some/path/beta/common/settings.sh" )
+		script .contains( '/some/path/beta/common/settings.sh' )
+        script .contains( '[ ! -d /hola ] && sudo mkdir -p /hola && sudo chown -R goofy:wheel /hola' )
 	}
 
 
 	public void testScriptSshConf() {
 
         when:
-		def sge = new Sge();
+		def sge = new SgeOp();
 		def script = sge.scriptSshConf()
 
         then:

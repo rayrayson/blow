@@ -19,7 +19,8 @@ PIPEDB2=$PIPENAME\_common
 PIPEHOME=$HOME/grape/pipelines/$PIPENAME
 
 
-# Install required dependencies 
+# Install required dependencies
+yum install -y svn cyrus-sasl-md5 
 yum install -y wget R R-devel cmake mysql mysql-devel mysql-server cpan
 yum install -y python-setuptools python-setuptools-devel
 easy_install virtualenv

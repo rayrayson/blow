@@ -1,3 +1,13 @@
+2012-07-20, version 0.6.3
+- New fcp command to upload/download data command based on Fast Data Transfer - http://monalisa.cern.ch/FDT/
+- New 'inbound-ports' configurtation property
+- New key-pair management commands
+- Added SGE local spool configuration option
+
+2012-06-14, version 0.6.2
+- Added 'spool-dir' configuration attribute to SGE configuration
+- Fixed issue on Gluster volume format
+
 2012-06-07, version 0.6.1
 - Added support for Amazon provided KeyPair
 - Fixed issue on 3Cmd op

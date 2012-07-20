@@ -64,7 +64,7 @@ class NodesInfoCommand  {
             return
         }
 
-		session.printNodeInfo( node.getProviderId() )
+		println session.getNodeInfoString( node.getProviderId() )
 	}
 
 
@@ -72,7 +72,7 @@ class NodesInfoCommand  {
     public void masterinfo() {
         def nodeId = session.getMasterMetadata()?.getProviderId()
         if( nodeId ) {
-            session.printNodeInfo( nodeId )
+            println session.getNodeInfoString( nodeId )
         }
         else {
             println "(no master node info available)"

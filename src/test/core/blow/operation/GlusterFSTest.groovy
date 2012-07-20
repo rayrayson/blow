@@ -29,7 +29,7 @@ class GlusterFSTest extends Specification {
 
     def "test getInstallScript" () {
         when:
-        def gluster = new GlusterFS()
+        def gluster = new GlusterFSOp()
         def expected = """\
         # Install required dependencies
         yum -y install wget fuse fuse-libs
@@ -52,7 +52,7 @@ class GlusterFSTest extends Specification {
 
     def "test getConfMaster" () {
         setup:
-        def gluster = new GlusterFS()
+        def gluster = new GlusterFSOp()
         def expected = """\
         # Start the Gluster daemon
         service glusterd start
@@ -81,7 +81,7 @@ class GlusterFSTest extends Specification {
 
     def "test getConfMaster with ebs vol" () {
         setup:
-        def gluster = new GlusterFS()
+        def gluster = new GlusterFSOp()
         def expected = """\
         # Start the Gluster daemon
         service glusterd start
@@ -112,7 +112,7 @@ class GlusterFSTest extends Specification {
     def "test getConfClient" () {
 
         setup:
-        def gluster = new GlusterFS()
+        def gluster = new GlusterFSOp()
         def expected = """\
         modprobe fuse
 
@@ -137,7 +137,7 @@ class GlusterFSTest extends Specification {
 
     def "test getBlockStorageMount with device" () {
         setup:
-        def gluster = new GlusterFS( device: "/dev/sdh", blockStorageMountPath: "/mnt/sdh" )
+        def gluster = new GlusterFSOp( device: "/dev/sdh", blockStorageMountPath: "/mnt/sdh" )
 
 
         when:
@@ -158,7 +158,7 @@ class GlusterFSTest extends Specification {
 
     def "test getBlockStorageMount (no device)" () {
         setup:
-        def gluster = new GlusterFS( )
+        def gluster = new GlusterFSOp( )
 
         expect:
         gluster.getBlockStorageMount() == ""

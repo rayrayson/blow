@@ -30,7 +30,7 @@ import blow.util.TraceHelper
  */
 
 @Operation("run-script")
-class RunScript {
+class RunScriptOp {
 
     /** The file containing the shell script to run on the remote nodes */
     @Conf

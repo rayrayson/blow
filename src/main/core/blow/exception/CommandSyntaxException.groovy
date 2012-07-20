@@ -17,37 +17,14 @@
  *   along with Blow.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package blow.command
+package blow.exception
 
-import blow.BlowSession
-import blow.shell.Cmd
+import groovy.transform.InheritConstructors
 
-class PutFilesCommand  {
-
-    def BlowSession session
-    
-    @Cmd(
-        summary="Copy a file to the remote hostname",
-        usage='usage: put <local filename> [<targetHost path>]')
-	public void put( String fLocal, String fTarget ) {
-
-		if( !fLocal ) {
-			println "usage: put <local filename> [<targetHost path>]"
-			return 
-		}
-		
-		File sourcePath = new File(fLocal)
-		String targetPath = fTarget ?: sourcePath.getName()
-		
-		if( !sourcePath.exists() ) {
-			println "error: the specified file does not exist"	
-			return
-		}
-		
-		session.copyToNodes(sourcePath, targetPath)
-
-	}
-
-
-
+/**
+ *
+ *  @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
+ */
+@InheritConstructors
+class CommandSyntaxException extends RuntimeException {
 }

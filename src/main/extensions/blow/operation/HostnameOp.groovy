@@ -37,7 +37,7 @@ import blow.BlowSession
  */
 @Slf4j
 @Operation("hostname")
-class Hostname {
+class HostnameOp {
 
 	
 	@Subscribe
@@ -83,7 +83,7 @@ class Hostname {
 			   msg +=  "OK"
 		   }
 
-           Hostname.log.debug msg
+           HostnameOp.log.debug msg
 	   }
 		
 	}

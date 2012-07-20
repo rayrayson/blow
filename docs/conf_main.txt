@@ -98,6 +98,9 @@ Currently the following attributes can be defined in the ``blow.conf`` file (the
 
 * ``user-name``: The user name to log-in the remote nodes. If this value is not specified, the current logged user name will be used.
 
+* ``create-user``: Set this value to ``true`` to force the creation of a user account defined by the property ``user-name``. If set
+  to ``false`` the user name specified b the above property is must exist.
+
 * ``private-key``: The SSH *private* key file to access the remote nodes. If this value is not specified, the private key defined
   in the path ``$HOME/.ssh/id_rsa`` will be used. If this file does not exist, a new key-pair in the current directory will be created.   
 
@@ -105,12 +108,33 @@ Currently the following attributes can be defined in the ``blow.conf`` file (the
   the public key defined in the path ``$HOME/.ssh/id_rsa.pub`` will be used. If this file does not exist, 
   a new key-pair in the current directory will be created.   
 
+* ``key-pair``: The AWS Key-Pair used to authenticate user access to the remote notes
+
+* ``inbound-ports``: The port to be opened in the remote nodes. It could be a single value, a comma separated list of
+  ports, or a range in the form ``n-m`` (from the port number ``n`` to the number ``m`` included). For example: ``22,80`` will open
+  the ports 22 and 80, ``22,9000-9005`` will open the ports 22, 9000 up to 9005.
+
+.. note::
+  The ``inbound-ports`` MUST always contain the port 22 used by the SSH service as well as the port used by the
+  Fast Data Transfer application (see below).
+
+* ``fdt-port``: The port used by the FDT application (default: 50000)
+
+* ``security-id``: The ID number of the AWS security group to be applied to the created nodes.
+
+.. important::
+  This property overrides the firewall configuration defined by the property ``inbound-ports``, so
+  if you use both of them the latter will be discarded.
+
+
 * ``operations``: The list of *Blow* operations to be applied in this cluster definition.
   
 .. _`AWS Security Credential`: https://aws-portal.amazon.com/gp/aws/securityCredentials#access_credentials
 .. _`AWS Regions and Availability Zones`: http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html
 .. _`Amazon Machine Images`: https://aws.amazon.com/amis
 .. _`EC2 Instance Types`: http://aws.amazon.com/ec2/instance-types/
+
+
 
 Configuration example
 ---------------------

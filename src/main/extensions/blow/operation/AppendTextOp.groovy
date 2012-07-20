@@ -38,7 +38,7 @@ import org.jclouds.scriptbuilder.domain.AppendFile
 
 @Slf4j
 @Operation("append")
-class AppendText {
+class AppendTextOp {
 
     @Conf String text;
     @Conf String file;
@@ -53,7 +53,7 @@ class AppendText {
         if( text == null ) text = "";
 
         if( sourceFile && sourceFile.exists() ) {
-            blow.operation.AppendText.log.debug("Reading file: '$sourceFile'")
+            AppendTextOp.log.debug("Reading file: '$sourceFile'")
             text += "\n" + sourceFile.text
         }
 

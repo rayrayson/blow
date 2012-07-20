@@ -30,7 +30,7 @@ class AppendTextTest extends Specification {
     def "test validation fail" () {
 
         when:
-        new AppendText().validate()
+        new AppendTextOp().validate()
 
         then:
         thrown( AssertionError )
@@ -39,7 +39,7 @@ class AppendTextTest extends Specification {
     def "test validation fail 2" () {
 
         when:
-        new AppendText(to: "~/file" ).validate()
+        new AppendTextOp(to: "~/file" ).validate()
 
         then:
         thrown( AssertionError )
@@ -51,7 +51,7 @@ class AppendTextTest extends Specification {
          * the validator have to raise an exception when the specified file not exist
          */
         when:
-        new AppendText(file: "/some/file" , to: "~/file" ).validate()
+        new AppendTextOp(file: "/some/file" , to: "~/file" ).validate()
 
         then:
         thrown( AssertionError )
@@ -61,7 +61,7 @@ class AppendTextTest extends Specification {
     def "test validation OK" () {
 
         when:
-        new AppendText(text: "content" , to: "~/file" ).validate()
+        new AppendTextOp(text: "content" , to: "~/file" ).validate()
 
         then:
         notThrown( AssertionError )
@@ -76,7 +76,7 @@ class AppendTextTest extends Specification {
         * But we know that the ones below exists
         */
         when:
-        new AppendText(file: "./src/test/extensions/blow/Command1.groovy" , to: "~/file" ).validate()
+        new AppendTextOp(file: "./src/test/extensions/blow/Command1.groovy" , to: "~/file" ).validate()
 
         then:
         notThrown( AssertionError )

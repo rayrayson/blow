@@ -41,7 +41,7 @@ import blow.BlowSession
  */
 @Operation("s3cmd")
 @Slf4j
-class S3cmd {
+class S3cmdOp {
 
     @Conf String accessKey
     @Conf String secretKey

@@ -42,7 +42,7 @@ import org.jclouds.ec2.domain.Attachment
 @Mixin(PromptHelper)
 @Mixin(BlockStorageHelper)
 @Operation('volume')
-class EbsVolume {
+class EbsVolumeOp {
 
     /**
      * The volume ID of a Block Store to be mounted

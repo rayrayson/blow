@@ -60,7 +60,8 @@ import util.TypesafeConfigTest;
 
     AppendTextTest.class,
 	NfsTest.class,
-	SgeTest.class,
+	SgeOpTest.class,
+    AwsCredetentialsOpTest.class,
     PilotHelpTest.class,
 
 	OperationFactoryTest.class,

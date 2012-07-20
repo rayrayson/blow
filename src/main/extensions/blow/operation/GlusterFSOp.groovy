@@ -41,7 +41,7 @@ import groovy.util.logging.Slf4j
 @Mixin(PromptHelper)
 @Mixin(BlockStorageHelper)
 @Operation("glusterfs")
-class GlusterFS {
+class GlusterFSOp {
 
     private static final RUN_AS_ROOT = true
 
@@ -335,10 +335,16 @@ class GlusterFS {
 
         assert blockStorageMountPath
 
-        """\
-        # Format the EBS volume if required
-        mkfs.ext3 ${device}; sleep 1
+        def script = ""
+        if( needFormatVolume ) {
+            script = """\
+            # Format the EBS volume if required
+            mkfs.ext3 ${device}; sleep 1
+            """
+            .stripIndent()
+        }
 
+        script += """\
         # Mount the EBS volume if required
         [ ! -e ${blockStorageMountPath} ] && mkdir -p ${blockStorageMountPath}
         [ -f ${blockStorageMountPath} ] && echo "The path to be mounted must be a directory. Make sure the following path is NOT a file: '${blockStorageMountPath}'" && exit 1

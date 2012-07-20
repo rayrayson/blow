@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>blow</groupId>
   <artifactId>blow</artifactId>
-  <version>0.6.1</version>
+  <version>0.6.3</version>
 
   <dependencies>
   	<dependency>
@@ -71,7 +71,7 @@
     <dependency>
         <groupId>net.schmizz</groupId>
         <artifactId>sshj</artifactId>
-         <version>0.8.0</version>
+         <version>0.8.1</version>
     </dependency>
 
 	<!-- required by sshj - scp/ssh compression  -->
@@ -92,13 +92,13 @@
         <artifactId>jansi</artifactId>
         <version>1.8</version>
     </dependency>
-  	
-    <dependency>
-      <groupId>org.spockframework</groupId>
-      <artifactId>spock-core</artifactId>
-      <version>0.6-groovy-1.8</version>
-      <scope>test</scope>
-    </dependency>    
+
+      <dependency>
+          <groupId>org.spockframework</groupId>
+          <artifactId>spock-core</artifactId>
+          <version>0.6-groovy-1.8</version>
+          <scope>test</scope>
+      </dependency>
 
   </dependencies>
 </project>

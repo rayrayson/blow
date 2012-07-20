@@ -26,7 +26,7 @@ public class NfsTest extends Specification {
 
 	public void testMasterTemplate() {
         when:
-        def nfs = new Nfs()
+        def nfs = new NfsOp()
         nfs.masterHostname = "xxx"
 		nfs.device = "/dev/abc"
 		nfs.volumeId = "vol-999"
@@ -45,7 +45,7 @@ public class NfsTest extends Specification {
     public void testMasterTemplate2 () {
 
         when:
-        def nfs = new Nfs()
+        def nfs = new NfsOp()
         nfs.masterHostname = "xxx"
         nfs.device = "/dev/abc"
         nfs.volumeId = "vol-999"
@@ -62,7 +62,7 @@ public class NfsTest extends Specification {
 	public void testWorkerTemplate() {
 
         when:
-        def nfs = new Nfs()
+        def nfs = new NfsOp()
 		nfs.masterHostname = "xxx"
 		nfs.device = "/dev/abc"
 		nfs.volumeId = "vol-999"
@@ -76,7 +76,7 @@ public class NfsTest extends Specification {
 
     public void "test validation FAIL"() {
         when:
-        new Nfs().validate()
+        new NfsOp().validate()
 
         then:
         thrown(AssertionError)
@@ -84,7 +84,7 @@ public class NfsTest extends Specification {
 
     public void "test validation OK"() {
         when:
-        new Nfs( path: "/folder" ).validate()
+        new NfsOp( path: "/folder" ).validate()
 
         then:
         notThrown(AssertionError)

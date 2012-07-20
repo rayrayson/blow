@@ -38,8 +38,12 @@ import org.jclouds.compute.ComputeServiceContext
 import org.jclouds.compute.ComputeServiceContextFactory
 import org.jclouds.compute.options.TemplateOptions
 import org.jclouds.compute.reference.ComputeServiceConstants
+import org.jclouds.ec2.EC2Client
+import org.jclouds.ec2.services.KeyPairClient
+import org.jclouds.ec2.services.SecurityGroupClient
 import org.jclouds.enterprise.config.EnterpriseConfigurationModule
 import org.jclouds.logging.slf4j.config.SLF4JLoggingModule
+import org.jclouds.scriptbuilder.domain.OsFamily
 import org.jclouds.scriptbuilder.domain.Statement
 import org.jclouds.scriptbuilder.statements.login.AdminAccess
 import org.jclouds.sshj.config.SshjSshClientModule
@@ -54,6 +58,7 @@ import java.util.concurrent.*
 import static com.google.common.base.Predicates.not
 import static org.jclouds.compute.predicates.NodePredicates.TERMINATED
 import static org.jclouds.compute.predicates.NodePredicates.inGroup
+import blow.exception.BlowConfigException
 
 /**
  * Base session initializer
@@ -83,6 +88,16 @@ class BlowSession {
 	
 	@Lazy
 	private BlockStorage blockstore = new BlockStorage(context,conf)
+
+    @Lazy
+    private SecurityGroupClient securityGroupClient = {
+        (context.getProviderSpecificContext().getApi() as EC2Client) .getSecurityGroupServices()
+    }()
+
+    @Lazy
+    private KeyPairClient keyPairClient = {
+        (context.getProviderSpecificContext().getApi() as EC2Client) .getKeyPairServices()
+    } ()
 
 	/*
 	 * The thread pool to handle ssh upload / download 
@@ -129,7 +144,7 @@ class BlowSession {
 
 		/*
 		 * create the event bus for the operation system
-		 * and register all the plugins
+		 * and register all the operations
 		 */
 		eventBus = new OrderedEventBus()
 		conf.operations.each {
@@ -139,8 +154,8 @@ class BlowSession {
 	} 
 
     /** Only for test */
-    protected BlowSession() {
-
+    protected BlowSession( BlowConfig config = new BlowConfig()) {
+        this.conf = config
     }
 
 
@@ -225,10 +240,32 @@ class BlowSession {
         }
         dirty = true
 
+        /*
+         * Verify the specified key-pair exists (if any)
+         */
+        if( conf.keyPair ) {
+            log.debug("Check key-pair '${conf.keyPair}' existance")
+            def result = keyPairClient.describeKeyPairsInRegion(conf.regionId,conf.keyPair)?.find()
+            if( !result ) {
+                throw new BlowConfigException("The specified key-pair '${conf.keyPair}' does not exist in region '${conf.regionId}'")
+            }
+        }
+
+
 		/*
 		 * send the cluster create event
 		 */
 		postEvent( new OnBeforeClusterStartEvent(session: this, clusterName: clusterName) )
+
+        /*
+         * Delete previously created security-group with the same name
+         *
+         * Since if a security group, with the specified props is NOT created, if already
+        *  exists another group with the same name, delete it already exists
+         */
+        def securityToClear = "jclouds#${clusterName}#${conf.regionId}"
+        log.debug "Cleating security group: '${securityToClear}'"
+        securityGroupClient.deleteSecurityGroupInRegion( conf.regionId, securityToClear )
 
 		/*
 		 * Get the compute service
@@ -314,6 +351,10 @@ class BlowSession {
         // set the security group id
         if( conf.securityId ) {
             template.getOptions().as(AWSEC2TemplateOptions).securityGroupIds(conf.securityId)
+        }
+        else {
+            int[] ports = BlowConfig.getPortsArrays ( conf.inboundPorts )
+            template.getOptions().inboundPorts(ports)
         }
 
 		/*
@@ -479,9 +520,11 @@ class BlowSession {
 		
 		
 		def whichNodes = filter ?: filterAll()
-		def response = context.getComputeService().runScriptOnNodesMatching(whichNodes, script, opt)
-		
-		return checkForValidResponse(response)
+		def responses = context.getComputeService().runScriptOnNodesMatching(whichNodes, script, opt)
+
+        logExecResponse(script, responses)
+
+		return checkForValidResponse(responses)
 	}
 	
 	/**
@@ -511,14 +554,15 @@ class BlowSession {
         def nodesFilter = filter ?: filterAll()
         def response = context.getComputeService().runScriptOnNodesMatching(nodesFilter, statement, opt)
 
-        return checkForValidResponse(response)
+        logExecResponse(script, responses)
 
+        return checkForValidResponse(response)
     }
 	
 	/**
 	 * Givan a map of response check if ALL are OK (exitcode == 0)
 	 * <p>
-	 * It will also update the 'response' map. The user can access it to know more abot the errors raised
+	 * It will also update the 'response' map. The user can access it to know more about the errors raised
 	 * 
 	 * @param mapOfResponses
 	 * @return <code>true</code> if all responses contain a 0 as exit code, <code>false</code> otherwise
@@ -556,27 +600,31 @@ class BlowSession {
 		
 	}  
 	
-	def void printNodeInfo( String istanceId ) {
-	
-		def node = compute.getNodeMetadata(istanceId);
-		println "+ ID: " + node.getId()
-		println "+ Name: " + node.getName()
-		println "+ Provider ID: " + node.getProviderId()
-		println "+ Type: " + node.getType()
-		println "+ Credential: " + node.getCredentials()
-		println "+ Group: " + node.getGroup()
-		println "+ Hardware: " + node.getHardware();
-		println "+ Hostname: " + node.getHostname();
-		println "+ Imageid: " + node.getImageId()
-		println "+ LoginPort: " + node.getLoginPort()
-		println "+ OS: " + node.getOperatingSystem()
-		println "+ Private addr: " + node.getPrivateAddresses()
-		println "+ Public addr: " + node.getPublicAddresses()
-		println "+ State: " + node.getState()
-		println "+ Tags: " + node.getTags().join("; ")
-		println "+ Metadata: " + node.getUserMetadata()
-		println "+ Uri: " + node.getUri()
-		println "+ Location: " + node.getLocation()
+	def getNodeInfoString( String instanceId ) {
+
+        def node = compute.getNodeMetadata(instanceId);
+
+        def result = new StringBuilder()
+        result << "+ ID: " << node.getId()
+		result << "\n+ Name: " << node.getName()
+		result << "\n+ Provider ID: " <<  node.getProviderId()
+		result << "\n+ Type: " <<  node.getType()
+		result << "\n+ Credential: " <<  node.getCredentials()
+		result << "\n+ Group: " << node.getGroup()
+		result << "\n+ Hardware: " << node.getHardware();
+		result << "\n+ Hostname: " << node.getHostname();
+		result << "\n+ Imageid: " << node.getImageId()
+		result << "\n+ LoginPort: " << node.getLoginPort()
+		result << "\n+ OS: " + node.getOperatingSystem()
+		result << "\n+ Private addr: " << node.getPrivateAddresses()
+		result << "\n+ Public addr: " << node.getPublicAddresses()
+		result << "\n+ State: " << node.getState()
+		result << "\n+ Tags: " << node.getTags().join("; ")
+		result << "\n+ Metadata: " << node.getUserMetadata()
+		result << "\n+ Uri: " << node.getUri()
+		result << "\n+ Location: " << node.getLocation()
+
+        return result.toString()
 	}
 	
 
@@ -818,5 +866,69 @@ class BlowSession {
             return devicesMap[device] == 1
         }
     }
-	
+
+    private def instancesLogFiles = [:]
+
+
+    protected void logExecResponse( def script, Map<? extends NodeMetadata, ExecResponse> mapOfResponses ) {
+         mapOfResponses ?. each { node, response -> logExecResponse(script,node,response) }
+    }
+
+
+    /**
+     * Create a separate log file for each node.
+     *
+     * @param node
+     * @param command
+     * @param response
+     */
+    protected void logExecResponse( def command, NodeMetadata node, ExecResponse response ) {
+
+        String script = command.toString()
+        if( command instanceof Statement ) {
+            script = (command as Statement) .render(OsFamily.UNIX)
+        }
+
+        def name = "node-${node.getProviderId()}.log";
+        File file = instancesLogFiles[name]
+        if( file == null ) {
+            file = new File("logs", name)
+            instancesLogFiles[name] = file
+            if( !file.getParentFile().exists() ) {
+                file.getParentFile().mkdirs()
+            }
+
+            /*
+             * The very fist time, print out some node metadata information
+             */
+            file << '============================================================\n'
+            file << getNodeInfoString( node.getId() ) << '\n'
+            file << '============================================================\n'
+            file << '\n'
+        }
+
+
+        /*
+         * Save the executed command and the result in the log file
+         */
+
+        file << '\n==(run)=='
+        file << '\n' << script
+
+        // print the exit code
+        file << "\n\n-- exit: ${response.exitCode}"
+
+        // the returned standard output
+        if( response.output ) {
+            file << "\n-- out :\n${response.output}"
+        }
+
+        // the returned standard error
+        if( response.error) {
+            file << "\n-- err :\n${response.error}"
+        }
+        file << '\n//end\n'
+
+    }
+
 }

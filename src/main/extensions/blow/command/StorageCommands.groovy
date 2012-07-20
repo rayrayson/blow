@@ -28,6 +28,7 @@ import org.jclouds.ec2.domain.Attachment
 import org.jclouds.ec2.domain.Snapshot
 import org.jclouds.ec2.domain.Volume
 import groovy.util.logging.Slf4j
+import blow.exception.CommandSyntaxException
 
 /**
  * Shell command managing EBS volumes and snapshots
@@ -244,8 +245,7 @@ class StorageCommands  {
         final ebs = shell.session.blockStore
 
         if( !volumeId ) {
-            println "You need to specify the volume-id as command parameter"
-            return
+            throw new CommandSyntaxException('You need to specify the volume-id as command parameter')
         }
 
         def vol = ebs.findVolume(volumeId)
@@ -284,8 +284,7 @@ class StorageCommands  {
           usage='deletesnapshot snapshot-id')
     def void deletesnapshot( String snapshotId ) {
         if( !snapshotId ) {
-            println "Provide on the command line the id of the snapshot to delete."
-            return
+            throw new CommandSyntaxException('Provide on the command line the id of the snapshot to delete')
         }
 
 
@@ -304,9 +303,5 @@ class StorageCommands  {
     }
 
 
-//    dev void deleteVolume( String volumeId ) {
-//
-//        session.blockStore.deleteVolume()
-//    }
 
 }

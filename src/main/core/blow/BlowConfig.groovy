@@ -61,6 +61,12 @@ class BlowConfig {
     def Boolean createUser
     def securityId
 
+    /** Port used by Fast Data Transport (FDT) protocol */
+    def int fdtPort = 9000
+
+    /** Which port to open using the syntax: n,m,from-to */
+    def String inboundPorts
+
     /** The list of all operation defined in the configuration */
 	List operations
 
@@ -161,6 +167,17 @@ class BlowConfig {
             if( createUser == null ) createUser = true
         }
 
+        /*
+         * FDT port
+         */
+        fdtPort = getInteger(conf, 'fdt-port', 50000)
+
+        /*
+         * Inbound ports
+         */
+        inboundPorts = getString(conf, 'inbound-ports', "22,${fdtPort}")
+
+
 		/*
 		 * Fetch all the operation declared. Operations can be declared
 		 * as a single item or a list of operations configuration
@@ -250,6 +267,24 @@ class BlowConfig {
                 throw new BlowConfigException("Invalid public key file format: '$publicKeyFile'")
             }
         }
+
+        /*
+         * Validate port numbers
+         */
+        if( fdtPort < 1 || fdtPort > 65535 ) {
+            throw BlowConfigException("Invalid port number FDT service ($fdtPort)")
+        }
+
+
+        int[] ports = getPortsArrays( inboundPorts )
+        if( !( 22 in ports ) ) {
+            throw BlowConfigException("Missing SSH port (22) in declared 'inbound-ports' attribute.")
+        }
+
+        if( !( fdtPort in ports ) ) {
+            throw BlowConfigException("Missing FDT port ($fdtPort) in declared 'inbound-ports' attribute.")
+        }
+
 
         /*
          * validate operations
@@ -344,6 +379,11 @@ class BlowConfig {
         def val = conf.hasPath(key) ? conf.getString(key) : null
         return val ? Boolean.parseBoolean(val?.toLowerCase()) : defValue
     }
+
+    private Integer getInteger( Config conf, String key, Integer defValue = null ) {
+        def val = conf.hasPath(key) ? conf.getString(key) : null
+        return val && val.isInteger() ? val.toInteger() : defValue
+    }
 	
 	def getConfMap() {
 
@@ -362,6 +402,8 @@ class BlowConfig {
 		result.put("instance-type",instanceType)
         result.put("security-id",securityId ?: '--')
 		result.put("size", size)
+        result.put("inbound-ports", inboundPorts)
+        result.put("fdt-port", fdtPort)
 
 
         return result
@@ -422,6 +464,48 @@ class BlowConfig {
         }
 
         return names
+    }
+
+    /**
+     * Converts a port specification string to an array of integer.
+     * For example:
+     * <pre>
+     *     '80' --> [ 80 ]
+     *     '80,8080' --> [ 80, 8080 ]
+     *     '80,9001-9004' --> [ 80, 9001, 9002, 9003, 9004 ]
+     * </pre>
+     *
+     * @param ports
+     * @return
+     */
+    static def getPortsArrays( String ports ) {
+
+        def result = []
+
+        def items = ports.split(',')
+        items .each {
+
+            if( it.isInteger() ) {
+                result.add(it.toInteger())
+            }
+            else if( it .contains('-') ) {
+                def pair = it.split('-')
+                if( !pair || pair.length !=2 || !pair[0].isInteger() || !pair[1].isInteger() ) {
+                    log.warn("Invalid TCP ports range: '${it}'")
+                }
+                else {
+                     result.addAll( pair[0].toInteger()..pair[1].toInteger() )
+                }
+            }
+
+            else {
+                log.warn("Invalid TCP port value: '${it}'")
+            }
+
+        }
+
+        return result as int[]
+
     }
 
 

@@ -34,7 +34,7 @@ import blow.BlowSession
  */
 @Slf4j
 @Operation("sge")
-class Sge {
+class SgeOp {
 
 	@Conf("cluster-name")
 	String clusterName = "cloud_sge"
@@ -96,6 +96,9 @@ class Sge {
       */
 	private String nodes = ""
 
+    /** The current user */
+    private String user
+
 
     @Validate
     def validation( BlowConfig config ) {
@@ -127,6 +130,10 @@ class Sge {
         // if not defined use the default spool path
         if( !spoolPath ) {
             spoolPath = "${root}/${cell}/spool"
+        }
+
+        if( !user ) {
+            user = session.conf.userName
         }
 
 		/*
@@ -172,7 +179,7 @@ class Sge {
             script = scriptDownloadBinaries()
         }
         else if( installationMode != "config" ) {
-            blow.operation.Sge.log.warn "Unknown SGE installation type: '${installationMode}'"
+            SgeOp.log.warn "Unknown SGE installation type: '${installationMode}'"
         }
 
         script += "\n" + scriptInstallMaster();
@@ -283,12 +290,12 @@ class Sge {
 		
 		assert root, "Variable 'root' cannot be empty"
 		assert cell, "Variable 'cell' cannot be empty"
-
-        def user = session.conf.userName
+        assert user, "Variable 'user' cannot be empty"
+        assert spoolPath, "Variable 'spoolPath' cannot be empty"
 
 		"""\
         # Create the spool directory
-		[ ! -d ${spoolPath} ] && sudo mkdir -p ${spoolPath} && sudo chown -R ${user}:${user} ${spoolPath}
+		[ ! -d ${spoolPath} ] && sudo mkdir -p ${spoolPath} && sudo chown -R ${user}:wheel ${spoolPath}
 
 		#
 		# Run the SGE the master node and the execd daemons 
@@ -315,12 +322,12 @@ class Sge {
 		
 		assert root, "Variable 'root' cannot be empty"
 		assert cell, "Variable 'cell' cannot be empty"
-
-        def user = session.conf.userName
+        assert user, "Variable 'user' cannot be empty"
+        assert spoolPath, "Variable 'spoolPath' cannot be empty"
 
 		"""\
         # Create spool directory
-        [ ! -d ${spoolPath} ] && sudo mkdir -p ${spoolPath} && sudo chown -R ${user}:${user} ${spoolPath}
+        [ ! -d ${spoolPath} ] && sudo mkdir -p ${spoolPath} && sudo chown -R ${user}:wheel ${spoolPath}
 
 		#
 		#  Install the 'execd' on worker nodes
@@ -348,8 +355,9 @@ class Sge {
 		assert execdPort,  "Provide a valid 'execd-port' value in the SGE configuration (6445)"
 		assert adminUser != null, "Provide the 'admin-user' in the SGE configuration (use blank to force the current user)"
 		assert nodes, "The SGE nodes cannot be empty "
+        assert spoolPath
 		assert adminEmail
-		
+
 		"""\
 		SGE_CLUSTER_NAME="${clusterName}"
 		SGE_ROOT="${root}"

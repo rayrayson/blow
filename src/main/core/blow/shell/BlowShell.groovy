@@ -19,10 +19,6 @@
 
 package blow.shell
 
-import blow.exception.BlowConfigException
-import blow.exception.IllegalShellOptionException
-import blow.exception.MissingKeyException
-import blow.exception.OperationAbortException
 import blow.util.CmdLine
 import blow.util.KeyPairBuilder
 import com.google.inject.Guice
@@ -36,6 +32,7 @@ import org.slf4j.LoggerFactory
 import java.lang.reflect.InvocationTargetException
 
 import blow.*
+import blow.exception.*
 
 /**
  * The Pilot shell runner 
@@ -508,13 +505,23 @@ class BlowShell {
                 log.warn(message,e)
             }
             catch( InvocationTargetException e ) {
-                if( e.getCause() instanceof OperationAbortException ) {
+                if( e.getCause() instanceof CommandSyntaxException ) {
+                    def show = []
+                    if( e.getCause()?.getMessage() ) { show << e.getCause().getMessage()?.trim() }
+                    def hh = cmdObj.getHelp()?.trim()
+                    if( hh ) show << hh
+
+                    println show.join('\n\n')
+                }
+                else if( e.getCause() instanceof OperationAbortException ) {
                     message = "Operation aborted: '${cmdObj.getName()}'"
+                    log.warn(message,e)
                 }
                 else {
-                   message = e.getCause()?.getMessage() ?: (e.getMessage() ?: e.toString())
+                    message = e.getCause()?.getMessage() ?: (e.getMessage() ?: e.toString())
+                    log.warn(message,e)
                 }
-                log.warn(message,e)
+
             }
             catch( Exception e ) {
                 message = e.getMessage() ?: (e.getCause()?.getMessage() ?: e.toString())
@@ -529,7 +536,7 @@ class BlowShell {
         }
 
 	}
-	
+
 	/**
 	 * Main execution method 	
 	 */

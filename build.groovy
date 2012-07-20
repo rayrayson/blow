@@ -31,6 +31,7 @@ class Build {
     def pathShellStub = "./build/launcher.stub"
     def pathMavenAntTask = "./build/maven-ant-tasks-2.1.3.jar"
     def pathOneJarTask = "./build/one-jar-ant-task-0.97.jar"
+    def pathLocalLibraries = "./lib"
 	def mainClass = "blow.shell.BlowShell"
 	def jcloudsVersion = "1.3.2"
 	def versionNumber   // defined by the property 'version' in the pom.xml
@@ -106,6 +107,11 @@ class Build {
 			fileset( refid:"libs.fileset" )
 			mapper type:"flatten"
 			}
+
+        ant.copy( todir: pathCompileLibs ) {
+            fileset( dir: pathLocalLibraries ) { include (name:'*.jar') }
+        }
+
 	}
 	
 	def copyGroovyDeps() {

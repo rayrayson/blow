@@ -125,7 +125,6 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
          */
 
         this.cli = new CliBuilder( )
-        this.cli.setFooter(cmd.description())
         this.cli.formatter.setLeftPadding(LEFT_PADDING)
 
         cli.usage = cmd?.usage() ?: getName()
@@ -183,7 +182,7 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
          * Add an help options by default if not specified
          */
         if( cli && (!cli.options.hasOption('h') && !cli.options.hasOption('help') )) {
-            def opt = new Option( 'h', 'Show the help for this commnad' )
+            def opt = new Option( 'h', 'Show the help for this command' )
             opt.setLongOpt('help')
             cli << opt
             showsDefaultHelp = true
@@ -230,9 +229,15 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
 
         if( usageStr ) {
             result.append("\n")
-            result.append("DESCRIPTION") .append("\n")
+            result.append("SYNTAX") .append("\n")
             result.append("".padLeft(LEFT_PADDING)).append(usageStr)
             result.append("\n")
+        }
+
+        if( cmd.description() ) {
+            result.append("\n")
+                .append("DESCRIPTION").append("\n")
+                .append(cmd.description()) .append('\n\n')
         }
 
         return result.toString()
