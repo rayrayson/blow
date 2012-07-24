@@ -552,11 +552,11 @@ class BlowSession {
 
 
         def nodesFilter = filter ?: filterAll()
-        def response = context.getComputeService().runScriptOnNodesMatching(nodesFilter, statement, opt)
+        def responses = context.getComputeService().runScriptOnNodesMatching(nodesFilter, statement, opt)
 
-        logExecResponse(script, responses)
+        logExecResponse(statement, responses)
 
-        return checkForValidResponse(response)
+        return checkForValidResponse(responses)
     }
 	
 	/**
