@@ -425,7 +425,7 @@ class BlowShell {
             }
             else {
                 if( names.size() == 0 ) {
-                    log.warn("The provided configuration file(s) does not contain any cluyster definition")
+                    log.warn("The provided configuration file(s) does not contain any cluster definition")
                 }
                 else {
                     log.info("Use the command 'listclusters' to view the list of available cluster definitions")

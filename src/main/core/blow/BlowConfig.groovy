@@ -148,7 +148,7 @@ class BlowConfig {
          */
         keyPair = getString(conf, "key-pair")
         if( keyPair && !privateKeyFile ) {
-            File keyFile = new File("./${keyPair}.pem")
+            File keyFile = new File("${keyPair}.pem")
             if( !keyFile.exists() ) keyFile = new File( System.properties['user.home'], ".ssh/${keyPair}.pem")
 
             if( keyFile.exists() ) {
