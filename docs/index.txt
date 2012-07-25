@@ -15,6 +15,7 @@ Contents:
    install
    tutorial
    conf_main
+   manage_credentials
    conf_nfs
    conf_gluster
    conf_sge
