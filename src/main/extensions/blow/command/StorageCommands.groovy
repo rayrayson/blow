@@ -188,7 +188,7 @@ class StorageCommands  {
             List<String> snapshotIds )
     {
 
-        def list = shell.session.blockStore.listSnapshots(snapshotIds)
+        def list = session.blockStore.listSnapshots(snapshotIds)
         if( !list ) {
             println "(no volumes found)"
             return

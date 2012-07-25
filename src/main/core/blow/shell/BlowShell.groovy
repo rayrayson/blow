@@ -455,7 +455,7 @@ class BlowShell {
                             .store()
                 }
                 else {
-                    println "Blow requires a valid asymmetric key-pair to continue. Configure them in the '${userConfigFile}' file."
+                    println "Blow requires a valid key-pair to continue. Configure them in the '${userConfigFile}' file."
                     System.exit 2
                 }
             }
