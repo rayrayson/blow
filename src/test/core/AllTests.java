@@ -47,8 +47,8 @@ import util.TypesafeConfigTest;
 
 @RunWith(Suite.class)
 @SuiteClasses({
+    BlowConfigTest.class,
     BlowSessionTest.class,
-	BlowConfigTest.class,
 	DynLoaderTest.class,
 	DynLoaderTest.class,
     DynLoaderFactoryTest.class,
@@ -58,11 +58,14 @@ import util.TypesafeConfigTest;
 
     SshCommandTest.class,
 
-    AppendTextTest.class,
-	NfsTest.class,
+    AppendTextOpTest.class,
+	NfsOpTest.class,
+    EbsVolumeOpTest.class,
 	SgeOpTest.class,
     AwsCredetentialsOpTest.class,
     PilotHelpTest.class,
+    OperationHelperTest.class,
+    OperationFactoryTest.class,
 
 	OperationFactoryTest.class,
 	ScpClientTest.class,

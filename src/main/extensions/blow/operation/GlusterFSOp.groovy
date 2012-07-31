@@ -41,7 +41,7 @@ import groovy.util.logging.Slf4j
 @Mixin(PromptHelper)
 @Mixin(BlockStorageHelper)
 @Operation("glusterfs")
-class GlusterFSOp {
+class GlusterFSOp  {
 
     private static final RUN_AS_ROOT = true
 

@@ -37,7 +37,7 @@ class KeysCommands {
 
     BlowSession session
 
-    @Cmd( description='List the key-pairs available in the current region' )
+    @Cmd( summary='List the key-pairs available in the current region' )
     def void listkeypairs ( )
     {
         def region = session.conf.regionId
@@ -55,7 +55,7 @@ class KeysCommands {
      *
      * @param keyName The name of the key to be created
      */
-    @Cmd( usage='createkeypair [options] keypair-name', description='Create a new key-pair in the current region' )
+    @Cmd( usage='createkeypair [options] keypair-name', summary='Create a new key-pair in the current region' )
     def void createkeypair( @Opt(opt='s', description='Store the key-pair in the current working directory') Boolean store, String keyName ) {
         if( !keyName ) {
             throw CommandSyntaxException('Please specified to name of the key-pair to be created')
@@ -104,7 +104,7 @@ class KeysCommands {
      * Delete the key with the provided name
      * @param keyName
      */
-    @Cmd(usage='deletekeypair keypair-name [key-pair name..]', description='Delete a key-pair from the current configured region')
+    @Cmd(usage='deletekeypair keypair-name [key-pair name..]', summary='Delete a key-pair from the current configured region')
     def void deletekeypair(List<String> keyNames) {
         if( !keyNames ) {
             throw CommandSyntaxException('Please specified to name of the key-pair to be deleted')

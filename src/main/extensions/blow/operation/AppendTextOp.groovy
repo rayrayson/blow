@@ -23,7 +23,7 @@ import blow.events.OnAfterClusterStartedEvent
 import blow.util.TraceHelper
 import com.google.common.eventbus.Subscribe
 import groovy.util.logging.Slf4j
-import org.jclouds.scriptbuilder.domain.AppendFile
+import org.jclouds.scriptbuilder.domain.Statements
 
 /**
  * This operation enable to append the content provided to each nodes in the cluster.
@@ -61,7 +61,7 @@ class AppendTextOp {
 
             def lines = []
             text.eachLine {  lines.add(it) }
-            def appender = new AppendFile(to, lines)
+            def appender = Statements.appendFile(to, lines)
             event.session.runStatementOnNodes(appender,null,rootPermission)
 
         })

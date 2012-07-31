@@ -19,16 +19,14 @@
 
 package blow.operation
 
-import org.jclouds.scriptbuilder.domain.CreateFile
-import org.jclouds.scriptbuilder.domain.StatementList
-
-import org.jclouds.scriptbuilder.domain.Statements
-import groovy.util.logging.Slf4j
-import com.google.common.eventbus.Subscribe
-
-import blow.util.TraceHelper
-import blow.events.OnAfterClusterStartedEvent
 import blow.BlowSession
+import blow.events.OnAfterClusterStartedEvent
+import blow.util.TraceHelper
+import com.google.common.eventbus.Subscribe
+import groovy.util.logging.Slf4j
+import org.jclouds.scriptbuilder.domain.CreateOrOverwriteFile
+import org.jclouds.scriptbuilder.domain.StatementList
+import org.jclouds.scriptbuilder.domain.Statements
 
 /**
  * Install and configure 's3cmd' cmd line tools 
@@ -39,9 +37,9 @@ import blow.BlowSession
  * @author Paolo Di Tommaso
  *
  */
-@Operation("s3cmd")
 @Slf4j
-class S3cmdOp {
+@Operation("s3cmd")
+class S3cmdOp  {
 
     @Conf String accessKey
     @Conf String secretKey
@@ -77,7 +75,7 @@ class S3cmdOp {
         // copy the s3 configuration file remotely
         def s3lines = [];
         s3conf().eachLine { s3lines.add(it) }
-        def s3file = new CreateFile("s3conf", s3lines);
+        def s3file = new CreateOrOverwriteFile("s3conf", s3lines);
 
         // the export path
         def export = """\

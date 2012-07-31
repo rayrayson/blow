@@ -20,11 +20,11 @@
 package blow.operation
 
 import blow.BlowConfig
+import blow.BlowSession
 import blow.events.OnAfterClusterStartedEvent
 import blow.util.TraceHelper
 import com.google.common.eventbus.Subscribe
 import groovy.util.logging.Slf4j
-import blow.BlowSession
 
 /**
  * Handles Sun Grid Engine deployment and configuration 

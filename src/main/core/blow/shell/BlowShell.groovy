@@ -415,7 +415,7 @@ class BlowShell {
 		log.debug("Using cluster: ${clusterName}")
 
         /*
-         * If not clusted has been specified try to use the default one
+         * If no cluster has been specified try to use the default one
          */
         if( !clusterName ) {
             def names = BlowConfig.getClusterNames(configObj)
@@ -434,44 +434,63 @@ class BlowShell {
             }
         }
 
-		/* 
-		 * read and validate the configuration 
-		 */
-			
-		BlowConfig config
-        while( true ) {
-            try {
-                config = new BlowConfig(configObj, clusterName)
-                config.checkValid()
-                // configuration validated -> exit from the loop
-                break
-            }
-            catch( MissingKeyException e ) {
-                def answer = prompt("The required key file: '${e.keyFile}' does not exist. Do you Blow to create it?", ['y','n'])
-                if( answer == 'y' ) {
-                    KeyPairBuilder.create()
-                            .privateKey( config.privateKeyFile )
-                            .publicKey( config.publicKeyFile )
-                            .store()
+
+        /*
+         * try to reload from disk
+         */
+        BlowConfig config
+        def serialized = clusterName ? BlowSession.read(clusterName) : null
+
+        if( serialized ) {
+            log.info "Restoring session for cluster: '${clusterName}' .. "
+        }
+
+        else {
+            /*
+            * read and validate the configuration
+            */
+
+            while( true ) {
+                try {
+                    config = new BlowConfig(configObj, clusterName)
+                    config.checkValid()
+                    // configuration validated -> exit from the loop
+                    break
                 }
-                else {
-                    println "Blow requires a valid key-pair to continue. Configure them in the '${userConfigFile}' file."
-                    System.exit 2
+                catch( MissingKeyException e ) {
+                    def answer = prompt("The required key file: '${e.keyFile}' does not exist. Do you Blow to create it?", ['y','n'])
+                    if( answer == 'y' ) {
+                        KeyPairBuilder.create()
+                                .privateKey( config.privateKeyFile )
+                                .publicKey( config.publicKeyFile )
+                                .store()
+                    }
+                    else {
+                        println "Blow requires a valid key-pair to continue. Configure them in the '${userConfigFile}' file."
+                        System.exit 2
+                    }
                 }
-            }
-            catch( BlowConfigException e ) {
-                System.err.println "Configuration error: ${e.message}"
-                return
+                catch( BlowConfigException e ) {
+                    System.err.println "Configuration error: ${e.message}"
+                    return
+                }
             }
         }
+
+
 
 		
 		/*
 		 * if OK, close the previous instance 
 		 * and create a new one for this cluster instance
 		 */
-		if( session ) session.close()
-		session = new BlowSession(config, clusterName)
+		if( session ) {
+            try { session.close() } catch( Exception e ) { log.warn("Opps .. something wrong closing session: '${session.clusterName}'", e) }
+            if( session.saveOnExit ) {
+                session.persist()
+            }
+        }
+		session = serialized ?: new BlowSession(config, clusterName)
 		
 		// set the current cluster name 
 		currentCluster = clusterName
@@ -577,7 +596,7 @@ class BlowShell {
 			execute( mainCommand.name, mainCommand.args )
 			return;
 		}
-		
+
 		/*
 		 * otherwise enter in a 'shell' loop
 		 */
@@ -603,6 +622,7 @@ class BlowShell {
 	def void close() {
 		// close the 'blow' session
 		if( session ) session.close()
+        log.trace 'After close session'
 	} 
 	
 	/**
@@ -739,6 +759,14 @@ class BlowShell {
          */
         Runtime.getRuntime().addShutdownHook {
             shell?.log?.debug "---- Finalizing ${Project.name} ----"
+            if( shell.session ) {
+                if( shell.session.saveOnExit ) {
+                    shell.session.persist()
+                }
+                else {
+                    shell.session.delete()
+                }
+            }
         }
 
         def confFileName = options?.conf ?: null
@@ -756,6 +784,7 @@ class BlowShell {
             shell.init(options.arguments(), confFileName, clusterName);
             shell.run();
             shell.close()
+            shell?.log.trace 'Closed'
         }
         catch( Exception e ) {
             shell.log.error(e.getMessage() ?: e.toString(), e)

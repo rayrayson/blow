@@ -38,7 +38,7 @@ class BlockStorageHelper {
      * @param session The current {@link BlowSession} instance
      * @throws BlowConfigException if the spanshot specified does not exist of is a status different from {@link Snapshot.Status#COMPLETED}
      */
-    static def void checkSnapshot( final String snapshotId, final BlowSession session ) {
+    static def void checkSnapshot( final String snapshotId, final BlowSession session, final Integer size = null) {
         assert session
         assert snapshotId
 
@@ -55,6 +55,12 @@ class BlockStorageHelper {
             def msg = "Cannot use snapshot '${snapshotId}' because its current status is '${snap.getStatus()}', but it should be '${Snapshot.Status.COMPLETED}'"
             throw new BlowConfigException(msg)
         }
+
+        if( size && size < snap.getVolumeSize() ) {
+            def msg = "The volume specified size ('${size} GB') is too small for the snapshot '${snapshotId}, which requires ${snap.getVolumeSize()} GB'"
+            throw new BlowConfigException(msg)
+        }
+
 
     }
 

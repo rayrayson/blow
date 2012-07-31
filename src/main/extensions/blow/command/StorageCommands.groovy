@@ -118,7 +118,7 @@ class StorageCommands  {
         list.each() { Volume vol ->
             def line = new StringBuilder()
             line.append(vol.id).append("; ")
-            line.append("${vol.size} G".padLeft(5)) .append("; ")
+            line.append("${vol.size} GB".padLeft(5)) .append("; ")
             line.append(vol.getCreateTime()?.format('yyyy-MM-dd HH:mm')) .append("; ")
             line.append(vol.getStatus()?.toString().padLeft(9) ) .append("; ")
 
@@ -200,6 +200,7 @@ class StorageCommands  {
         list.each() { Snapshot snapshot ->
             def line = new StringBuilder(snapshot.id)
                     .append("; ")
+                    .append("${snapshot.getVolumeSize()}".padLeft(3) ) .append(' GB; ')
                     .append(snapshot.getStartTime()?.format('yyyy-MM-dd HH:mm')) .append("; ")
                     .append(snapshot.getStatus()) .append("; ")
 
@@ -280,8 +281,8 @@ class StorageCommands  {
      *      The id of the snapshot to delete
      */
     @Cmd( name='deletesnapshot',
-          summary = 'Delete a AWS snapshot',
-          usage='deletesnapshot snapshot-id')
+          summary = 'Delete an AWS snapshot',
+          usage='deletesnapshot <snapshot-id>')
     def void deletesnapshot( String snapshotId ) {
         if( !snapshotId ) {
             throw new CommandSyntaxException('Provide on the command line the id of the snapshot to delete')
@@ -299,9 +300,21 @@ class StorageCommands  {
             return
         }
 
-        println "Snapshot schedueled for deletion. It can take some minutes."
+        println "Snapshot scheduled for deletion. It can take some minutes."
     }
 
+
+//
+//    @Cmd ( summary='Delete an AWS volume', usage='deletevolume <volume-id>' )
+//    def void deletevolume( String volId ) {
+//        if( !volId ) {
+//            throw new CommandSyntaxException('Specify the ID of the volume to delete')
+//        }
+//
+//
+//        session.getBlockStore().deleteVolume()
+//
+//    }
 
 
 }

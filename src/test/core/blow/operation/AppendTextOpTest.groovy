@@ -25,7 +25,7 @@ import spock.lang.Specification
  * @author Paolo Di Tommaso
  *
  */
-class AppendTextTest extends Specification {
+class AppendTextOpTest extends Specification {
 
     def "test validation fail" () {
 

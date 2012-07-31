@@ -19,6 +19,7 @@
 
 package blow
 
+import blow.operation.EbsVolumeOp
 import spock.lang.Specification
 
 /**
@@ -53,6 +54,40 @@ class BlowSessionTest extends Specification {
         session.getNextDevice() == "/dev/sdg"
         session.getNextDevice() == "/dev/sdi"
         session.getNextDevice() == "/dev/sdj"
+
+    }
+
+    def testSaveReadSession() {
+        setup:
+        def CONF =
+            """
+				access-key = abc
+				secret-key = 123
+				size = 1
+
+				my-cluster {
+					access-key = xyz
+					size = 3
+					operations = [ {volume { path: /here }} ]
+				}
+				"""
+
+        when:
+        def session = new BlowSession(new BlowConfig( CONF, "my-cluster" ), "my-cluster")
+        def file = session.persist()
+
+        // read back
+        def serializedSession =  BlowSession.read('my-cluster')
+
+        then:
+        file.exists()
+        serializedSession.confHashCode == session.conf.hashCode()
+        serializedSession.conf.operations.get(0).getClass() == EbsVolumeOp.class
+        (serializedSession.conf.operations.get(0) as EbsVolumeOp) .session. is( serializedSession )
+
+
+        cleanup:
+        file?.delete()
 
     }
 

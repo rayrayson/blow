@@ -101,7 +101,7 @@ class BlockStorage {
 	* @param size The new volume size in GB
 	* @return
 	*/
-   def createVolume( int size, String snapshotId = null ) {
+   def createVolume( Integer size, String snapshotId = null ) {
 	   
 	  Volume vol
 	  
@@ -109,7 +109,7 @@ class BlockStorage {
 	   * create a volume from the specified 'snapshot' and the specified 'size' 
 	   */
 	  if( snapshotId && size ) {
-          log.debug "Creating volume from snapshot ${snapshotId} with size $size G"
+          log.debug "Creating volume from snapshot ${snapshotId} with size $size GB"
 		  vol = ebs.createVolumeFromSnapshotInAvailabilityZone( conf.zoneId, size, snapshotId )
 	  }
 	  /*
@@ -123,11 +123,11 @@ class BlockStorage {
 	  else {
 
 		  if( !size ) {
-			  log.debug("Volume size not specified, using default value")
+			  log.debug("Volume size not specified, using default value (10 GB)")
 		  	  size = 10
 		  }
 
-          log.debug "Creating new volume with size $size G"
+          log.debug "Creating new volume with size $size GB"
 		  vol = ebs.createVolumeInAvailabilityZone( conf.zoneId, size )
 	  }
 

@@ -64,13 +64,13 @@ class NodesInfoCommand  {
             return
         }
 
-		println session.getNodeInfoString( node.getProviderId() )
+		println session.getNodeInfoString( node.getId() )
 	}
 
 
     @Cmd(summary="Shows the information details of the 'master' node")
     public void masterinfo() {
-        def nodeId = session.getMasterMetadata()?.getProviderId()
+        def nodeId = session.getMasterMetadata()?.getId()
         if( nodeId ) {
             println session.getNodeInfoString( nodeId )
         }

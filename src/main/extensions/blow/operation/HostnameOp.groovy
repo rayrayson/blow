@@ -19,15 +19,14 @@
 
 package blow.operation
 
+import blow.BlowSession
+import blow.events.OnAfterClusterStartedEvent
+import blow.util.TraceHelper
 import com.google.common.eventbus.Subscribe
 import groovy.util.logging.Slf4j
 import org.jclouds.compute.domain.NodeMetadata
 import org.jclouds.compute.options.TemplateOptions
-import org.jclouds.scriptbuilder.domain.AppendFile
-
-import blow.events.OnAfterClusterStartedEvent
-import blow.util.TraceHelper
-import blow.BlowSession
+import org.jclouds.scriptbuilder.domain.Statements
 
 /**
  * Configure the <code>/etc/hostname</code> file in each node in the cluster
@@ -37,9 +36,8 @@ import blow.BlowSession
  */
 @Slf4j
 @Operation("hostname")
-class HostnameOp {
+class HostnameOp  {
 
-	
 	@Subscribe
 	public void configureHostsFile( OnAfterClusterStartedEvent event ) {
         log.info "Configuring cluster hostname(s)"
@@ -65,7 +63,7 @@ class HostnameOp {
 	   }
 			   
 	   // uploaded to all nodes
-	   AppendFile appender = new AppendFile( "/etc/hosts", hostname)
+	   def appender = Statements.appendFile("/etc/hosts", hostname)
 
 	   def credential = session.conf.credentials
 	   def opt = TemplateOptions.Builder.overrideLoginCredentials(credential).runAsRoot(true)

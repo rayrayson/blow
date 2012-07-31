@@ -20,16 +20,20 @@
 package blow
 
 import blow.eventbus.OrderedEventBus
+import blow.exception.BlowConfigException
 import blow.exception.DirtySessionException
 import blow.exception.OperationAbortException
 import blow.ssh.ScpClient
 import blow.storage.BlockStorage
 import blow.util.InjectorHelper
 import blow.util.PromptHelper
+import blow.util.Serializable
 import com.google.common.base.Predicate
 import com.google.common.base.Predicates
 import com.google.common.collect.ImmutableSet
 import com.google.inject.Module
+import com.thoughtworks.xstream.XStream
+import com.thoughtworks.xstream.io.xml.StaxDriver
 import groovy.util.logging.Slf4j
 import org.jclouds.Constants
 import org.jclouds.aws.ec2.compute.AWSEC2TemplateOptions
@@ -58,7 +62,8 @@ import java.util.concurrent.*
 import static com.google.common.base.Predicates.not
 import static org.jclouds.compute.predicates.NodePredicates.TERMINATED
 import static org.jclouds.compute.predicates.NodePredicates.inGroup
-import blow.exception.BlowConfigException
+import com.thoughtworks.xstream.io.xml.PrettyPrintWriter
+import blow.operation.OperationHelper
 
 /**
  * Base session initializer
@@ -72,47 +77,71 @@ import blow.exception.BlowConfigException
 @Mixin(InjectorHelper)
 class BlowSession {
 
-	final ComputeServiceContext context;
-
 	final BlowConfig conf;
-	
+
 	final String clusterName
-	
-	final OrderedEventBus eventBus
-	
-	Map<String,ExecResponse> response = [:]
-    Map<String,ExecResponse> errors = [:]
-	
-	@Lazy 
-	ComputeService compute = getLazyComputeService() 
-	
-	@Lazy
-	private BlockStorage blockstore = new BlockStorage(context,conf)
+
+	transient OrderedEventBus eventBus
+
+	transient Map<String,ExecResponse> response = [:]
+
+    transient Map<String,ExecResponse> errors = [:]
+
+    transient private boolean contextCreated
 
     @Lazy
-    private SecurityGroupClient securityGroupClient = {
+	transient ComputeServiceContext context = { def ctx=createContext(conf); contextCreated=true; ctx }()
+
+	@Lazy
+    transient ComputeService compute = { context.getComputeService() }()
+	
+	@Lazy
+	transient private BlockStorage blockstore = { new BlockStorage(context,conf) } ()
+
+    @Lazy
+    transient private SecurityGroupClient securityGroupClient = {
         (context.getProviderSpecificContext().getApi() as EC2Client) .getSecurityGroupServices()
     }()
 
     @Lazy
-    private KeyPairClient keyPairClient = {
+    transient private KeyPairClient keyPairClient = {
         (context.getProviderSpecificContext().getApi() as EC2Client) .getKeyPairServices()
+    } ()
+
+
+    // note this will create a user with the same name as you on the
+    // node. ex. you can connect via ssh public ip
+    @Lazy transient private AdminAccess adminAccessScript = {
+
+        new AdminAccess.Builder()
+                .adminUsername( conf.userName )
+                .adminPublicKey( conf.publicKeyFile )
+                .adminPrivateKey( conf.privateKeyFile )
+                .build()
+
     } ()
 
 	/*
 	 * The thread pool to handle ssh upload / download 
 	 */
 	@Lazy 
-	private ExecutorService scpExecutor = new ThreadPoolExecutor(0, 20, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>())
+	transient private ExecutorService scpExecutor = new ThreadPoolExecutor(0, 20, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>())
 	
 	/**
 	 * The metadata for the master node
+     * <p>
+     * See {@link #getMasterMetadata()}
 	 */
-	private NodeMetadata masterMetadata
+	transient private NodeMetadata masterMetadata
 
     /** Mark the session dirty as soon as the cluster is created */
     private boolean dirty
 
+    private boolean saveOnExit
+
+    private int confHashCode
+
+    /** Keep the status of assigned devices */
     private def devicesMap = [
             "/dev/sdf":0,
             "/dev/sdg":0,
@@ -126,8 +155,15 @@ class BlowSession {
             "/dev/sdo":0,
             "/dev/sdp":0
     ]
-	
-	/**
+
+
+    /** Only for test */
+    protected BlowSession( BlowConfig config = new BlowConfig()) {
+        this.conf = config
+    }
+
+
+    /**
 	 * The Pilot core object creator
 	 * 
 	 * @param conf
@@ -140,24 +176,32 @@ class BlowSession {
         log.debug("Creating BlowSession for cluster: '${clusterName}'")
 		this.conf = conf;
 		this.clusterName = clusterName
-		this.context = createContext(conf)
 
-		/*
-		 * create the event bus for the operation system
-		 * and register all the operations
-		 */
-		eventBus = new OrderedEventBus()
-		conf.operations.each {
+        eventBus = new OrderedEventBus()
+        conf.operations.each { it ->
             eventBus.register(it)
             injectFields(it, [this])
         }
-	} 
 
-    /** Only for test */
-    protected BlowSession( BlowConfig config = new BlowConfig()) {
-        this.conf = config
+        // store the config object
+        this.confHashCode = conf.hashCode()
+	}
+
+    /**
+     * Managed by XStream during the de-serializaton phase
+     */
+    private Object readResolve() {
+        log.debug('XStream desialization readResolve invoke')
+        eventBus = new OrderedEventBus()
+        conf.operations.each { it ->
+            eventBus.register(it)
+            /* note: here we don't need to inject session to the operation instances because the de-serialization
+              process take care of that
+             */
+        }
+
+        return this;
     }
-
 
 	protected ComputeServiceContext createContext(BlowConfig conf) {
 		
@@ -188,10 +232,6 @@ class BlowSession {
 		return result;
 	} 
 	
-	private ComputeService getLazyComputeService() {
-		log.debug("> Getting lazy ComputeService")
-		context.getComputeService()
-	}
 
 	public BlockStorage getBlockStore() { blockstore }
 
@@ -304,20 +344,11 @@ class BlowSession {
 		 * notify the cluster creation 	
 		 */
 		postEvent( new OnAfterClusterStartedEvent(session: this, clusterName:clusterName, nodes: allNodes) )
+
+        /* Require to save this session on exit */
+        saveOnExit = true
 	}
 
-
-    // note this will create a user with the same name as you on the
-    // node. ex. you can connect via ssh public ip
-    @Lazy def private AdminAccess adminAccessScript = {
-
-        new AdminAccess.Builder()
-                .adminUsername( conf.userName )
-                .adminPublicKey( conf.publicKeyFile )
-                .adminPrivateKey( conf.privateKeyFile )
-                .build()
-
-    } ()
 
     /**
      * Start a set of nodes
@@ -367,7 +398,10 @@ class BlowSession {
 			role: role, 
 			options: template.getOptions()
 			) )
-		
+
+        log.debug "Template metadata for '${role}': " + template.getOptions()?.getUserMetadata()
+        //log.debug "Template options for '${role} == '" + template.getOptions()?.toString()
+
 		/*
 		 * Start the requested nodes
 		 */
@@ -385,7 +419,7 @@ class BlowSession {
 			) )
 	
 		/*
-		 * returns the set of metadate for the started nodes
+		 * returns the set of metadata for the started nodes
 		 */
 		return setOfNodes
 	} 
@@ -418,19 +452,23 @@ class BlowSession {
 		 * sent the complete notification
 		 */
 		postEvent( new OnAfterClusterTerminationEvent(session: this, clusterName: groupName, nodes: result) );
-		
+
+        /*
+         * When the session si terminated, it is not more require to store it
+         */
+        saveOnExit = false
+
 		return result
 	}
-	 
+
 	public NodeMetadata getMasterMetadata() {
-		if( masterMetadata ) {
-			masterMetadata
-		}
-		
-		/* try to discover it */
-		masterMetadata = context.getComputeService().listNodesDetailsMatching(filterMasterNode()).find()
-	} 
-	
+        if( !masterMetadata ) {
+            masterMetadata = context.getComputeService().listNodesDetailsMatching(filterMasterNode())?.find()
+        }
+
+        masterMetadata
+    }
+	 
 	/**
 	 * Define a predicate to filter all nodes marked by 'Role' tag a cluster. 
 	 * 
@@ -601,6 +639,8 @@ class BlowSession {
 	}  
 	
 	def getNodeInfoString( String instanceId ) {
+        assert instanceId
+        log.debug("getNodeInfoString for: ${instanceId}")
 
         def node = compute.getNodeMetadata(instanceId);
 
@@ -650,19 +690,32 @@ class BlowSession {
 	} 
 	
 	def close() {
-		if( context ) context.close()	
+        log.trace('Closing session')
+		if( contextCreated ) context?.close()
+        log.trace 'After close context'
 		if( scpExecutor ) scpExecutor.shutdown()
+        log.trace 'After shutdown executor'
 	} 
 	
 	
 	public String getConfString() {
 		
-		String result = "cluster: $clusterName\n"
-		
+		def result = new StringBuilder()
+        result <<= "cluster: $clusterName\n"
+
 		conf.getConfMap().each {
 			result <<= "${it.key}: ${it.value}\n"	
 		}
-			
+
+        if( conf.operations?.size() == 1 ) {
+            result <<= "operations [ ${OperationHelper.opToString(conf.operations[0])} ] "
+        }
+        else if( conf.operations?.size() > 1 ) {
+            result <<= "operations ["
+            conf.operations.each { result <<= "\n  " + OperationHelper.opToString(it) }
+            result <<= "\n]"
+        }
+
 		return result
 	} 
 	
@@ -931,4 +984,83 @@ class BlowSession {
 
     }
 
+    /** Define the file where read/store the sessin object */
+    def private static File sessionFile( String clusterName ) {
+        def home = new File(System.properties['user.home'], '.blow')
+        new File( home, ".blow_session.${clusterName}")
+    }
+
+    @Lazy
+    transient private static XStream xstream = {
+        def result = new XStream(new StaxDriver())
+        result.alias("session", BlowSession.class)
+        result
+    } ()
+
+    /**
+     * Save the current session to a file
+     *
+     * @return The file where the session has been persisted, of {@code null} in it cannot stored
+     */
+    def File persist() {
+        def file = sessionFile(clusterName)
+
+        try {
+            FileWriter writer = new FileWriter(file)
+            xstream.marshal(this, new PrettyPrintWriter(writer))
+            writer.close()
+
+            return file
+        }
+        catch( Exception e ) {
+            log.warn("Error saving session to file: '${file}'", e)
+        }
+
+    }
+
+    /**
+     * Read a session object from a serialized object
+     *
+     * @param clusterName The session name to restore
+     * @return A {@code BlowSession} instance
+     */
+    def static BlowSession read( String clusterName ) {
+        def file = sessionFile(clusterName)
+        if( !file.exists() ) {
+            return null
+        }
+
+        try {
+            return (BlowSession)xstream.fromXML(file)
+        }
+        catch( Exception e ) {
+            log.warn("Cannot read saved session: '${file}'", e)
+            return null
+        }
+
+    }
+
+    /**
+     * Delete a serialized session file
+     * @param clusterName The cluster name of the serialized session
+     * @return {@code true} if the serialized session file has beend delete
+     */
+    def static boolean delete( String clusterName ) {
+        def file = sessionFile(clusterName)
+        if( file.exists() ) {
+            return file.delete()
+        }
+        return false
+    }
+
+    /**
+     * Delete a serialized session file, if exist
+     * @return @{code true} if the serialized file has been deleted,
+     * or {@false } if it does not exist or cannot be deleted
+     */
+    def boolean delete() {
+        clusterName ? delete(clusterName) : false
+    }
+
 }
+

@@ -124,7 +124,7 @@ class BlowConfigTest extends Specification {
 			image << [ "1234", "def-image" ]
 			type << [ "micro.1", "def-type" ]
 			user << [ "illo", System.getProperty("user.name") ]
-			operations << [ [ "TracePlugin", "NfsOp", "SgeOp" ], [ "HostnameOp" ]]
+			operations << [ [ "TraceOp", "NfsOp", "SgeOp" ], [ "HostnameOp" ]]
 			
 			
 	}

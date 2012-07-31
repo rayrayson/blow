@@ -25,7 +25,7 @@ import spock.lang.Specification
  *
  *  @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
-class GlusterFSTest extends Specification {
+class GlusterFSOpTest extends Specification {
 
     def "test getInstallScript" () {
         when:

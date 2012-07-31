@@ -19,20 +19,16 @@
 
 package blow.operation
 
+import blow.BlowSession
 import com.google.common.eventbus.Subscribe
 import groovy.util.logging.Slf4j
-import blow.events.OnAfterClusterStartedEvent
-import blow.events.OnAfterClusterTerminationEvent
-import blow.events.OnBeforeClusterStartEvent
-import blow.events.OnBeforeClusterTerminationEvent
-import blow.events.OnAfterNodeLaunchEvent
-import blow.events.OnBeforeNodeLaunchEvent
-
+import blow.events.*
 
 @Slf4j
 @Operation("trace")
-class TracePlugin {
+class TraceOp {
 
+    BlowSession session
 
 	@Override
 	public void execute() { }
@@ -40,33 +36,33 @@ class TracePlugin {
 	
 	@Subscribe
 	public void onBeforeCreate( OnBeforeClusterStartEvent event ) {
-		blow.operation.TracePlugin.log.info(">> Before cluster create: ${event.clusterName}")
+		TraceOp.log.info(">> Before cluster create: ${event.clusterName}")
 	}
 
 	@Subscribe
 	public void onAfterCreate( OnAfterClusterStartedEvent event ) {
-		blow.operation.TracePlugin.log.info(">> After cluster create: ${event.clusterName}")
+		TraceOp.log.info(">> After cluster create: ${event.clusterName}")
 	}
 
 	
 	@Subscribe
 	public void onBeforeStart( OnBeforeNodeLaunchEvent event ) {
-		blow.operation.TracePlugin.log.info(">> Before start node(s): ${event.role}: ${event.numberOfNodes}")
+		TraceOp.log.info(">> Before start node(s): ${event.role}: ${event.numberOfNodes}")
 	}
 
 	@Subscribe
 	public void onAfterStart( OnAfterNodeLaunchEvent event ) {
-		blow.operation.TracePlugin.log.info(">> After start node(s): ${event.role}: ${event.numberOfNodes}")
+		TraceOp.log.info(">> After start node(s): ${event.role}: ${event.numberOfNodes}")
 	}
 
 	@Subscribe
 	public void onBeforeTerminate( OnBeforeClusterTerminationEvent event ) {
-		blow.operation.TracePlugin.log.info(">> Before cluster terminate: ${event.clusterName}")
+		TraceOp.log.info(">> Before cluster terminate: ${event.clusterName}")
 	}
 
 	@Subscribe
 	public void onAfterTermiante( OnAfterClusterTerminationEvent event ) {
-		blow.operation.TracePlugin.log.info(">> After cluster terminate: ${event.clusterName}")
+		TraceOp.log.info(">> After cluster terminate: ${event.clusterName}")
 	}
 	
 }

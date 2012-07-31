@@ -23,12 +23,12 @@ import com.typesafe.config.ConfigObject as ConfigObject
 
 import blow.DynLoader
 import blow.exception.BlowConfigException
-
+import blow.exception.UnknownOperationException
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValue
 import groovy.util.logging.Slf4j
-import java.lang.reflect.Field
-import blow.exception.UnknownOperationException
+
+import static OperationHelper.*
 
 /**
  * Create and initialize a operation instance
@@ -39,7 +39,7 @@ import blow.exception.UnknownOperationException
 
 @Slf4j
 class OperationFactory {
-	
+
 	/**
 	 * The custom class loader used by the operation factory
 	 */
@@ -74,8 +74,8 @@ class OperationFactory {
 	 */
 	public Object create( String name, ConfigObject conf ) {
 		assert name, "Argument 'name' cannot be null"
-		
-		Class clazz = loader.operationsClasses.find { it.getSimpleName()?.equalsIgnoreCase(name) || it.getAnnotation(Operation.class) ?.value()?.equalsIgnoreCase(name)  }
+
+		Class clazz = loader.operationsClasses.find {  name == opName(it)  }
 		if( clazz == null ) { 
 			throw new UnknownOperationException("Cannot found the definition for operation named: '${name}'")
 		}
@@ -140,7 +140,7 @@ class OperationFactory {
 		 * A config object can be an instance of:
 		 * - ConfigString: in this case the string represent the operation name and there is any configuration value for the operation
 		 * - ConfigObject: this object contains only one entry in which, the key defines the operation name and the associated value
-		 * 					MUST be a ConfigObjectdefining the option for the operation instantiation. Other value will be discarded
+		 * 	 MUST be a ConfigObject defining the option for the operation instantiation. Other value will be discarded
 		 */
 
 		
@@ -169,65 +169,6 @@ class OperationFactory {
 	}
 
 
-
-
-    /**
-     * Look out all the operation properties annotated with the 'Conf' annotation
-     *
-     * @param clazz the operation class
-     * @return a list of {@link java.lang.reflect.Field} instances, or an empty list if any field is annotated
-     */
-    static def List<Field> getConfFields( Class clazz, List<Field> fields = [] ) {
-
-        List<Field> result = clazz.getDeclaredFields().findAll { it.getAnnotation(Conf.class) }
-        fields.addAll(result);
-
-        return (clazz.getSuperclass() != Object.class)  ? getConfFields(clazz.getSuperclass(),fields) : fields
-    }
-
-    /**
-     * The configuration properties are defined by the Plugin through the 'Conf' annotation
-     * <p>
-     * This method look for all the attributes defined in the operation that need to inject with
-     * values coming from the configuration file
-     *
-     * @param clazz the operation class
-     * @return A map associating the operation properties with the relative configuration attributes.
-     * For example:
-     *
-     * <pre>
-     * class Bean {
-     *
-     *   Conf("image-id") def imageId
-     *   Conf("region-id") def regionId
-     *   Conf("zone-id") def zoneId
-     *
-     *
-     * }
-     * </pre>
-     *
-     * <pre>
-     *   [
-     *        "image-id": imageId
-     *        "region-id": regionId
-     *        "zone-id": zoneId
-     *   ]
-     * </pre>
-     */
-    static def Map<String,String> getConfProperties(Class clazz) {
-        List<Field> fields = getConfFields(clazz);
-        Map<String,String> result = [:]
-        fields.each {
-            def configName = it.getName();
-            Conf aa = it.getAnnotation(Conf.class)
-            if( aa.value() ) {
-                configName = aa.value()
-            }
-            result.putAt(configName,it.getName())
-        }
-
-        return result
-    }
 
 
 

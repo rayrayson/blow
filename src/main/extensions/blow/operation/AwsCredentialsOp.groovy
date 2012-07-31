@@ -31,9 +31,9 @@ import blow.BlowSession
  *
  *  @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
+
 @Operation('aws-credentials')
 class AwsCredentialsOp extends GenericScriptOp {
-
 
     BlowSession session
 

@@ -21,56 +21,35 @@ package blow.operation
 
 import spock.lang.*;
 
-public class NfsTest extends Specification {
+public class NfsOpTest extends Specification {
 
 
 	public void testMasterTemplate() {
         when:
         def nfs = new NfsOp()
-        nfs.masterHostname = "xxx"
-		nfs.device = "/dev/abc"
-		nfs.volumeId = "vol-999"
 		nfs.path =  "/mydata"
-		nfs.userName = "illo"
-		def tpl = nfs.scriptMaster(true)
+		def tpl = nfs.scriptMaster()
 
         then:
         tpl.contains("echo \"/mydata	*(rw,async,no_root_squash,no_subtree_check)\" >> /etc/exports")
-		tpl.contains("chown -R illo:wheel /mydata")
-		tpl.contains( "mount /dev/abc /mydata;" )
+		tpl.contains("exportfs -ra")
 
 
 	}
-
-    public void testMasterTemplate2 () {
-
-        when:
-        def nfs = new NfsOp()
-        nfs.masterHostname = "xxx"
-        nfs.device = "/dev/abc"
-        nfs.volumeId = "vol-999"
-        nfs.path =  "/mydata"
-        nfs.userName = "illo"
-        def tpl = nfs.scriptMaster(false)
-
-        then:
-        !tpl.contains( "mount /dev/abc /mydata" )
-
-    }
 
 
 	public void testWorkerTemplate() {
 
         when:
         def nfs = new NfsOp()
-		nfs.masterHostname = "xxx"
-		nfs.device = "/dev/abc"
-		nfs.volumeId = "vol-999"
+		nfs.masterHostname = "some-home-name"
 		nfs.path = "/alpha"
 		def tpl = nfs.scriptWorker()
 
         then:
-		tpl.contains("echo \"xxx:/alpha      /alpha      nfs     rw,hard,intr    0 0\" >> /etc/fstab")
+        tpl.contains('mkdir -p ')
+		tpl.contains('echo "some-home-name:/alpha      /alpha      nfs     rw,hard,intr    0 0" >> /etc/fstab')
+        tpl.contains('mount -a')
 	}
 
 

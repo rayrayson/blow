@@ -1,11 +1,8 @@
 package blow
 
 import blow.operation.Conf
-
+import blow.operation.Operation
 import blow.operation.Validate
-import blow.operation.Operation;
-
-
 
 @Operation("my-super-operation")
 class TestOperation extends TestOperationBase {
@@ -15,6 +12,7 @@ class TestOperation extends TestOperationBase {
 	@Conf("value-2") 
 	String value2;
 
+    BlowSession session
 
     @Validate
     def void validate() {

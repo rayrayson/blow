@@ -19,9 +19,9 @@
 
 package blow.operation
 
-import com.google.common.eventbus.Subscribe
 import blow.events.OnAfterClusterStartedEvent
 import blow.util.TraceHelper
+import com.google.common.eventbus.Subscribe
 
 /**
  * Run a BASH script on the remote hosts
@@ -30,7 +30,7 @@ import blow.util.TraceHelper
  */
 
 @Operation("run-script")
-class RunScriptOp {
+class RunScriptOp  {
 
     /** The file containing the shell script to run on the remote nodes */
     @Conf

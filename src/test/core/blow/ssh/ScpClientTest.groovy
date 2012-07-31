@@ -118,10 +118,11 @@ class ScpClientTest {
 		if( target.exists() ) target.delete()
 		
 		ScpClient client = new ScpClient( host:"palestine.crg.es" )
-		client.connect("ptommaso")
+		def key = new File(System.properties['user.home'], '.ssh/id_rsa')
+        client.connect("ptommaso",key)
 		
 		client.download("./s3_upload" )
 		
-		assert ( target .exists())
+		assert ( target .exists() )
 	} 
 }

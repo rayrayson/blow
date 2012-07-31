@@ -20,21 +20,20 @@
 package blow.operation
 
 import blow.BlowSession
-import com.google.common.eventbus.Subscribe
-import blow.events.OnBeforeClusterStartEvent
-import blow.exception.BlowConfigException
 import blow.events.OnAfterClusterStartedEvent
-import blow.util.TraceHelper
 import blow.events.OnAfterClusterTerminationEvent
+import blow.events.OnBeforeClusterStartEvent
 import blow.events.OnBeforeClusterTerminationEvent
-import groovy.util.logging.Slf4j
-import blow.util.PromptHelper
-import blow.util.BlockStorageHelper
+import blow.exception.BlowConfigException
 import blow.exception.OperationAbortException
-import org.jclouds.ec2.domain.Volume
-import org.jclouds.ec2.domain.Attachment
+import blow.util.BlockStorageHelper
+import blow.util.PromptHelper
+import blow.util.TraceHelper
+import com.google.common.eventbus.Subscribe
+import groovy.util.logging.Slf4j
 
 /**
+ * Handle the installation of a AWS EBS volume
  *
  *  @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
@@ -67,7 +66,7 @@ class EbsVolumeOp {
     /**
      * Size of
      */
-    @Conf Integer size = 10
+    @Conf Integer size
 
     @Conf("delete-on-termination")
     def String deleteOnTermination = "false"
@@ -80,12 +79,14 @@ class EbsVolumeOp {
     // the session is injected by the framework
     def BlowSession session
 
-    @Lazy private String masterInstanceId = { assert session; session.getMasterMetadata().getProviderId() } ()
-    @Lazy private String userName = { assert session; session.conf.userName } ()
-    @Lazy private String masterHostname = { assert session; session.getMasterMetadata().getHostname() } ()
+    def boolean quiet
 
-    private boolean needFormatVolume
+    def private boolean needFormatVolume
+    def private boolean needToDelete
+    def private boolean makeSnapshot
 
+    @Lazy transient private String masterInstanceId = { assert session; session.getMasterMetadata().getProviderId() } ()
+    @Lazy transient private String userName = { assert session; session.conf.userName } ()
 
 
     /**
@@ -96,6 +97,8 @@ class EbsVolumeOp {
         log.debug "Validating EBS configuration"
         assert path, "You need to define the 'path' attribute in the EBS volume configuration"
         assert path.startsWith("/"), "The volume path value must begin with a '/' character: '${path}'"
+
+        assert !(volumeId && snapshotId), "The attribute 'volume-id' and 'snapshot-id' cannot be used at the same time"
     }
 
     /**
@@ -108,7 +111,7 @@ class EbsVolumeOp {
      * @param event The {@link blow.events.OnBeforeClusterStartEvent} object
      */
     @Subscribe
-    public void  sanityCheck( OnBeforeClusterStartEvent event ) {
+    public void checkAndCreateVolume( OnBeforeClusterStartEvent event ) {
 
         /*
          * Check assign the device name
@@ -123,17 +126,36 @@ class EbsVolumeOp {
         }
 
         /*
-         * check the snapshot
+         * Some sanity check on the specified 'volume-id' or 'snapshot-id'
          */
         if( snapshotId ) {
-            checkSnapshot(snapshotId,session)
+            checkSnapshot(snapshotId,session,size)
+        }
+
+        if( volumeId ) {
+            checkVolume(volumeId,session)
+        }
+
+
+        /*
+        * create a volume starting from the specified snapshot id
+        */
+        if( snapshotId ) {
+            def vol = session.getBlockStore().createVolume(size, snapshotId)
+            volumeId = vol.getId()
         }
 
         /*
-         * check the volumeId exists and it is allocated in the same availability zone
+         * create a new volume
          */
-        if( volumeId ) {
-            checkVolume(volumeId,session)
+        if( !volumeId ) {
+            log.debug "Creating new volume with size: $size GB"
+            def vol = session.getBlockStore().createVolume(size)
+
+            log.info "New volume created with id ${vol.getId()}, size: ${vol.getSize()} GB"
+            volumeId = vol.getId()
+            needFormatVolume = true // <-- set this flag to 'remember' to format the volume
+
         }
 
     }
@@ -150,19 +172,18 @@ class EbsVolumeOp {
      */
     @Subscribe
     public void configureEbsVolume( OnAfterClusterStartedEvent event ) {
+        if( !quiet ) {
         log.info "Configuring EBS Volume for path '${path}'"
+        }
 
         /*
          * run the logic tracing the execution time
          */
-        TraceHelper.debugTime( "Attaching EBS volume", { attachBlockStore() } )
-        TraceHelper.debugTime( "Mounting EBS volume", { mountBlockStore() }  )
+        TraceHelper.debugTime( "Attaching EBS volume for path: ${path}", { attachBlockStore() } )
+        TraceHelper.debugTime( "Mounting EBS volume for path: ${path}", { mountBlockStore() }  )
     }
 
 
-
-    def private boolean needToDelete
-    def private boolean makeSnapshot
 
     /**
      * Before terminate the cluster keep track of the Master node ID
@@ -174,33 +195,8 @@ class EbsVolumeOp {
 
         log.debug("Volume path: ${path}; volume: ${volumeId}; snapshot: ${snapshotId}; device: ${device}; deleteOnTermination: ${needToDelete}; makeSnapshot: ${makeSnapshot} ")
 
-        /*
-         * make sure to have volume-id
-         */
-        if( snapshotId && !volumeId && (makeSnapshotOnTermination == "true" || deleteOnTermination == "true") ) {
-            // NOTE: that the device can be generated by framework
-            // so if the application is stopped there's no guarantee that it will be the same
-            def list = session.getBlockStore().listVolumes().findAll { Volume vol ->
-                vol.status == Volume.Status.IN_USE  \
-                && vol.snapshotId == snapshotId \
-                && vol.attachments?.find { Attachment attach -> attach.instanceId == masterInstanceId }
-            }
-
-            if( list.size() == 1 ) {
-                volumeId = list.find().getId()
-            }
-            else if( list.size() > 1 ) {
-                log.debug("Cannot find a unique volume for snapshot ${snapshotId}; instance-id: ${masterInstanceId}, path: ${path}; ")
-            }
-
-            // make sure that the volumeId has been retrieved
-            assert volumeId, "Oops .. The EBS volume-id cannot be retrieved for path '${path}'"
-        }
-
-
         needToDelete = (volumeId && deleteOnTermination == "true")
         makeSnapshot = (volumeId && makeSnapshotOnTermination == "true")
-
 
         /*
          * ask for the user to confirm the volume deletion
@@ -241,7 +237,7 @@ class EbsVolumeOp {
             log.info("Creating a snapshot for volume: ${volumeId} as requested by configuration")
             def message = "Snapshot for volume ${volumeId} - Blow"
             def waitFlag = needToDelete  // wait only if we need to delete the 'volume'
-            def snapshot = event.session.blockStore.createSnapshot(volumeId, message, waitFlag)
+            def snapshot = session.blockStore.createSnapshot(volumeId, message, waitFlag)
             log.info("Created snapshot: ${snapshot.getId()} for volume: ${volumeId}")
         }
 
@@ -249,13 +245,7 @@ class EbsVolumeOp {
         * Delete the volume
         */
         if( needToDelete ) {
-
             TraceHelper.debugTime( "Delete attached volume", { session.getBlockStore().deleteVolume(volumeId) })
-        }
-
-        // report an informative message
-        else if( volumeId ) {
-            log.info("The following volume: '${volumeId}' is still available.")
         }
 
     }
@@ -266,33 +256,8 @@ class EbsVolumeOp {
      */
     protected void attachBlockStore() {
 
-        /*
-         * create a volume starting from the specified snapshot id
-         */
-        if( snapshotId ) {
-            def vol = session.getBlockStore().createVolume(size, snapshotId)
-            volumeId = vol.getId()
-        }
-
-        /*
-         * create a new volume
-         */
-        if( !volumeId ) {
-            log.debug "Creating new volume with size: $size G"
-            def vol = session.getBlockStore().createVolume(size)
-
-            log.info "New volume created with id ${vol.getId()}, size: ${vol.getSize()} G"
-            volumeId = vol.getId()
-            needFormatVolume = true // <-- set this flag to 'remember' to format the volume
-
-        }
-
-        /*
-         * now attach the volume
-         */
-
         assert volumeId, 'No EBS volume-id available. Something went wrong in the volume creation'
-        session.getBlockStore().attachVolume(masterInstanceId, volumeId, path, device )
+        session.getBlockStore().attachVolume( masterInstanceId, volumeId, path, device )
 
     }
 

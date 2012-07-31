@@ -32,6 +32,7 @@ import org.jclouds.scriptbuilder.domain.StatementList
 import org.jclouds.scriptbuilder.util.Utils
 
 import static com.google.common.base.Preconditions.checkNotNull
+import blow.util.Serializable
 
 /**
  * Append a list of exported variables to the '~/.bash_profile' file to the remote instances

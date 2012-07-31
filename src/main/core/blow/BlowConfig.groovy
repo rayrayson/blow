@@ -22,16 +22,18 @@ package blow
 import blow.exception.BlowConfigException
 import blow.exception.MissingKeyException
 import blow.operation.OperationFactory
+import blow.operation.OperationHelper
 import blow.operation.Validate
+import com.google.common.base.Charsets
+import com.google.common.io.Files
 import groovy.util.logging.Slf4j
+import org.codehaus.groovy.util.HashCodeHelper
 import org.jclouds.domain.LoginCredentials
 
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 
 import com.typesafe.config.*
-import com.google.common.io.Files
-import com.google.common.base.Charsets
 
 /**
  * Contains all configuration required to handle a cluster 
@@ -41,7 +43,7 @@ import com.google.common.base.Charsets
  */
 
 @Slf4j
-class BlowConfig {
+class BlowConfig  {
 
 	def accessKey
 	def secretKey
@@ -71,7 +73,8 @@ class BlowConfig {
 	List operations
 
     /** The {@link org.jclouds.domain.LoginCredentials} object */
-	@Lazy LoginCredentials credentials = {
+	@Lazy
+    transient LoginCredentials credentials = {
 		log.debug "Creating lazy credential for user: ${userName} - key file: '${privateKeyFile}'"
 
         String privateKey = Files.toString(privateKeyFile, Charsets.UTF_8);
@@ -81,7 +84,7 @@ class BlowConfig {
 
     /** The operation factory   */
     @Lazy
-	private OperationFactory operationFactory = { new OperationFactory( DynLoaderFactory.get() ) }()
+	transient private OperationFactory operationFactory = { new OperationFactory( DynLoaderFactory.get() ) }()
 
 
     /** Protected constructor used only for testing purpose */
@@ -506,6 +509,34 @@ class BlowConfig {
 
         return result as int[]
 
+    }
+
+
+    @Override
+    def int hashCode() {
+        def val = HashCodeHelper.initHash()
+        val = HashCodeHelper.updateHash(val,accessKey)
+        val = HashCodeHelper.updateHash(val,secretKey)
+        val = HashCodeHelper.updateHash(val,accountId)
+        val = HashCodeHelper.updateHash(val,regionId)
+        val = HashCodeHelper.updateHash(val,zoneId)
+        val = HashCodeHelper.updateHash(val,imageId)
+        val = HashCodeHelper.updateHash(val,instanceType)
+        val = HashCodeHelper.updateHash(val,size)
+        val = HashCodeHelper.updateHash(val,userName)
+        val = HashCodeHelper.updateHash(val,publicKeyFile)
+        val = HashCodeHelper.updateHash(val,privateKeyFile)
+        val = HashCodeHelper.updateHash(val,keyPair)
+        val = HashCodeHelper.updateHash(val,createUser)
+        val = HashCodeHelper.updateHash(val,securityId)
+
+        operations?.each { Object op ->
+            def opHash = OperationHelper.opHashCode( op )
+            val = HashCodeHelper.updateHash(val,opHash)
+        }
+
+
+        return val
     }
 
 
