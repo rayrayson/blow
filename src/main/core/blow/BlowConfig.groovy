@@ -106,14 +106,13 @@ class BlowConfig  {
             zoneId = regionId + "a"
         }
 
-
         if( !userName ) {
             userName = System.getProperty("user.name")
         }
 
-
         if( keyPair && !privateKey ) {
             File keyFile = new File("./${keyPair}.pem")
+
             if( !keyFile.exists() ) keyFile = new File( System.properties['user.home'], ".ssh/${keyPair}.pem")
 
             if( keyFile.exists() ) {
