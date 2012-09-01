@@ -1,7 +1,7 @@
 Getting the code 
 ================
 
-The *Blow* framework source code is hosted on Github at the following link:https://github.com/paoloditommaso/blow .
+The *Blow* framework source code is hosted on Github at the following link: https://github.com/paoloditommaso/blow .
 
 You can download the code with the following command::
 

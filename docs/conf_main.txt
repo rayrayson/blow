@@ -2,23 +2,22 @@ Blow configuration
 ==================
 
 *Blow* configuration has to be defined in a file named ``blow.conf``. *Blow* will look
-for this file in the directory where the application has been launched and in the user home i.e.
-the path ``$HOME/.blow/blow.conf``. If both of them exist the values in the former will
+for this file in the directory where the application has been launched and in the Blow home directory i.e.
+the path ``$HOME/.blow/``. If both of them exist the values in the former will
 have an higher priority, in other words, they will override the values defined in the 
 configuration file stored in the home directory. 
 
 A different configuration file can be provided using the CLI option ``--conf``. For example::
 
-  blow.run --conf myconf.txt
+  blow.run --conf my.conf
 
 A common approach is to put *Blow* general properties in the ``$HOME/.blow/blow.conf``
-file, and place cluster specific properties in a file located in a different folder.
+file, and place cluster specific configuration properties in a file located in a different folder.
 
-The configuration file provides the definition of the clusters which are supposed to be 
-managed with *Blow*.
+The configuration file provides the definition of the clusters which will be managed with *Blow*.
 
 Each *cluster* definition needs to declare some configuration attributes, for example:
-which virtual machine to use, the region where the cluster will run, the number of nodes, etc.
+which virtual machine to use, the region where the cluster will run, the number of nodes to launch, etc.
 
 
 Configuration file syntax
@@ -53,12 +52,12 @@ The easiest way to explain the syntax for the *Blow* configuration file is look 
     }
   }
 
-The configuration file contains a list of properties definition and clusters definitions. A property is a
+The configuration file contains a list of properties and clusters definitions. A property is a
 simple *name* *value* pair. On each line you can have just one property definition. The property name can contain only
 alphanumeric characters plus the underscore character.
 
-Property string value must be single quoted or double quoted. Double quoted strings can contain environment variables which are
-interpolated in the string, i.e. the variable is replaced by the value the variable is holding when the property is evaluated.
+Property string value must be single quoted or double quoted. Double quoted strings can contain environment variables which values
+are interpolated in the string, i.e. the variable is replaced by the value the variable is holding when the property is evaluated.
 
 A cluster definition starts by an open curly bracket and ends with a closed curly bracket. It contains the properties
 for a specific cluster definition plus the list of *operation* to be applied in order to setup the cluster.
@@ -80,22 +79,24 @@ an *EBS* volume.
 
 .. _`S3cmd`: http://s3tools.org/s3cmd
 
+
 Available configuration attributes
 -----------------------------------
 
 Currently the following attributes can be defined in the ``blow.config`` file (the ones marked with \* are mandatory):
 
-* ``accessKey`` \*: The AWS account *Access Key ID*, available through the `AWS Security Credential`_ page.
+* ``accessKey`` \*: The AWS account *Access Key ID*, check the `AWS Security Credential`_ page.
 
-* ``secretKey`` \*: The AWS account *Secret Access Key*, available through the `AWS Security Credential`_ page.
+* ``secretKey`` \*: The AWS account *Secret Access Key*, check the `AWS Security Credential`_ page.
 
 * ``regionId``: The AWS *Region ID* where the cluster has to be created. If it is not specified, the region `us-east-1`
   will be used by default. Read more about regions in the `AWS Regions and Availability Zones`_ documentation.
 
 * ``zoneId``: The AWS *Region ID* where the cluster has to be created. If it is not specified,
-  the zone `us-east-1a` will be used by default. Read more about regions in the `AWS Regions and Availability Zones`_ documentation.
+  the zone `us-east-1a` will be used by default. Read more about this in the Amazon documentation
+  at the page `AWS Regions and Availability Zones`_ .
 
-* ``imageid``: The Amazon EC2 machine image ID. In other words this is the identifier of the virtual machine used
+* ``imageId``: The Amazon EC2 machine image ID. In other words this is the identifier of the virtual machine used
   to run the cluster nodes. The list of all machines is available at this page `Amazon Machine Images`_ . 
 
 * ``instanceType``: The type of the instance to launch. This attribute allows you to select the features
