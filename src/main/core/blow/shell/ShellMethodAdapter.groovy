@@ -59,7 +59,7 @@ import blow.util.InjectorHelper
 private class ShellMethodAdapter extends AbstractShellCommand implements CommandCompletor {
 
     /** The object instance declaring the method */
-    private def declaringObj
+    private def targetObj
 
     /** The method to invoke */
     private Method method
@@ -89,6 +89,9 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
     /* This flags is used to mark that the 'help' option has to be handled automatically by this method */
     private boolean showsDefaultHelp
 
+
+    private Method free
+
     /**
      * Crete the adapter for the specified method. The method parameter cannot be null and it is assumed that
      * it is marked with the {@link Cmd} annotation.
@@ -103,8 +106,8 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
 
         this.method = method
         this.shell = owner
-        this.declaringObj = method.getDeclaringClass().newInstance()
-        this.completion = method.getAnnotation(Completion)?.value()?.newInstance(declaringObj,declaringObj)
+        this.targetObj = method.getDeclaringClass().newInstance()
+        this.completion = method.getAnnotation(Completion)?.value()?.newInstance(targetObj,targetObj)
 
         this.cmd = method.getAnnotation(Cmd)
 
@@ -119,6 +122,16 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
             }
         }
 
+        /*
+         * Check for the free method
+         */
+        Method[] all = method.getDeclaringClass().getDeclaredMethods()
+        for( Method mm : all ) {
+            if( mm.getAnnotation(CmdFree) ) {
+                free = mm
+                break
+            }
+        }
 
         /*
          * create the Command Line builder to handle CLI parameters for this command
@@ -245,7 +258,6 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
 
     List<String> findOptions( String cmdline ) {
         if( completion ) {
-            injectFields( declaringObj, [shell, shell.session] )
             completion.call(cmdline)
         }
     }
@@ -285,15 +297,10 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
         }
 
         /*
-         * Inject the shell object
-         */
-        injectFields( declaringObj, [shell, shell.session] )
-
-        /*
          * When the method does not declare any parameter, just invoke it
          */
         if( method.getParameterTypes().length == 0 ) {
-            method.invoke(declaringObj)
+            method.invoke(targetObj)
             return
         }
 
@@ -365,8 +372,12 @@ private class ShellMethodAdapter extends AbstractShellCommand implements Command
         }
 
         log.debug("${getName()} (${methodArgs})")
-        method.invoke( declaringObj, methodArgs as Object[] )
+        method.invoke( targetObj, methodArgs as Object[] )
     }
-   
+
+    @Override
+    public void free() {
+        if( free ) free.invoke(targetObj)
+    }
 
 }

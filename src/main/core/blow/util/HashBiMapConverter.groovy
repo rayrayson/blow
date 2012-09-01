@@ -17,48 +17,32 @@
  *   along with Blow.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package blow.shell
+package blow.util
+
+import com.google.common.collect.HashBiMap
+import com.thoughtworks.xstream.converters.collections.MapConverter
+import com.thoughtworks.xstream.mapper.Mapper
 
 /**
- * Shell command have to implement this interface
+ * XStream converter for Google Guava {@link HashBiMap} collection
+ *
+ *  @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
-public interface ShellCommand {
+class HashBiMapConverter extends MapConverter {
 
-	/**
-	 * Define the shell command name
-	 * 
-	 * @return the string to be entered into the shell to invoke this command
-	 */
-	String getName();
+    HashBiMapConverter(Mapper mapper) {
+        super(mapper)
+    }
 
-
-    /**
-     * @return One line description for the command
-     */
-    public String getSummary()
-
-    /**
-     * @return The help string for this command
-     */
-    public String getHelp()
-	
-	/**
-	 * Parse the command arguments provided by the user
-	 * 
-	 * @param args
-	 */
-	void parse( def args );
-	
-	/**
-	 * Run the command
-	 */
-	void invoke();
-
-    /**
-     * Destroy the command and release all associated resources
-     */
-    void free();
+    @Override
+    boolean canConvert(Class aClass) {
+        return aClass.equals(HashBiMap.class)
+    }
 
 
-	
+    @Override
+    protected java.lang.Object createCollection(java.lang.Class type) {
+        HashBiMap.create()
+    }
+
 }

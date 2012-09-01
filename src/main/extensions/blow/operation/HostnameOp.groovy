@@ -24,8 +24,6 @@ import blow.events.OnAfterClusterStartedEvent
 import blow.util.TraceHelper
 import com.google.common.eventbus.Subscribe
 import groovy.util.logging.Slf4j
-import org.jclouds.compute.domain.NodeMetadata
-import org.jclouds.compute.options.TemplateOptions
 import org.jclouds.scriptbuilder.domain.Statements
 
 /**
@@ -38,12 +36,19 @@ import org.jclouds.scriptbuilder.domain.Statements
 @Operation("hostname")
 class HostnameOp  {
 
+
+    /*
+     * The current session inject by Blow
+     */
+    private BlowSession session
+
+
 	@Subscribe
 	public void configureHostsFile( OnAfterClusterStartedEvent event ) {
         log.info "Configuring cluster hostname(s)"
 
         TraceHelper.debugTime( "Configure '/etc/hosts' file") {
-            configureHostsTask(event.session)
+            configureHostsTask()
         }
 	}
 	
@@ -54,36 +59,37 @@ class HostnameOp  {
 	 * @param session The {@link BlowSession} instance
 	 * 
 	 */
-	protected void configureHostsTask( BlowSession session ) {
+	protected void configureHostsTask( ) {
 		
-	   // get all the nodes (private) IPs and host names
-	   List<String> hostname = []
-	   session.listNodes().each { NodeMetadata node ->
-		   hostname.add( String.format("%s\t%s", node.getPrivateAddresses().find(), node.getHostname()) )
+	   /*
+	    * Make a list containing each node a pair (IP address - Node name)
+	    * to be appended to the node 'hosts' file
+	    */
+	   List<String> hostnameList = []
+	   session.listNodes().each { BlowSession.BlowNodeMetadata node ->
+		   hostnameList.add( String.format("%s\t%s", node.getPrivateAddresses().find(), node.getNodeName()) )
 	   }
 			   
-	   // uploaded to all nodes
-	   def appender = Statements.appendFile("/etc/hosts", hostname)
 
-	   def credential = session.conf.credentials
-	   def opt = TemplateOptions.Builder.overrideLoginCredentials(credential).runAsRoot(true)
-	   def response = session.compute.runScriptOnNodesMatching(session.filterAll(), appender, opt)
-	   
-	   response.each {
-	   
-		   def msg = " ${it.key.getHostname()} -> "
-		   
-		   if( it.value.getExitCode() ) {
-			   // there is an error
-			   msg += "${it.value.getExitCode()} - ${it.value.getError()} - ${it.value.getOutput()}"
-		   }
-		   else {
-			   msg +=  "OK"
-		   }
+       /*
+        * This script using the node public
+        */
+       def setHostname = """\
+       yum install -y wget
+       HOSTIP=`wget -q -O - http://169.254.169.254/latest/meta-data/local-ipv4`
+       HOSTNAME=`cat /etc/hosts | grep \$HOSTIP | cut -f 2`
+       hostname \$HOSTNAME
+       """
+       .stripIndent()
 
-           HostnameOp.log.debug msg
-	   }
-		
+
+       def statementsToRun = Statements.newStatementList(
+               Statements.appendFile("/etc/hosts", hostnameList),
+               Statements.exec(setHostname) )
+
+       session.runStatementOnNodes(statementsToRun, null, true)
+
+
 	}
 
 	

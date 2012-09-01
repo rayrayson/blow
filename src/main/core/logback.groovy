@@ -8,6 +8,7 @@ import ch.qos.logback.core.rolling.RollingFileAppender
 import ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP
 import ch.qos.logback.core.rolling.TimeBasedRollingPolicy
 import blow.util.PrettyConsoleLayout
+import blow.util.CmdLine
 
 /*
 * Copyright (c) 2012, the authors.
@@ -45,20 +46,22 @@ def debugPackages = []
 def tracePackages = []
 
 def consoleLevel = {
+    def command = System.getProperty("sun.java.command")
+    def level = Level.INFO
 
-    if( BlowShell.options?.debug instanceof String ) {
-        debugPackages = BlowShell.options.debug.split(',')
+    def cmdline = new CmdLine(command)
+
+    if( cmdline.contains('--debug') ) {
+        level = Level.DEBUG
+        debugPackages = cmdline.asList('--debug')
     }
 
-    if( BlowShell.options?.trace instanceof String ) {
-        tracePackages = BlowShell.options.trace.split(',')
+    if( cmdline.contains('--trace') ) {
+        level = Level.TRACE
+        tracePackages = cmdline.asList('--trace')
     }
 
-
-    if( BlowShell.options?.trace ) { return Level.TRACE }
-    else if( BlowShell.options?.debug ) { return Level.DEBUG }
-    else { return Level.INFO }
-
+    return level
 }
 
 

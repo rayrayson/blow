@@ -11,7 +11,6 @@ Credits
 
   * `Groovy`_ -- The scripting language that put the fun back into Java programming
   * `JClouds`_ -- It manages the cloud connection for Amazon AWS as well as for many other providers
-  * `Typesafe Config`_ -- Used to handle the application configuration files
   * `SSHJ`_ -- A pure Java SSH client implementation
   * `Spock Framework`_ -- Unit testing made simple
   * `Fast Data Transfer`_ - FDT is an Application for Efficient Data Transfers developed at CERN.
@@ -19,7 +18,6 @@ Credits
 
 .. _`Groovy`: http://groovy.codehaus.org/
 .. _`JClouds`: http://www.jclouds.org/
-.. _`Typesafe Config`: http://github.com/typesafehub/config
 .. _`SSHJ`: http://github.com/shikhar/sshj
 .. _`Spock Framework`: http://code.google.com/p/spock/
 .. _`Fast Data Transfer`: http://monalisa.cern.ch/FDT

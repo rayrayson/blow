@@ -25,7 +25,7 @@ import spock.lang.Specification
  *
  *  @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
-class CmdLineHelperTest extends Specification {
+class CmdLineTest extends Specification {
 
     def "test splitter" () {
 
@@ -49,5 +49,44 @@ class CmdLineHelperTest extends Specification {
         ]
 
     }
+
+    def "test hasArg  " () {
+
+        when:
+        def cmdline = new CmdLine('-a -b 1 -c 2 3')
+
+        then:
+        cmdline.contains('-a') == true
+        cmdline.contains('-b') == true
+        cmdline.contains('-x') == false
+    }
+
+
+    def "test getArg" () {
+
+        when:
+        def cmdline = new CmdLine('-a -b 1 -c 2 3')
+
+        then:
+        cmdline.getArg('-a') == true
+        cmdline.getArg('-b') == '1'
+        cmdline.getArg('-c') == ['2','3']
+        cmdline.getArg('-x') == null
+    }
+
+    def "test list" () {
+        when:
+        def cmdline = new CmdLine('-a -b 1 -c 2 3 -d x,y,z p q')
+
+        then:
+        cmdline.asList('-a') == []
+        cmdline.asList('-b') == ['1']
+        cmdline.asList('-c') == ['2','3']
+        cmdline.asList('-d') == ['x','y','z','p','q']
+        cmdline.asList('-omega') == null
+
+
+    }
+
 
 }

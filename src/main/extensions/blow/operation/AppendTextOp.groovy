@@ -19,6 +19,7 @@
 
 package blow.operation
 
+import blow.BlowSession
 import blow.events.OnAfterClusterStartedEvent
 import blow.util.TraceHelper
 import com.google.common.eventbus.Subscribe
@@ -40,31 +41,37 @@ import org.jclouds.scriptbuilder.domain.Statements
 @Operation("append")
 class AppendTextOp {
 
-    @Conf String text;
-    @Conf String file;
-    @Conf String to;
-    @Conf('root') boolean rootPermission = false
+    @Conf def String text;
+    @Conf def String file;
+    @Conf def String to;
+    @Conf boolean root = false
+
+    def applyTo
+
+    private BlowSession session
 
     private File sourceFile;
 
     @Subscribe
     public void append( OnAfterClusterStartedEvent event ) {
 
-        if( text == null ) text = "";
+        if( text == null ) {
+            text = ""
+        }
 
         if( sourceFile && sourceFile.exists() ) {
-            AppendTextOp.log.debug("Reading file: '$sourceFile'")
+            log.debug("Reading file: '$sourceFile'")
             text += "\n" + sourceFile.text
         }
 
-        TraceHelper.debugTime( "Appending to '${to}'", {
+        TraceHelper.debugTime("Appending to '${to}' at nodes: ${applyTo?:'(all)'} ") {
 
             def lines = []
             text.eachLine {  lines.add(it) }
             def appender = Statements.appendFile(to, lines)
-            event.session.runStatementOnNodes(appender,null,rootPermission)
+            session.runStatementOnNodes(appender,applyTo,root)
 
-        })
+        }
     }
 
     /**

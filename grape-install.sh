@@ -85,7 +85,6 @@ perl -i -pe "s/COMMONDB(\s*)=.*/COMMONDB\1= ${PIPEDB2}/" ../../profiles/$PIPENAM
 mkdir src
 wget -q https://s3.amazonaws.com/cbcrg-lab/grape-testdata.zip
 unzip grape-testdata.zip -d src
-rm -rf grape-testdata.zip
 
 # Warm up
 ./bin/buildout

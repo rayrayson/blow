@@ -20,7 +20,7 @@
 import groovy.xml.NamespaceBuilder
 
 class Build {
-	
+	def now = System.currentTimeMillis()
 	def pathBuild = "./build/stage"
 	def pathSourceAll = "./src/main/core:./src/main/extensions:./src/main/java"
 	def pathSourceCore = "./src/main/core"
@@ -33,10 +33,10 @@ class Build {
     def pathOneJarTask = "./build/one-jar-ant-task-0.97.jar"
     def pathLocalLibraries = "./lib"
 	def mainClass = "blow.shell.BlowShell"
-	def jcloudsVersion = "1.3.2"
 	def versionNumber   // defined by the property 'version' in the pom.xml
     def projectName     // defined by the property 'groupId' in the pom.xml
-	@Lazy def pathDistFile = { "./dist/${projectName}.jar" } ()
+	@Lazy def pathDistRunnableFile = { "./dist/${projectName}.run" } ()
+    @Lazy def pathDistJarFile = { "./dist/${projectName}.jar" } ()
 	def ant = new AntBuilder()
     def artifact
 
@@ -73,8 +73,10 @@ class Build {
 		    * THIS FILE IS GENERATED AUTOMATICALLY BY THE BUILD SCRIPT
 		    */
 		   final class Project {
-		       final static def name = "${projectName}"
-			   final static def number = "${versionNumber}"
+                final static def name = "${projectName}"
+                final static def number = "${versionNumber}"
+                final static def version = "${versionNumber}_${now}"
+                final static def timestamp = new Date($now)
 		   }
 		   """
 		   .stripIndent()      
@@ -87,7 +89,8 @@ class Build {
 	 */
 	def clean () {
 		ant.delete dir: pathBuild
-        ant.delete file: pathDistFile
+        ant.delete file: pathDistRunnableFile
+        ant.delete file: pathDistJarFile
 		ant.mkdir  dir: pathBuild
 		ant.mkdir  dir: pathClasses
 		ant.mkdir  dir: pathCompileLibs
@@ -218,17 +221,20 @@ class Build {
 		* Create the bash startup file
 		*/
 	   
-	   def distFile = new File(pathDistFile)
+	   def distFile = new File(pathDistRunnableFile)
        if( !distFile.getParentFile().exists() ) { distFile.getParentFile().mkdirs()  }
 	   if( distFile.exists() ) distFile.delete()
 
-       def out = new FileOutputStream(pathDistFile);
+       def out = new FileOutputStream(pathDistRunnableFile);
        out << new FileInputStream(pathShellStub)
        out << new FileInputStream(pathBigJar)
 
        "chmod +x ${distFile}".execute()
+
+       // copy also the plain jar
+        ant.copy ( file : pathBigJar , tofile : pathDistJarFile, overwrite: true )
 	   
-	   ant.echo( "Blow executable created. Launch with: '$pathDistFile'" )
+	   ant.echo( "Blow executable created. Launch with: '$pathDistRunnableFile'" )
        ant.echo( "Done" );
 		
 	} 
@@ -290,11 +296,11 @@ class Build {
 
     def upload() {
 
-        def file = new File(pathDistFile);
+        def file = new File(pathDistRunnableFile);
         if( !file.exists() ) pack()
 
         println "Uploading $file .. "
-        ant.copy ( file : file , tofile : '/Users/ptommaso/Dropbox/Public/blow/blow.jar', overwrite: true )
+        ant.copy ( file : file , tofile : '/Users/ptommaso/Dropbox/Public/blow/blow.run', overwrite: true )
 
     }
 	

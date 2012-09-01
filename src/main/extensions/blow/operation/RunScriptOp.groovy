@@ -22,6 +22,7 @@ package blow.operation
 import blow.events.OnAfterClusterStartedEvent
 import blow.util.TraceHelper
 import com.google.common.eventbus.Subscribe
+import blow.BlowSession
 
 /**
  * Run a BASH script on the remote hosts
@@ -29,7 +30,7 @@ import com.google.common.eventbus.Subscribe
  * @author Paolo Di Tommaso
  */
 
-@Operation("run-script")
+@Operation("runScript")
 class RunScriptOp  {
 
     /** The file containing the shell script to run on the remote nodes */
@@ -42,10 +43,12 @@ class RunScriptOp  {
 
     /** The 'role' of the nodes on which run the script */
     @Conf
-    String role
+    String applyTo
 
-    @Conf("run-as-root")
+    @Conf
     boolean runAsRoot
+
+    private BlowSession session
 
 
     @Validate
@@ -69,11 +72,10 @@ class RunScriptOp  {
     public void run( OnAfterClusterStartedEvent event ) {
 
         def script = file ? new File(file).text : text;
-        def session = event.session;
 
         TraceHelper.debugTime("RunScript", {
 
-            def filter = role ? session.filterByRole( role ) : session.filterAll();
+            def filter = applyTo ? session.filterByCriteria(applyTo) : session.filterAll();
 
             session.runScriptOnNodes( script, filter, runAsRoot )
 

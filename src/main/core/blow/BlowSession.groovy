@@ -23,16 +23,18 @@ import blow.eventbus.OrderedEventBus
 import blow.exception.BlowConfigException
 import blow.exception.DirtySessionException
 import blow.exception.OperationAbortException
+import blow.operation.OperationHelper
 import blow.ssh.ScpClient
 import blow.storage.BlockStorage
+import blow.util.ArrayListMultimapConverter
+import blow.util.HashBiMapConverter
 import blow.util.InjectorHelper
 import blow.util.PromptHelper
-import blow.util.Serializable
 import com.google.common.base.Predicate
 import com.google.common.base.Predicates
-import com.google.common.collect.ImmutableSet
 import com.google.inject.Module
 import com.thoughtworks.xstream.XStream
+import com.thoughtworks.xstream.io.xml.PrettyPrintWriter
 import com.thoughtworks.xstream.io.xml.StaxDriver
 import groovy.util.logging.Slf4j
 import org.jclouds.Constants
@@ -55,6 +57,7 @@ import org.jclouds.sshj.config.SshjSshClientModule
 import java.lang.reflect.InvocationTargetException
 
 import blow.events.*
+import com.google.common.collect.*
 import org.jclouds.compute.domain.*
 
 import java.util.concurrent.*
@@ -62,8 +65,7 @@ import java.util.concurrent.*
 import static com.google.common.base.Predicates.not
 import static org.jclouds.compute.predicates.NodePredicates.TERMINATED
 import static org.jclouds.compute.predicates.NodePredicates.inGroup
-import com.thoughtworks.xstream.io.xml.PrettyPrintWriter
-import blow.operation.OperationHelper
+import blow.exception.BlowException
 
 /**
  * Base session initializer
@@ -115,8 +117,8 @@ class BlowSession {
 
         new AdminAccess.Builder()
                 .adminUsername( conf.userName )
-                .adminPublicKey( conf.publicKeyFile )
-                .adminPrivateKey( conf.privateKeyFile )
+                .adminPublicKey( conf.publicKey )
+                .adminPrivateKey( conf.privateKey )
                 .build()
 
     } ()
@@ -132,7 +134,12 @@ class BlowSession {
      * <p>
      * See {@link #getMasterMetadata()}
 	 */
+    @Deprecated
 	transient private NodeMetadata masterMetadata
+
+    transient private Timer refreshTimer
+
+    private long refreshLastRun
 
     /** Mark the session dirty as soon as the cluster is created */
     private boolean dirty
@@ -156,6 +163,30 @@ class BlowSession {
             "/dev/sdp":0
     ]
 
+    /**
+     * A map containing the pair <'Node name', 'Instance ID' > e.g. < 'worker1', 'us-east-1/i-0b075a70'>
+     * <p>
+     * The 'Instance ID' is defined by {@link NodeMetadata#getId()}
+     */
+    private BiMap<String, String> nodeNamesMap = HashBiMap.create()
+
+
+    /**
+     * A Multimap containing for each 'role' the associated collection of instance IDs e.g.
+     *
+     * <'master', ['us-east-1/i-0b075a70']>
+     * <'worker', ['us-east-1/i-74837843', 'us-east-1/i-02909243', 'us-east-1/i-8093289'] >
+     * <p>
+     * The 'Instance ID' is defined by {@link NodeMetadata#getId()}
+     */
+    private Multimap<String,String> nodeRolesMap = ArrayListMultimap.create()
+
+    /**
+     * The map containing pair < Node name, Node metadata >
+     */
+    private Map<String,BlowNodeMetadata> allNodes = [:]
+
+    private long nodesCacheDuration = 4 * 60 * 1000 // 4 min
 
     /** Only for test */
     protected BlowSession( BlowConfig config = new BlowConfig()) {
@@ -164,7 +195,7 @@ class BlowSession {
 
 
     /**
-	 * The Pilot core object creator
+	 * The Blow core object creator
 	 * 
 	 * @param conf
 	 * @param clusterName
@@ -188,7 +219,9 @@ class BlowSession {
 	}
 
     /**
-     * Managed by XStream during the de-serializaton phase
+     * Initialize the object when the session is de-serialized by XStream
+     * <p>
+     * It takes care to create transient objects
      */
     private Object readResolve() {
         log.debug('XStream desialization readResolve invoke')
@@ -199,6 +232,11 @@ class BlowSession {
               process take care of that
              */
         }
+
+        /*
+         * If there was a refresh timer, re-set it
+         */
+        resumeRefreshMetadata()
 
         return this;
     }
@@ -214,8 +252,8 @@ class BlowSession {
 	   props.setProperty("jclouds.regions", conf.regionId)
 	   
 	   //props.setProperty( Constants.PROPERTY_USER_THREADS, "25" )
-	   props.setProperty( Constants.PROPERTY_MAX_RETRIES, "7" );
-	   props.setProperty( Constants.PROPERTY_RETRY_DELAY_START, "500" );
+	   //props.setProperty( Constants.PROPERTY_RETRY_DELAY_START, "500" );
+	   props.setProperty( Constants.PROPERTY_MAX_RETRIES, "3" );
 	   props.setProperty( ComputeServiceConstants.PROPERTY_TIMEOUT_NODE_RUNNING, 5 * 60 * 1000 + "" )
 	   props.setProperty( ComputeServiceConstants.PROPERTY_TIMEOUT_PORT_OPEN, 5 * 60 * 1000 + ""  )
 	   props.setProperty( ComputeServiceConstants.PROPERTY_TIMEOUT_SCRIPT_COMPLETE, 5 * 60 * 1000 + ""  )
@@ -254,7 +292,7 @@ class BlowSession {
             if( e instanceof InvocationTargetException ) {
                 e = e.getCause()
             }
-            log.error("${event.getClass().getSimpleName()} raised an exception. Cause: " + (e.getMessage()?:e.toString()), e )
+            log.error( e.getMessage() ?: e.toString() , e )
 
             // ask to the user if want to continue
             println "\nIt is strongly suggested to stop the process and review the cluster configuration!"
@@ -291,6 +329,11 @@ class BlowSession {
             }
         }
 
+        /*
+         * Initialize the metadata structures
+         */
+        metadataInitialize()
+
 
 		/*
 		 * send the cluster create event
@@ -303,51 +346,58 @@ class BlowSession {
          * Since if a security group, with the specified props is NOT created, if already
         *  exists another group with the same name, delete it already exists
          */
-        def securityToClear = "jclouds#${clusterName}#${conf.regionId}"
-        log.debug "Cleating security group: '${securityToClear}'"
-        securityGroupClient.deleteSecurityGroupInRegion( conf.regionId, securityToClear )
-
-		/*
-		 * Get the compute service
-		 */
-		def template = compute.templateBuilder()
-
-		template.hardwareId( conf.instanceType )
-		template.imageId( "${conf.regionId}/${conf.imageId}" )
-		template.locationId( conf.zoneId )
+        deleteDefaultSecurityGroup()
 
 
-		/*
-		 * create the master node
-		 */
-		def allNodes = new TreeSet()
-		log.info("Creating the 'master' node")
-		masterMetadata = startNodes(template, 1, "master").find()
-		allNodes.add(masterMetadata)
+        /*
+         * Creates the instances for each defined role
+         */
+        conf.roles.each { role ->
 
-		/*
-		 * create the 'worker' nodes
-		 */
-		def workerCount = conf.size-1
-		if( workerCount ) {
-			log.info("Creating ${workerCount} worker node(s)")
-			def nodes = startNodes( template, workerCount, "worker" )
+            /*
+             * Get the compute service
+             */
+            def templateBuilder = compute.templateBuilder()
 
-			allNodes.addAll( nodes )
-		}
-		else {
-			log.debug("(no worker nodes required)")
-		}
+            templateBuilder.hardwareId( conf.instanceTypeFor(role) )
+            templateBuilder.imageId( "${conf.regionId}/${conf.imageIdFor(role)}" )
+            templateBuilder.locationId( conf.zoneId )
 
-	
+
+            /*
+             * create the master node
+             */
+            def count = conf.instanceNumFor(role)
+            if( count ) {
+                def lbl = count==1 ? 'node' : 'nodes'
+                log.info("Creating $count $lbl for role '${role}'")
+                def nodes = startNodes(templateBuilder, count, role)
+
+                if( !masterMetadata ) {
+                    masterMetadata = nodes?.find()
+                }
+            }
+            else {
+                log.debug("(no '${role}' nodes required)")
+            }            
+        }
+
+
 		/*
 		 * notify the cluster creation 	
 		 */
-		postEvent( new OnAfterClusterStartedEvent(session: this, clusterName:clusterName, nodes: allNodes) )
+		postEvent( new OnAfterClusterStartedEvent(session: this, clusterName:clusterName, nodes: listNodes() ) )
+
+        /*
+         * refresh the nodes metadata to be sure that are updated after the previous event
+         */
+        scheduleRefreshMetadataNow()
+
 
         /* Require to save this session on exit */
         saveOnExit = true
 	}
+
 
 
     /**
@@ -361,7 +411,6 @@ class BlowSession {
     private startNodes( TemplateBuilder builder, int numberOfNodes, String role ) {
 
         Template template = builder.build()
-		template.getOptions().userMetadata("Role", role)
 
         /*
          * set the credential to use
@@ -399,13 +448,16 @@ class BlowSession {
 			options: template.getOptions()
 			) )
 
-        log.debug "Template metadata for '${role}': " + template.getOptions()?.getUserMetadata()
-        //log.debug "Template options for '${role} == '" + template.getOptions()?.toString()
-
 		/*
 		 * Start the requested nodes
 		 */
+        log.debug "Creating nodes cluster: $clusterName; numberOfNodes: $numberOfNodes; role: $role; template: $template"
 		def setOfNodes = compute.createNodesInGroup(clusterName, numberOfNodes, template)
+
+        /*
+         * Update session metadata
+         */
+        metadataAddInstances(setOfNodes, role)
 		
 		/*
 		 * send the after creation event
@@ -439,7 +491,13 @@ class BlowSession {
 		 * notify the event
 		 */
 		postEvent( new OnBeforeClusterTerminationEvent(session: this, clusterName: groupName) );
-		
+
+        /*
+         * Cancel any pending refresh timer to avoid any potential side effects
+         * on nodes metadata update during the shutdown process
+         */
+        cancelScheduledRefresh()
+
 		/*
 		 * apply the command
 		 */
@@ -453,45 +511,298 @@ class BlowSession {
 		 */
 		postEvent( new OnAfterClusterTerminationEvent(session: this, clusterName: groupName, nodes: result) );
 
+        // reschedule a metadata refresh to reflect the changes applied
+        // and keep it running because this process can takes some seconds (or minutes) to complete
+        scheduleRefreshMetadataNow()
+
         /*
          * When the session si terminated, it is not more require to store it
          */
         saveOnExit = false
 
+        // delete the session file
+        deleteSessionFile()
+
 		return result
 	}
 
+    synchronized protected metadataInitialize() {
+
+        int tot = 0;
+        conf.roles.each { tot += conf.instanceNumFor(it) }
+
+        nodeNamesMap = HashBiMap.create(tot)
+        nodeRolesMap = ArrayListMultimap.create()
+        allNodes = new LinkedHashMap<String, BlowNodeMetadata>(tot)  // <-- use a linked hash map to maintain the insertion order
+
+        conf.roles.each {
+            def count = conf.instanceNumFor(it)
+            if( !count ) return
+
+            for( int i=0; i<count; i++ ) {
+                def name = getNextNodeName(it,i)
+                allNodes.put( name, null )
+            }
+
+        }
+
+    }
+
+    synchronized protected void metadataAddInstances( Set<? extends NodeMetadata> setOfNodes, String role ) {
+        assert role
+
+        setOfNodes.each { NodeMetadata node ->
+            def name = getNextNodeName(role)
+            log.debug "Adding metadata for node ${name} - instance: ${node.getProviderId()} - IP: ${node.getPublicAddresses().find()} "
+            nodeNamesMap.put( name, node.getId() )
+            nodeRolesMap.put( role, node.getId() )
+            allNodes.put(name, wrapNode(node))
+        }
+    }
+
+
+    protected void metadataUpdate( def setOfNodes = null ) {
+        log.debug "Metadata update"
+
+        def nodeIdToName = nodeNamesMap.inverse()
+        List<NodeMetadata> listOfNewNodes = []
+        def listOfUpdatedNames = []
+
+        /*
+         * Find the 'fresh' metadata for the current nodes
+         */
+        if( !setOfNodes ) {
+            setOfNodes = compute.listNodesDetailsMatching( new Predicate<NodeMetadata>() {
+                boolean apply( NodeMetadata it ) {
+                    return it.getGroup() == clusterName
+                }
+            })
+        }
+
+
+        /*
+         * For each of the node in the new list
+         * update the metadata for the existing entries in the 'allNodes' map
+         */
+        synchronized (this) {
+
+            setOfNodes.each { NodeMetadata node ->
+
+                if( nodeIdToName.containsKey(node.id) ) {
+                    def name = nodeIdToName[ node.id ]
+                    allNodes.put( name, wrapNode(node) )
+                    listOfUpdatedNames << name
+                }
+                else {
+                    listOfNewNodes << node
+                }
+            }
+
+            if( listOfNewNodes ) {
+                log.debug "Oops these nodes should not exist: ${listOfNewNodes *. getProviderId()}"
+            }
+
+            /*
+            * Check if the 'setOfNodes' contain less nodes than in
+            * 'allNodes' map
+            */
+            def missingNames = allNodes.keySet() - listOfUpdatedNames
+            log.debug "Removing from cached nodes the following entries: $missingNames"
+
+            missingNames .each { String name ->
+
+                def node = allNodes.get(name)
+                if( node ) {
+                    nodeNamesMap.remove(name)
+                    nodeRolesMap.remove( node.getNodeRole(), node.getId() )
+                    allNodes.put(name, null) // note: this remove must be the last otherwise the above 'getNodeId()' and 'getNodeRole()' will fail
+                }
+                else {
+                    log.debug "Unknown node: '$name'"
+                }
+            }
+            // end of missingNames
+        }
+
+    }
+
+    private BlowNodeMetadata wrapNode( NodeMetadata node ) {
+        new BlowNodeMetadata(node)
+    }
+
+
+    /*
+     * Resume the metadata refresh timer after a session continuation
+     */
+    protected void resumeRefreshMetadata() {
+        log.debug "Resume refresh metadata timer - refreshLastRun: ${refreshLastRun} "
+
+        long delay = 0
+        if( refreshLastRun ) {
+            long elapsed = System.currentTimeMillis() - refreshLastRun
+            if( elapsed < nodesCacheDuration ) {
+                delay = nodesCacheDuration - elapsed
+            }
+
+            log.debug("Refresh timer delay: ${delay / 1000} secs")
+            scheduleRefreshMetadata(delay)
+        }
+
+    }
+
+    /**
+     * Refresh the nodes metadata scheduling a timer to keep them updated
+     */
+    protected void scheduleRefreshMetadataNow() {
+        scheduleRefreshMetadata(0)
+    }
+
+    /**
+     * Schedule a metadata update
+     */
+    protected void scheduleRefreshMetadata(long delay = nodesCacheDuration) {
+        log.debug "Schedule refresh metadata with delay: ${delay/1000} secs"
+
+        if( !allNodes ) {
+            log.debug "Not install the refresh timer since the 'allNodes' map is empty "
+            return
+        }
+
+        if( refreshTimer ) { refreshTimer.cancel() }
+
+        refreshTimer = new Timer('BlowSyncTimer',true)
+        refreshTimer.runAfter(delay.toInteger()) {
+            log.debug("Refreshing nodes metadata")
+            try {
+                metadataUpdate()
+                refreshLastRun = System.currentTimeMillis()
+            }
+            catch( Throwable e ) {
+                log.warn("Oops .. unable to refresh nodes metadata. See log file for details.", e)
+            }
+            finally {
+                log.debug("Refreshing nodes metadata - end")
+                // schedule another iteration
+                scheduleRefreshMetadata(nodesCacheDuration)
+                log.debug("Re-scheduled metadata refresh")
+            }
+        }
+
+    }
+
+
+    /*
+     * A background timer tries to keep the nodes metadata updates,
+     * but the user may call this method to force a metadata update
+     */
+    public void refreshMetadata() {
+        log.debug "Refreshing metadata"
+
+        /*
+         * cancel the current refresh timer
+         */
+        def thereWasTimer = cancelScheduledRefresh()
+
+        try {
+            /*
+             * Update the metadata
+             */
+            metadataUpdate()
+
+            // keep track of the last time it has been executed
+            refreshLastRun = System.currentTimeMillis()
+        }
+        finally {
+            /*
+             * schedule a new refresh if there's a timer
+             */
+            if( thereWasTimer ) {
+                resumeRefreshMetadata()
+            }
+
+        }
+    }
+
+    protected boolean cancelScheduledRefresh() {
+        if( refreshTimer ) {
+            log.debug "Cancel refresh timer"
+
+            refreshTimer.cancel();
+            refreshTimer=null
+
+            return true
+        }
+
+        return false
+    }
+
+
+    @Deprecated
 	public NodeMetadata getMasterMetadata() {
         if( !masterMetadata ) {
-            masterMetadata = context.getComputeService().listNodesDetailsMatching(filterMasterNode())?.find()
+            def filter = filterByCriteria(conf.masterRole)
+            masterMetadata = context.getComputeService().listNodesDetailsMatching(filter) ?.find()
         }
 
         masterMetadata
     }
-	 
-	/**
-	 * Define a predicate to filter all nodes marked by 'Role' tag a cluster. 
-	 * 
-	 * @param role The required role string. Currently are used <code>master</code> and <code>worker</code>
-	 * @return A {@link Predicate<NodeMetadata>} instance matching for the required role for the running nodes in the current cluster 
-	 */
-	def Predicate<NodeMetadata> filterByRole( final String role ) {
 
-		def nodeFilter = new Predicate<NodeMetadata>() {
-			boolean apply( NodeMetadata it) {
-				def map = it.getUserMetadata()
-				return it.getGroup() == clusterName && it.getState() == NodeState.RUNNING && map.containsKey("Role") && map["Role"] == role
-			}
-		}
+    /**
+     * Find out a list of node IDs given a 'node name' or a 'node role' or a combination of them
+     *
+     * @param criteria
+     * @return
+     */
+    def List<String> findNodeIDs( def criteria ) {
+        assert criteria
 
-	}
-	
-	def Predicate<NodeMetadata> filterAll( final groupName = clusterName ) {
+        def result = []
+        if( criteria instanceof Collection || criteria.getClass().isArray() ) {
+            criteria.each {
+                if(it) {
+                result.addAll( findNodeIDs(it) )
+                }
+            }
+            return result
+        }
+
+        if( nodeNamesMap.containsKey(criteria) ) {
+            result.add(nodeNamesMap.get(criteria))
+        }
+        else if( nodeRolesMap.containsKey(criteria) ) {
+            result.addAll( nodeRolesMap.get(criteria) )
+        }
+
+        return result
+
+    }
+
+    /**
+     * Get a predicate matching the specified criteria
+     * @param criteria A specification of nodes. It could be a node name (as defined by blow), a node role or a combination of them (as list)
+     * @return The matching criteria
+     */
+
+    def Predicate<NodeMetadata> filterByCriteria( final def criteria ) {
+        assert criteria
+
+        def listOfNodeIDs = findNodeIDs(criteria)
+
+        def nodeFilter = new Predicate<NodeMetadata>() {
+            boolean apply( NodeMetadata it) {
+                return it.getGroup() == clusterName \
+				    && it.getState() == NodeState.RUNNING \
+				    && it.getId() in listOfNodeIDs
+            }
+        }
+    }
+
+	def Predicate<NodeMetadata> filterAll() {
 		
 		new Predicate<NodeMetadata>() {
 			boolean apply( NodeMetadata it ) {
-				def map = it.getUserMetadata()
-				return it.getGroup() == groupName && it.getState() == NodeState.RUNNING 
+				return it.getGroup() == clusterName \
+				    && it.getState() == NodeState.RUNNING
 			}
 		}
 
@@ -502,7 +813,6 @@ class BlowSession {
 
         new Predicate<NodeMetadata>() {
             boolean apply( NodeMetadata it ) {
-                def map = it.getUserMetadata()
                 return it.getGroup() == clusterName \
                     && it.getState() == NodeState.RUNNING \
                     && it.getPublicAddresses().find( {  it =~ publicAddress  } )
@@ -510,41 +820,20 @@ class BlowSession {
         }
 
     }
-	
-	/**
-	 * Define a predicate filter matching all nodes marked by the 'master' role
-	 * 
-	 * @return The {@link Predicate<NodeMetadata>} instance matching the above rule
-	 */
-	def Predicate<NodeMetadata> filterMasterNode( ) {  filterByRole("master")	} 
 
-	/**
-	* Define a predicate filter matching all nodes marked by the 'worker' role
-	*
-	* @return The {@link Predicate<NodeMetadata>} instance matching the above rule
-	*/
-	def Predicate<NodeMetadata> filterWorkerNodes( ) { filterByRole("worker")  }
-	
-	/**
-	 * List all the node metadata matching for the specified 'role' string
-	 * 
-	 */
-	def Set<? extends NodeMetadata> listByRole( final String role ) {
-        compute.listNodesDetailsMatching( filterByRole(role) )
-    }
-	
-	/**
-	 * Run a shell script (sh/bash) on the remote 'master' 
-	 * 	
-	 * @param script
-	 */
-	def boolean runScriptOnMaster( String script, boolean runAsRoot = false ) {
 
-		runScriptOnNodes( script, filterMasterNode(), runAsRoot )		
+	def boolean runScriptOnNodes( String script, def criteria = null, boolean runAsRoot = false) {
 
-	}
-	
-	def boolean runScriptOnNodes( String script, Predicate<NodeMetadata> filter = null, boolean runAsRoot = false) {
+        def filter
+        if( criteria == null ) {
+            filter = filterAll()
+        }
+        else if( criteria instanceof Predicate<NodeMetadata> ) {
+            filter = criteria
+        }
+        else {
+            filter = filterByCriteria(criteria)
+        }
 
 		/*
 		 * defines the credentials option
@@ -556,27 +845,25 @@ class BlowSession {
 		 */
 		opt.runAsRoot(runAsRoot)
 		
-		
-		def whichNodes = filter ?: filterAll()
-		def responses = context.getComputeService().runScriptOnNodesMatching(whichNodes, script, opt)
+		def responses = context.getComputeService().runScriptOnNodesMatching(filter, script, opt)
 
         logExecResponse(script, responses)
 
 		return checkForValidResponse(responses)
 	}
-	
-	/**
-	 * Run a shell script (sh/bash) on the remote 'worker(s)' node as 'root' user
-	 * 
-	 * @param script
-	 */
-	def boolean runScriptOnWorkers( String script, boolean runAsRoot = false ) {
 
-		runScriptOnNodes( script, filterWorkerNodes(), runAsRoot )		
+    def boolean runStatementOnNodes( Statement statement, def criteria = null, boolean runAsRoot = false ) {
 
-	}
-
-    def boolean runStatementOnNodes( Statement statement, Predicate<NodeMetadata> filter = null, boolean runAsRoot = false ) {
+        def filter
+        if( criteria == null ) {
+            filter = filterAll()
+        }
+        else if( criteria instanceof Predicate<NodeMetadata> ) {
+            filter = criteria
+        }
+        else {
+            filter = filterByCriteria(criteria)
+        }
 
         /*
            * defines the credentials option
@@ -584,13 +871,11 @@ class BlowSession {
         def opt = TemplateOptions.Builder.overrideLoginCredentials(conf.credentials);
 
         /*
-           * run as 'root' if required
-           */
+         * run as 'root' if required
+         */
         opt.runAsRoot(runAsRoot)
 
-
-        def nodesFilter = filter ?: filterAll()
-        def responses = context.getComputeService().runScriptOnNodesMatching(nodesFilter, statement, opt)
+        def responses = context.getComputeService().runScriptOnNodesMatching(filter, statement, opt)
 
         logExecResponse(statement, responses)
 
@@ -666,7 +951,11 @@ class BlowSession {
 
         return result.toString()
 	}
-	
+
+    /**
+     * Synchronize the access to the 'allNodes' map
+     */
+    synchronized def getAllNodes() { allNodes }
 
 	/**
 	 * @return the list of current available cluster names
@@ -681,42 +970,101 @@ class BlowSession {
 	/**
 	 * @return the list of availables nodes in the cluster specified 
 	 */
-	def Set<? extends NodeMetadata> listNodes( String groupName = clusterName ) {
-		compute.listNodesDetailsMatching( filterAll(groupName) )
-	} 
-	
-	def Collection<String> listHostNames( String groupName = clusterName ) {
-		listNodes(groupName).collect { it.getHostname() } 
-	} 
+	synchronized def Set<? extends BlowNodeMetadata> listNodes() {
+
+        def result =  new LinkedHashSet<BlowNodeMetadata>(allNodes.size())
+        allNodes.each {
+            if( it.value ) { result.add(it.value)  }
+        }
+
+        result
+	}
+
+    synchronized def Set<? extends BlowNodeMetadata> listNodes( def criteria )  {
+        assert criteria
+
+        def result = new LinkedHashSet<BlowNodeMetadata>()
+        def nodeList = findNodeIDs(criteria)
+
+        allNodes?.values(). each { BlowNodeMetadata node ->
+            if( node?.getId() in nodeList ) {
+                result.add(node)
+            }
+        }
+
+        return result
+    }
+
+
+    def Collection<String> listNodesNames( ) {
+        listNodes().collect { BlowNodeMetadata node ->
+            node.getNodeName()
+        }
+    }
 	
 	def close() {
         log.trace('Closing session')
 		if( contextCreated ) context?.close()
-        log.trace 'After close context'
 		if( scpExecutor ) scpExecutor.shutdown()
-        log.trace 'After shutdown executor'
-	} 
+        if( refreshTimer ) refreshTimer.cancel()
+	}
 	
 	
 	public String getConfString() {
-		
+
+        def defConfigObj = new BlowConfig();
+        def nesting = 0
 		def result = new StringBuilder()
-        result <<= "cluster: $clusterName\n"
+        result <<= "cluster: $clusterName { \n"
+        nesting += 2
 
-		conf.getConfMap().each {
-			result <<= "${it.key}: ${it.value}\n"	
-		}
+        def props = new ArrayList(conf.metaPropertyValues)
+        def excludes = ['class','metaClass','operations', 'credentials', 'size', 'defaultKeyFile']
+        def map = [:]
+        def maxlen = 0
+        props.each { PropertyValue it ->
 
-        if( conf.operations?.size() == 1 ) {
-            result <<= "operations [ ${OperationHelper.opToString(conf.operations[0])} ] "
+            // skip unwanted properties
+            if( it.name in excludes ) return
+
+            // skip that values which does not change respect teh default obj
+            if( defConfigObj[it.name] == it.value ) return
+
+            def val = it.value
+            if( val == null ) {
+                val = '--'
+            } else if( val instanceof CharSequence || val instanceof File )  {
+                val = "'$val'"
+            }
+
+            map[ it.name ] = val
+            if( it.name.length()>maxlen ) maxlen = it.name.length();
         }
-        else if( conf.operations?.size() > 1 ) {
-            result <<= "operations ["
-            conf.operations.each { result <<= "\n  " + OperationHelper.opToString(it) }
-            result <<= "\n]"
+
+        // print the props
+        map.keySet().sort().each { String name ->
+
+            result <<= "".padLeft(nesting)
+            result <<= "${name.padRight(maxlen)} ${map[name]}\n"
         }
 
-		return result
+
+        if( conf.operations?.size() >= 1 ) {
+            result <<= "".padLeft(nesting)
+            result <<= "operations {"
+            nesting += 2
+            conf.operations.each {
+                result <<= "\n  "
+                result <<= "".padLeft(nesting)
+                result <<= OperationHelper.opToString(it)
+            }
+            nesting -= 2
+            result <<= "\n"
+            result <<= "".padLeft(nesting) << "}"
+        }
+
+        result <<= "\n}"
+        return result
 	} 
 	
 	public String getUserInfo() {
@@ -732,24 +1080,24 @@ class BlowSession {
 	 * @param targetNode 
 	 * @return
 	 */
-	protected void copyToNode( def payload, String targetPath, NodeMetadata targetNode ) {
+	protected void copyToNode( def payload, String targetPath, BlowNodeMetadata targetNode ) {
 		assert targetNode
 		assert targetPath 
 		
-		log.debug("[scp] uploading to path: ${targetNode.getHostname()}:${targetPath}")
+		log.debug("[scp] uploading to path: ${targetNode.getNodeName()}:${targetPath}")
 
-		def ip = targetNode.getPublicAddresses()?.find()
-		log.debug("[scp] connecting host: ${ip}")
+		def ip = targetNode.getNodeIp()
+		log.debug("[scp] connecting host: '${ip}'")
 		def scp = new ScpClient()
 		
-		scp.connect( ip, conf.userName, conf.privateKeyFile )
+		scp.connect( ip, conf.userName, conf.privateKey )
 		try {
 			def result
 			if( payload instanceof File ) {
-				result = scp.uploadFile( payload, targetPath )
+				scp.uploadFile( payload, targetPath )
 			}
 			else if( payload instanceof String ) {
-				result = scp.uploadString( payload, targetPath )
+				scp.uploadString( payload, targetPath )
 			}
 			else {
 				throw new RuntimeException("[scp] unsupported payload type [${payload.getClass().getName()}]")
@@ -761,17 +1109,16 @@ class BlowSession {
 	}
 	
 	
-	public boolean copyToNodes( def payload, String targetPath, Predicate<NodeMetadata> filter = null) {
-		log.debug("copyToNodes: filter ${filter}")
-		
-		def nodes = filter ? compute.listNodesDetailsMatching(filter) : this.listNodes()
+	public boolean copyToNodes( def payload, String targetPath, def criteria = null ) {
+
+		def nodes = criteria ? listNodes(criteria) : this.listNodes()
 		
 		/* 
 		 * create a list with an upload job for each node 		
 		 */
 		def tasks = new ArrayList( nodes.size() )
 		
-		nodes.each { NodeMetadata node -> 
+		nodes.each { BlowNodeMetadata node ->
 			
 			tasks.add( new Callable<Object[]>() {
 					public Object[] call( ) {
@@ -813,31 +1160,34 @@ class BlowSession {
      * @param criteria
      * @return
      */
-    def List<String> findMatchingAttributes( def criteria = null, def defAttribute = 'publicAddresses' ) {
+    def List<String> findMatchingAttributes( def criteria = null, def defAttribute = 'nodeName' ) {
 
         /*
         * Find all available IP addresses
         */
         def result
         if( !criteria ) {
-            result = listNodes() .collect { NodeMetadata node  ->
+            result = listNodes() .collect { BlowNodeMetadata node  ->
                 node[defAttribute]
             }
         }
 
         else {
-            result = listNodes() .collect { NodeMetadata node ->
+            result = listNodes() .collect { BlowNodeMetadata node ->
                 def entries = []
-                def ip = node.getPublicAddresses()?.find();
-                if( ip?.startsWith(criteria) ) entries.add(ip)
+
+                if( node.getNodeName()?.startsWith(criteria) ) {
+                    entries.add(node.getNodeName())
+                }
+
+                if( node.getNodeIp()?.startsWith(criteria) ) {
+                    entries.add(node.getNodeIp())
+                }
 
                 if( node.getProviderId()?.startsWith(criteria) ) {
                     entries?.add(node.getProviderId())
                 }
 
-                if( node.getHostname()?.startsWith(criteria) ) {
-                    entries.add(node.getHostname())
-                }
 
                 return entries
             }
@@ -860,11 +1210,12 @@ class BlowSession {
      */
     def NodeMetadata findMatchingNode( String value ) {
 
-        def list = listNodes().findAll() { NodeMetadata node ->
+        def list = listNodes().findAll() { BlowNodeMetadata node ->
 
-            return node.getPublicAddresses()?.contains(value) \
-                        || node.getHostname() == value \
-                        || node.getProviderId() == value
+            return  node.getNodeName() == value \
+                    || node.getNodeIp() == value \
+                    || node.getHostname() == value \
+                    || node.getProviderId() == value
 
         }
 
@@ -877,10 +1228,29 @@ class BlowSession {
 
     }
 
+
+    protected String getNextNodeName(String role, Integer count=null) {
+        assert role
+
+        if( count == null ) {
+            count = nodeRolesMap.get(role).size()
+        }
+
+        def num = conf.instanceNumFor(role)
+        if( num <= 1 ) {
+            return role
+        }
+
+        def len = num.toString().length()
+
+        return role + (count+1).toString().padLeft(len,'0')
+    }
+
+
     /**
      * @return The first available deviceName
      */
-    def String getNextDevice( ) {
+    protected String getNextDevice( ) {
 
         synchronized (devicesMap) {
             // find the first device that has been never assigned (count == 0)
@@ -894,13 +1264,14 @@ class BlowSession {
 
     }
 
+
     /**
      * Mark a device name as used.
      *
      * @param device The Linux device name e.g {@code /dev/sdf}
      * @return {@code true} if the device was not used before and it is marked as used successfully
      */
-    def boolean markDevice( String device ) {
+    protected boolean markDevice( String device ) {
 
         synchronized (devicesMap) {
             // normalize to the device '/dev/xvd?' to '/dev/sd?'
@@ -919,6 +1290,18 @@ class BlowSession {
             return devicesMap[device] == 1
         }
     }
+
+    private void deleteDefaultSecurityGroup() {
+        def securityToClear = "jclouds#${clusterName}#${conf.regionId}"
+        log.debug "Clearing security group: '${securityToClear}'"
+        try {
+            securityGroupClient.deleteSecurityGroupInRegion( conf.regionId, securityToClear )
+        }
+        catch( Exception e ) {
+            log.warn("Error delerting security group: '$securityToClear'", e)
+        }
+    }
+
 
     private def instancesLogFiles = [:]
 
@@ -984,16 +1367,22 @@ class BlowSession {
 
     }
 
-    /** Define the file where read/store the sessin object */
+    /**
+     * Define the file where read/store the session object
+     */
     def private static File sessionFile( String clusterName ) {
         def home = new File(System.properties['user.home'], '.blow')
-        new File( home, ".blow_session.${clusterName}")
+        new File( home, "blow_session.${clusterName}")
     }
 
     @Lazy
-    transient private static XStream xstream = {
+    transient private static XStream xStream = {
         def result = new XStream(new StaxDriver())
-        result.alias("session", BlowSession.class)
+        result.registerConverter( new HashBiMapConverter(result.getMapper()) )
+        result.registerConverter( new ArrayListMultimapConverter(result.getMapper()) )
+        result.alias( "session", BlowSession.class )
+        result.alias( "hash-bimap", HashBiMap.class )
+        result.alias( "arraylist-multimap", ArrayListMultimap.class )
         result
     } ()
 
@@ -1002,12 +1391,33 @@ class BlowSession {
      *
      * @return The file where the session has been persisted, of {@code null} in it cannot stored
      */
-    def File persist() {
-        def file = sessionFile(clusterName)
+    def File persist(def target) {
+        assert clusterName, "Missing 'clusterName', cannot save session"
+        def file;
 
+        /*
+         * detect where save the session
+         */
+        if( target == null ) {
+            file = sessionFile(clusterName)
+        }
+        else if( target instanceof File ) {
+            file = target
+        }
+        else if( target instanceof CharSequence ) {
+            file = new File( target.toString() )
+        }
+        else {
+            throw new BlowException("Invalid save session target class: ${target.getClass()}")
+        }
+
+
+        /*
+         * serialize and save the session
+         */
         try {
             FileWriter writer = new FileWriter(file)
-            xstream.marshal(this, new PrettyPrintWriter(writer))
+            xStream.marshal(this, new PrettyPrintWriter(writer))
             writer.close()
 
             return file
@@ -1031,7 +1441,7 @@ class BlowSession {
         }
 
         try {
-            return (BlowSession)xstream.fromXML(file)
+            return (BlowSession)xStream.fromXML(file)
         }
         catch( Exception e ) {
             log.warn("Cannot read saved session: '${file}'", e)
@@ -1045,7 +1455,7 @@ class BlowSession {
      * @param clusterName The cluster name of the serialized session
      * @return {@code true} if the serialized session file has beend delete
      */
-    def static boolean delete( String clusterName ) {
+    def static boolean deleteSessionFile( String clusterName ) {
         def file = sessionFile(clusterName)
         if( file.exists() ) {
             return file.delete()
@@ -1058,9 +1468,48 @@ class BlowSession {
      * @return @{code true} if the serialized file has been deleted,
      * or {@false } if it does not exist or cannot be deleted
      */
-    def boolean delete() {
-        clusterName ? delete(clusterName) : false
+    def boolean deleteSessionFile() {
+        clusterName ? deleteSessionFile(clusterName) : false
     }
 
+    def with( NodeMetadata node, Closure closure ) {
+        closure.setDelegate(new BlowNodeMetadata(node))
+        closure.call()
+    }
+
+
+
+    public class BlowNodeMetadata implements NodeMetadata {
+
+        BlowNodeMetadata(NodeMetadata node) {
+            this.node = node
+        }
+
+        @Delegate(interfaces=false)
+        NodeMetadata node
+
+        def String getNodeName( ) {
+            nodeNamesMap.inverse().get( this.getId() )
+        }
+
+        def String getNodeIp( ) {
+            getPublicAddresses() ?. find()
+        }
+
+        def String getNodeRole() {
+            def entry = nodeRolesMap.entries().find { entry -> node.getId() == entry.value }
+            return entry?.key
+        }
+
+        @Override
+        public ComputeType getType() {
+            node.getType()
+        }
+
+        @Override
+        String getAdminPassword() {
+            node.getAdminPassword()
+        }
+    }
 }
 

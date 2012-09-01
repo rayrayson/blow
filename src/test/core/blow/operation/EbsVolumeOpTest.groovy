@@ -19,6 +19,8 @@
 
 package blow.operation
 
+import blow.BlowConfig
+import blow.exception.BlowConfigException
 import spock.lang.Specification
 
 /**
@@ -27,24 +29,49 @@ import spock.lang.Specification
  */
 class EbsVolumeOpTest extends Specification {
 
-    def "test validation fail" () {
-
-        when:
-        new EbsVolumeOp(path: '/hola', volumeId: 'vol-xxx', snapshotId: 'snap-yy').validate()
-
-        then:
-        thrown(AssertionError)
-
-    }
-
     def "test validation ok " () {
         when:
-        new EbsVolumeOp(path: '/hola').validate()
-        new EbsVolumeOp(path: '/hola', snapshotId: 'snap-123').validate()
-        new EbsVolumeOp(path: '/hola', volumeId: 'vol-999').validate()
+        def conf = new BlowConfig(userName: 'pablo')
+        new EbsVolumeOp(path: '/hola', applyTo: 'master').validate(conf)
+        new EbsVolumeOp(path: '/hola', supply: 'snap-123', applyTo: 'master').validate(conf)
+        new EbsVolumeOp(path: '/hola', supply: 'vol-999', applyTo: 'master').validate(conf)
 
 
         then:
         notThrown(AssertionError)
     }
+
+    def "test checkEphemeral FAIL" () {
+
+        when:
+        EbsVolumeOp.checkEphemeral('ephemeral0','t1.micro')
+
+        then:
+        thrown( BlowConfigException )
+
+    }
+
+    def "test checkEphemeral FAIL (2)" () {
+
+        when:
+        EbsVolumeOp.checkEphemeral('ephemeral1','m1.small')
+
+        then:
+        thrown( BlowConfigException )
+
+    }
+
+    def "test checkEphemeral OK" () {
+
+        when:
+        EbsVolumeOp.checkEphemeral('ephemeral0','m1.small')
+        EbsVolumeOp.checkEphemeral('ephemeral0','m1.medium')
+        EbsVolumeOp.checkEphemeral('ephemeral1','m1.large')
+        EbsVolumeOp.checkEphemeral('ephemeral3','m1.xlarge')
+
+        then:
+        notThrown( BlowConfigException )
+
+    }
+
 }

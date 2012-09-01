@@ -17,22 +17,50 @@
  *   along with Blow.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package blow
+package blow.util
 
-import blow.operation.ConfHolder
-import blow.operation.Operation
+import spock.lang.Specification
 
 /**
- * @author Paolo Di Tommaso
+ *
+ *  @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
+class InjectorHelperTest extends Specification {
 
-@Operation
-class TestOperationHolder implements ConfHolder {
+    def "test inject" () {
 
-    def map = [:]
+        when:
+        def obj = new Super()
+        def now = new Date()
+        InjectorHelper.inject(Super, obj, ['hola', 99, now])
 
-    @Override
-    void setConfProperty(String name, def value) {
-        map .put( name, value )
+        then:
+        obj.num == 99
+        obj.date == now
+        obj.str == 'hola'
+        obj.checkStr() == 'hola'
+        obj.otherString == 'hola'
+
     }
+}
+
+
+class Simple {
+
+    private String str
+
+    public Integer num
+
+    public String getStr() { str }
+
+    public String checkStr() { str }
+
+}
+
+class Super extends Simple {
+
+    private Date date
+
+    def String otherString
+
 }

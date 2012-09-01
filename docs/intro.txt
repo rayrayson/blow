@@ -19,15 +19,21 @@ Features
 
 Currently Blow is able to configure:
 
-* /etc/hosts file
+* Instances hostname
 * NFS shares
 * GlusterFS shares
 * Password-less SSH
 * Security group
 * User account
-* Mount EBS volumes
-* Mount EBS snapshots
+* EBS volumes
+* EBS snapshots
 * Open Grid Engine (SGE)
+
+Moreover it provides integrated access to:
+
+* Amazon S3 client
+* SSH terminal
+* Fast Data Transfer (FDT) - http://monalisa.cern.ch/FDT/
 
 
 Prerequisites

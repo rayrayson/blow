@@ -19,7 +19,8 @@
 
 package blow.operation
 
-import spock.lang.*;
+import spock.lang.Specification
+import blow.BlowConfig
 
 public class NfsOpTest extends Specification {
 
@@ -42,20 +43,20 @@ public class NfsOpTest extends Specification {
 
         when:
         def nfs = new NfsOp()
-		nfs.masterHostname = "some-home-name"
-		nfs.path = "/alpha"
+		nfs.master = 'master_node'
+        nfs.path = '/alpha'
 		def tpl = nfs.scriptWorker()
 
         then:
         tpl.contains('mkdir -p ')
-		tpl.contains('echo "some-home-name:/alpha      /alpha      nfs     rw,hard,intr    0 0" >> /etc/fstab')
+		tpl.contains('echo "master_node:/alpha      /alpha      nfs     rw,hard,intr    0 0" >> /etc/fstab')
         tpl.contains('mount -a')
 	}
 
 
     public void "test validation FAIL"() {
         when:
-        new NfsOp().validate()
+        new NfsOp().validate(new BlowConfig())
 
         then:
         thrown(AssertionError)
@@ -63,7 +64,7 @@ public class NfsOpTest extends Specification {
 
     public void "test validation OK"() {
         when:
-        new NfsOp( path: "/folder" ).validate()
+        new NfsOp( path: "/folder" ).validate(new BlowConfig(instanceNum: 2))
 
         then:
         notThrown(AssertionError)

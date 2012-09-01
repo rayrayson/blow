@@ -1,6 +1,6 @@
 Blow
 ====
-Easy and replicable cluster deployments in the cloud
+Easy and replicable cluster configuration and deployments in the cloud
 
 What is Blow?
 -------------
@@ -24,37 +24,43 @@ safer and replicable.
 
 Currently Blow is able to configure:
 
-* /etc/hosts file
+* Instances hostname
 * NFS shares
 * GlusterFS shares
 * Password-less SSH
 * Security group
 * User account
-* Mount EBS volumes
-* Mount EBS snapshots
+* EBS volumes
+* EBS snapshots
 * Open Grid Engine (SGE)
+
+Moreover it provides:
+
+* Integrated S3 client
+* Integrated SSH shell
+* Fast Data Transfer (FDT) - http://monalisa.cern.ch/FDT/
 
 
 Configure your cluster in 5 minutes
 -----------------------------------
 
 #### 0. Prerequisites
-* You need a JRE/JDK 6 installed on your machine
+* You need a JRE/JDK 6 (or higher version) installed on your machine
 * An Amazon AWS account (the account key and the secret key)
 
 #### 1. Download Blow
 
-Download the <a href="http://dl.dropbox.com/u/376524/blow/blow.jar">Blow executable package here</a> and
+Download the <a href="http://dl.dropbox.com/u/376524/blow/blow.run">Blow executable package here</a> and
 store it somewhere on your machine.
 
 If you are using a *nix system (Linux/MacOSX) grants the executable permission to the downloaded file with the command
-`chmod +x ./blow.jar`, after that you will able to run it using the below command:
+`chmod +x ./blow.run`, after that you will able to run it using the below command:
 
-    ./blow.jar [program arguments]
+    ./blow.run [program arguments]
 
 If you are running a Windows OS, you will have to use the following syntax to run it:
 
-    java -jar blow.jar [program arguments]
+    java -jar blow.run [program arguments]
 
 #### 2. Provide the cluster configuration
 
@@ -62,29 +68,23 @@ Create a file named `blow.conf` with the following properties and copy it
 to the path where you downloaded Blow.
 
     mycluster {
-        access-key = xxxx
-        secret-key = yyyy
-        region-id = us-east-1
-        zone-id = us-east-1d
-        image-id =  ami-e565ba8c
-        size = 2
-        instance-type = t1.micro
+        accessKey '123...'
+        secretKey 'xyz...'
+        regionId 'us-east-1'
+        zoneId 'us-east-1d'
+        imageId 'ami-e565ba8c'
+        instanceNum 3
+        instanceType 't1.micro'
 
-        operations = [
-            hostname
-
-            { nfs = {
-                path: /soft
-                device: /dev/sdh1
-            }}
-
-            { sge = { root: /soft/sge6, installation-type: deploy } }
-        ]
+        operations {
+    	    nfs(path: '/soft')
+            sge(path: '/soft/sge6', installationMode: 'deploy')
+        }
     }
 
-In the above configuration replace the `access-key` and `secret-property` with your Amazon AWS account credentials.
+In the above configuration replace the `accessKey` and `secretKey` with your Amazon AWS account credentials.
 
-This will create a cluster with two nodes, based on the `Amazon Linux 2012.03 (x86_64)` public AMI, configure the
+This will create a cluster with three nodes, based on the `Amazon Linux 2012.03 (x86_64)` public AMI, configure the
 `/etc/hosts` file, a shared NFS and install the <a href="http://gridscheduler.sourceforge.net" target="_blank">Open Grid Engine</a>,
 formerly Sun Grid Engine (SGE) batch-queuing system for distributed resource management.
 
@@ -94,12 +94,12 @@ Move the folder that contains the configuration file and the download Blow binar
 
 Start the Blow shell entering the command:
 
-    ./blow.jar
+    ./blow.run
 
 
 Note: Windows users have to use the syntax:
 
-    java -jar blow.jar
+    java -jar blow.run
 
 
 If you don't a key-pair in your $HOME/.ssh pair, it will ask you to create a new key-pair in the current local directory.
@@ -115,17 +115,26 @@ When the configuration is complete, you can access any nodes in the cluster usin
 In the Blow shell terminal enter the command `listnodes` to get IP address of each nodes.
 A list similar to the one shown below will be displayed:
 
-    i-75589112;    50.17.93.165; RUNNING; mycluster; master
-    i-135a9374;     23.20.68.63; RUNNING; mycluster; worker
+    master  (i-e808e592); 23.22.132.166; RUNNING
+    worker1 (i-ea05e890); 23.23.29.40  ; RUNNING
+    worker2 (i-e805e892); 50.19.32.102 ; RUNNING
 
-In the above list you can read (from left to right) the instance id, the public IP address, the node status,
-the cluster name and finally the _role_ of the node in the cluster.
+In the above list you can read (from left to right) the node name, the instance id (as provided by Amazon), the public IP address
+and the node status.
 
-To access any node in the cluster, simply enter the following command in the Blow shell:
+To access any node in the cluster, simply enter in the Blow shell the `ssh` command followed by the node name. For example:
 
-    ssh 23.20.68.63
+    ssh master
 
-(obviously replacing the IP address with the one available in your cluster).
+Once you have accessed the remote node, enter the `qhost` command to verify the SGE cluster is up and running:
+
+    [master ~]$ qhost
+    HOSTNAME                ARCH         NCPU  LOAD  MEMTOT  MEMUSE  SWAPTO  SWAPUS
+    -------------------------------------------------------------------------------
+    global                  -               -     -       -       -       -       -
+    master                  linux-x64       1  0.01  595.4M   53.8M     0.0     0.0
+    worker1                 linux-x64       1  0.37  595.4M   50.1M     0.0     0.0
+    worker2                 linux-x64       1  0.02  595.4M   43.4M     0.0     0.0
 
 
 ### 5. Terminate the cluster

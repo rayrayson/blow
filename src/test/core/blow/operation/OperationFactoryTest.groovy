@@ -22,7 +22,6 @@ package blow.operation;
 
 import blow.DynLoader
 import blow.TestOperation
-import blow.TestOperationHolder
 import org.codehaus.groovy.util.HashCodeHelper
 import spock.lang.Shared
 import spock.lang.Specification
@@ -48,57 +47,7 @@ public class OperationFactoryTest extends Specification {
 				
 	}
 	
-	
-	public void testCreateWithConf() {
 
-		when:
-			String str =
-			"""
-			value1 = 10
-			value-2 = 20
-			baseValue = hola
-			missing-value = nope
-			"""
-		
-		
-		then:
-			def plugin = new OperationFactory(loader).create("my-super-operation", str)
-			plugin != null
-			plugin.value1 == 10
-			plugin.value2 == "20"
-			plugin.baseValue == "hola"
-		
-	}
-
-    def void testCreateWithConfHolder() {
-
-        when:
-        def conf = """\
-        ALPHA=1
-        BETA=true
-        DELTA=three
-        """
-
-        def plugin = new OperationFactory(loader).create(TestOperationHolder.class.getSimpleName(), conf )
-
-        then:
-            plugin.map != null
-            plugin.map.ALPHA == 1
-            plugin.map.BETA == true
-            plugin.map.DELTA == "three"
-
-    }
-	
-	public void testCreateWithStringConf() {
-		
-		setup: 
-			def pp = new OperationFactory(loader).create("my-super-operation", "value1: 99")
-			
-		expect:
-			pp.value1 == 99
-		
-		
-	} 
 	
 
     def testOperationHashCode() {

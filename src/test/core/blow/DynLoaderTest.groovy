@@ -63,15 +63,15 @@ class DynLoaderTest extends Specification {
 			def loader = new DynLoader("./src/test/extensions");
 			
 		then: 
-			loader.foundGroovySources.size() == 7
-			loader.allClasses.size() == 7
-			loader.allClasses*.getSimpleName() == [ "Command1", "Command2", "Operation1", "TestOperation", "TestOperationBase", "TestOperationHolder", "TestShellMethods" ]
+			loader.foundGroovySources.size() == 6
+			loader.allClasses.size() == 6
+			loader.allClasses*.getSimpleName() == [ "Command1", "Command2", "Operation1", "TestOperation", "TestOperationBase", "TestShellMethods" ]
 			
 			loader.shellCommands.size() == 2
 			loader.shellCommands*.getSimpleName() == ["Command1", "Command2"]
 		
-			loader.operationsClasses.size() == 3
-			loader.operationsClasses*.getSimpleName() == ["Operation1", "TestOperation", "TestOperationHolder" ]
+			loader.operationsClasses.size() == 2
+			loader.operationsClasses*.getSimpleName() == ["Operation1", "TestOperation" ]
 
             loader.shellMethods *. getName() == ['command1', 'command3']
 	}

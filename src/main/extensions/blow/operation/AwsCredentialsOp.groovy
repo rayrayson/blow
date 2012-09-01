@@ -32,10 +32,10 @@ import blow.BlowSession
  *  @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
 
-@Operation('aws-credentials')
+@Operation('awsCredentials')
 class AwsCredentialsOp extends GenericScriptOp {
 
-    BlowSession session
+    private BlowSession session
 
     @Override
     String script() {

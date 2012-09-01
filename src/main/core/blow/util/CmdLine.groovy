@@ -40,7 +40,7 @@ class CmdLine {
      */
     static def splitter( String cmdline ) {
 
-        def result = []
+        List<String> result = []
 
         if( cmdline ) {
             QuoteStringTokenizer tokenizer = new QuoteStringTokenizer(cmdline);
@@ -50,6 +50,59 @@ class CmdLine {
         }
 
         result
+    }
+
+    def List<String> args
+
+    public CmdLine( String cmdLineToBeParsed ) {
+        assert cmdLineToBeParsed
+        args = splitter(cmdLineToBeParsed)
+    }
+
+    def boolean contains(String argument) {
+        return args.indexOf(argument) != -1
+    }
+
+    def getArg( String argument ) {
+        def pos = args.indexOf(argument)
+        if( pos == -1 ) return null
+
+        def result = []
+        for( int i=pos+1; i<args.size(); i++ ) {
+            if( args[i].startsWith('-') ) {
+                break
+            }
+            result.add(args[i])
+        }
+
+        if( result.size()==0 ) {
+            return true
+        }
+        else if( result.size()==1 ) {
+            return result[0]
+        }
+        else {
+            return result
+        }
+    }
+
+    def asList( String argument, String splitter=',' ) {
+        def val = getArg(argument)
+        if( !val ) return val
+
+        if( val instanceof Boolean ) {
+            return []
+        }
+
+        if( val instanceof String ) {
+            val = [val]
+        }
+
+        for( int i=0; i<val.size(); i++ ) {
+            val[i] = val[i] ?. split(splitter)
+        }
+
+        return val.flatten()
     }
 
 }

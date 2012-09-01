@@ -19,11 +19,10 @@
 
 package blow.shell
 
+import blow.builder.BlowConfigBuilder
 import blow.util.CmdLine
 import blow.util.KeyPairBuilder
 import com.google.inject.Guice
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 import jline.Completor
 import jline.ConsoleReader
 import org.slf4j.Logger
@@ -33,6 +32,7 @@ import java.lang.reflect.InvocationTargetException
 
 import blow.*
 import blow.exception.*
+import blow.util.InjectorHelper
 
 /**
  * The Pilot shell runner 
@@ -40,6 +40,7 @@ import blow.exception.*
  * @author Paolo Di Tommaso
  *
  */
+@Mixin(InjectorHelper)
 class BlowShell {
 
     /**
@@ -60,7 +61,7 @@ class BlowShell {
     private File userConfigFile = new File("./blow.conf")
 
     @Lazy
-    private Config configObj = { parseConfigFile() } ()
+    private BlowConfigBuilder configBuilder = { parseConfigFile() } ()
 
     /**
      * The map of the {@link  ShellCommand} available in this shell instance
@@ -102,21 +103,20 @@ class BlowShell {
 
 	/**
 	 * Defines the 'help' command used by the shell
-	 * 
 	 */
-	class HelpCommand extends AbstractShellCommand implements CommandCompletor {
+	class HelpCmd extends AbstractShellCommand implements CommandCompletor {
 
         String cmd
-        
+
 		@Override
-		public String getName() { "help" } 
+		public String getName() { "help" }
 
         @Override
         public void parse( def args ) {  cmd = args ? args.head() : null  }
-        
+
 		@Override
 		public void invoke() {
-            
+
             if( !cmd ) {
                 printUsage()
             }
@@ -128,7 +128,7 @@ class BlowShell {
                 println "Unknown command: '${cmd}'"
             }
 		}
-		
+
 		@Override
 		public String getSummary() {
 			"Print this help"
@@ -140,12 +140,12 @@ class BlowShell {
             availableCommands.keySet().each() { if(!cmdline || it.startsWith(cmdline)) result.add(it) }
             result.sort()
         }
-    } 
+    }
 	
 	/**
 	 * Defines the 'use' command to switch between different configuration
 	 */
-	class UseCommand extends AbstractShellCommand {
+	class UseCmd extends AbstractShellCommand {
 
         private String clusterName
 
@@ -163,12 +163,20 @@ class BlowShell {
 		@Override
 		public String getSummary() {
 			"Switch to a different cluster configuration"
-		} } 
+		} }
+
+    /** Command to print the blow version */
+    class VersionCmd extends AbstractShellCommand {
+        public String getName() { "version" }
+        public String getSummary() { "Print the program version and build info"}
+        public void invoke() {
+            println "Version: ${Project.version} - Build timestap: ${Project.timestamp.format('dd/MM/yyyy HH.mm')}"
+        } }
 	
 	/**
 	 * Exit from the shell environment 
 	 */
-	class ExitCommand extends AbstractShellCommand {
+	class ExitCmd extends AbstractShellCommand {
 
 		public String getName() { "exit" }
 
@@ -217,8 +225,12 @@ class BlowShell {
                  */
 				sCommand = buffer.substring(0,p);
                 def sOptions = buffer.substring(p).trim()
-                if( sCommand && availableCommands[sCommand] instanceof CommandCompletor) {
-                    def options = (availableCommands[sCommand] as CommandCompletor).findOptions( sOptions )
+                def cmdObj = sCommand ? availableCommands[sCommand] : null
+                if( cmdObj instanceof CommandCompletor) {
+                    // inject the required fields to this command
+                    injectProperties(cmdObj)
+                    // look for the 'completion' options
+                    def options = (cmdObj as CommandCompletor).findOptions( sOptions )
                     if( options ) {
                         candidates.addAll(options)
                         result =  cursor - sOptions.length()
@@ -255,15 +267,16 @@ class BlowShell {
 	 * 
 	 */
 	protected BlowShell() {
-		
+
 		loader = DynLoaderFactory.get()
 		
 		/*
 		 * add the availableCommands
 		 */
-		addCommand( new HelpCommand() )
-		addCommand( new UseCommand() )
-		addCommand( new ExitCommand() )
+		addCommand( new HelpCmd() )
+		addCommand( new UseCmd() )
+        addCommand( new VersionCmd() )
+		addCommand( new ExitCmd() )
 
 		loader.shellCommands.each { clazz -> addCommand(clazz) }
         
@@ -312,10 +325,6 @@ class BlowShell {
 			return
 		}	
 
-		if( command.hasProperty("shell") ) {
-			command.shell = this;	
-		}
-
 		/*
 		 * append the command to the global list
 		 */
@@ -340,7 +349,7 @@ class BlowShell {
             }
         }
 
-        // define the cluyster name as the 'main' entry
+        // define the cluster name as the 'main' entry
         mainEntry = clusterName
 
         // the first argument as the command to execute
@@ -356,12 +365,12 @@ class BlowShell {
      * @return The list of cluster names defined in the current used configuration file
      */
     def List<String> listClusters() {
-        BlowConfig.getClusterNames(configObj)
+        configBuilder.getClusterNames()
     }
 
 
     /**
-     * Parse the configuration file(s) and return the {@link Config} object.
+     * Parse the configuration file(s) and return the {@link BlowConfigBuilder} object.
      * This is meant for low-level operation.
      *
      * The configuration files use the following strategy
@@ -373,10 +382,9 @@ class BlowShell {
      * - when none of them exist an error is reported
      *
      *
-     * See {@link BlowConfig}
+     * See {@link BlowConfigBuilder}
      */
-    protected Config parseConfigFile( ) {
-
+    protected BlowConfigBuilder parseConfigFile( ) {
 
         def currentPathConfig = userConfigFile
         def homePathConfig = new File( System.getProperty("user.home"), ".blow/blow.conf" )
@@ -384,17 +392,17 @@ class BlowShell {
         log.debug( "User conf file [${currentPathConfig.exists()}]: " + currentPathConfig )
         log.debug( "Home conf file [${homePathConfig.exists()}]: " + homePathConfig )
 
-        Config result
-        if( currentPathConfig.exists() && homePathConfig.exists() ) {
-            result = ConfigFactory.parseFile(currentPathConfig).withFallback( ConfigFactory.parseFile(homePathConfig)  )
+        def configFiles = []
+
+        if( homePathConfig.exists() ) {
+            configFiles << homePathConfig
         }
-        else if( currentPathConfig.exists() ) {
-            result = ConfigFactory.parseFile(currentPathConfig)
+
+        if( currentPathConfig.exists() ) {
+            configFiles << currentPathConfig
         }
-        else if( homePathConfig.exists() ) {
-            result = ConfigFactory.parseFile(homePathConfig)
-        }
-        else {
+
+        if( configFiles.size() == 0 ) {
             System.err.println """\
 								Missing configuration file. Configuration have to be specified using one (or both) the following paths:
 								 - '$currentPathConfig'
@@ -404,7 +412,7 @@ class BlowShell {
             System.exit(1)
         }
 
-        return result.resolve()
+        return BlowConfigBuilder.create(configFiles as File[])
     }
 
 	/**
@@ -418,16 +426,16 @@ class BlowShell {
          * If no cluster has been specified try to use the default one
          */
         if( !clusterName ) {
-            def names = BlowConfig.getClusterNames(configObj)
+            def names = configBuilder.getClusterNames()
             if( names.size() == 1 ) {
                 clusterName = names[0]
                 log.debug("Choosing by default cluster: ${clusterName} ")
             }
             else {
                 if( names.size() == 0 ) {
-                    log.warn("The provided configuration file(s) does not contain any cluyster definition")
+                    log.warn("The provided configuration file(s) does not contain any cluster definition")
                 }
-                else {
+                else if( !mainCommand?.name ) {  // <-- since there's any command to be execute, give a hint to the user
                     log.info("Use the command 'listclusters' to view the list of available cluster definitions")
                 }
                 return null
@@ -440,6 +448,28 @@ class BlowShell {
          */
         BlowConfig config
         def serialized = clusterName ? BlowSession.read(clusterName) : null
+        // clear the serialized session if the 'saveOnExit' is false,
+        // it means that we don't need it any node
+        if( serialized && !serialized.saveOnExit ) {
+            try { serialized.deleteSessionFile() }
+            catch( Exception e) { log.debug("Error deleting session file", e) }
+            serialized = null
+        }
+
+        if( serialized ) {
+            def newConf = configBuilder.buildConfig( clusterName )
+            if( serialized.confHashCode != newConf.hashCode() ) {
+                def answer = prompt("The configuration has changed. Do you want to (C)ontinue previous session, load the (N)ew configuration file or (E)exit?", ['c','n','e'])
+                if( 'e' == answer ) {
+                    System.exit(0)
+                }
+                if( 'n' == answer ) {
+                    try { serialized.deleteSessionFile() }
+                    catch( Exception e) { log.debug("Error deleting session file", e) }
+                    serialized = null
+                }
+            }
+        }
 
         if( serialized ) {
             log.info "Restoring session for cluster: '${clusterName}' .. "
@@ -452,7 +482,7 @@ class BlowShell {
 
             while( true ) {
                 try {
-                    config = new BlowConfig(configObj, clusterName)
+                    config = configBuilder.buildConfig( clusterName )
                     config.checkValid()
                     // configuration validated -> exit from the loop
                     break
@@ -461,8 +491,8 @@ class BlowShell {
                     def answer = prompt("The required key file: '${e.keyFile}' does not exist. Do you Blow to create it?", ['y','n'])
                     if( answer == 'y' ) {
                         KeyPairBuilder.create()
-                                .privateKey( config.privateKeyFile )
-                                .publicKey( config.publicKeyFile )
+                                .privateKey( config.privateKey )
+                                .publicKey( config.publicKey )
                                 .store()
                     }
                     else {
@@ -471,15 +501,17 @@ class BlowShell {
                     }
                 }
                 catch( BlowConfigException e ) {
-                    System.err.println "Configuration error: ${e.message}"
-                    return
+                    log.error("Configuration error: ${e.message}", e)
+                    System.exit 2
+                }
+                catch( Exception e ) {
+                    log.error ("Unknown error: ${e.message}", e )
+                    System.exit 2
                 }
             }
         }
 
 
-
-		
 		/*
 		 * if OK, close the previous instance 
 		 * and create a new one for this cluster instance
@@ -510,6 +542,10 @@ class BlowShell {
         def cmdObj = availableCommands[command]
         if( cmdObj ) {
             try {
+
+                /* Inject the shell instance to the command */
+                injectProperties(cmdObj)
+
                 cmdObj.parse(args)
                 cmdObj.invoke()
             }
@@ -534,17 +570,17 @@ class BlowShell {
                 }
                 else if( e.getCause() instanceof OperationAbortException ) {
                     message = "Operation aborted: '${cmdObj.getName()}'"
-                    log.warn(message,e)
+                    log.warn(message)
                 }
                 else {
                     message = e.getCause()?.getMessage() ?: (e.getMessage() ?: e.toString())
-                    log.warn(message,e)
+                    log.error(message,e)
                 }
 
             }
             catch( Exception e ) {
                 message = e.getMessage() ?: (e.getCause()?.getMessage() ?: e.toString())
-                log.warn(message, e)
+                log.error(message, e)
             }
         }
         /*
@@ -619,8 +655,33 @@ class BlowShell {
 		println "Bye"
 	}
 
+    private void injectProperties( ShellCommand cmd ) {
+
+        def props = [ this, this.session ]
+        def target = ( cmd instanceof ShellMethodAdapter ) ? (cmd as ShellMethodAdapter).targetObj : cmd
+        injectFields(target, props)
+    }
+
+
+    /**
+     *  Invoke the free method on each command
+     */
+    private void freeCommands () {
+
+        availableCommands.each { String name, ShellCommand cmd ->
+            try {
+                cmd ?. free()
+            }
+            catch( Exception e ) {
+                log.warn "Oops .. error freeing command: ${name}"
+            }
+        }
+
+    }
+
 	def void close() {
 		// close the 'blow' session
+        freeCommands()
 		if( session ) session.close()
         log.trace 'After close session'
 	} 
@@ -718,12 +779,7 @@ class BlowShell {
 	 * @param args
 	 */
 
-	public static void main( String[] args ) {
-
-        /*
-         * print the logo
-         */
-        println \
+    static final transient def LOGO =
         """\
            ___  __
           / _ )/ /__ _    __
@@ -732,6 +788,10 @@ class BlowShell {
         """
         .stripIndent()
 
+	public static void main( String[] args ) {
+
+        println LOGO
+
         /*
          * parse the command line options
          */
@@ -739,7 +799,7 @@ class BlowShell {
         cli.usage = "usage: ${Project.name} [options] [command [arguments..]]"
         cli._( longOpt: "debug", "Print debug level information", args:1, optionalArg:true, argName: 'package(s)')
         cli._( longOpt: "trace", "Print trace level information", args:1, optionalArg:true, argName: 'package(s)')
-        cli._( longOpt: "conf", "Specify a configuration file othen than 'blow.conf'", args: 1, optionalArg: false, argName:  'file name')
+        cli._( longOpt: "conf", "Specify a configuration file other than 'blow.conf'", args: 1, optionalArg: false, argName:  'file name')
         cli.c( longOpt: "cluster", "Specify the cluster name to be used", args:1, optionalArg: false, argName: 'clusterName')
         cli.h( longOpt: "help", "Show this help")
 
@@ -751,7 +811,7 @@ class BlowShell {
         Guice.createInjector();
 		BlowShell shell = new BlowShell();
         // trace the command line
-        shell.log.debug "**** Launching ${Project.name} - ver ${Project.number} ****"
+        shell.log.debug "**** Launching ${Project.name} - ver ${Project.version} ****"
         shell.log.debug "cmdline: \"${args?.join(' ') ?: ''}\""
 
         /*
@@ -759,12 +819,10 @@ class BlowShell {
          */
         Runtime.getRuntime().addShutdownHook {
             shell?.log?.debug "---- Finalizing ${Project.name} ----"
-            if( shell.session ) {
-                if( shell.session.saveOnExit ) {
-                    shell.session.persist()
-                }
-                else {
-                    shell.session.delete()
+            if( shell?.session?.saveOnExit ) {
+                def file = shell.session.persist()
+                if( file ) {
+                    shell.log?.info "Session saved to file: $file"
                 }
             }
         }
@@ -784,7 +842,6 @@ class BlowShell {
             shell.init(options.arguments(), confFileName, clusterName);
             shell.run();
             shell.close()
-            shell?.log.trace 'Closed'
         }
         catch( Exception e ) {
             shell.log.error(e.getMessage() ?: e.toString(), e)

@@ -17,18 +17,37 @@
  *   along with Blow.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package blow.shell
+package util
 
 import spock.lang.Specification
 
 /**
- * Created by IntelliJ IDEA.
- * User: yo
- * Date: 4/29/12
- * Time: 4:26 PM
- * To change this template use File | Settings | File Templates.
+ *
+ *  @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
-class ShellMethodAdapterTest extends Specification {
+class TestProperies extends Specification {
 
-   //TODO
+    def "test xx" () {
+
+        when:
+        def sub = ['a','c']
+        def set = ['a','b','c','x']
+        def result = set - sub
+
+        then:
+        result == ['b', 'x']
+
+    }
+
+}
+
+
+class UnderTest {
+
+    def aaa
+    def bbb
+    protected ccc
+    protected String ddd
+    private String eee
+
 }

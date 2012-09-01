@@ -31,10 +31,10 @@ class SgeOpTest extends Specification {
 		def sge = new SgeOp()
 		sge.clusterName = "test"
 		sge.nodes = "xxx"
-		sge.root = "/opt/sge_root"
+		sge.path = "/opt/sge_root"
 		sge.qmasterPort = "1234"
 		sge.execdPort = "4321"
-        sge.spoolPath = "/var/sge/spool"
+        sge.spool = "/var/sge/spool"
 		def conf = sge.confTemplate()
 		
 
@@ -55,10 +55,10 @@ class SgeOpTest extends Specification {
 
         when:
 		def sge = new SgeOp();
-		sge.root = '/some/path'
+		sge.path = '/some/path'
 		sge.cell = 'alpha'
         sge.user = 'goofy'
-        sge.spoolPath = '/hola'
+        sge.spool = '/hola'
 		def script = sge.scriptInstallMaster()
 
         then:
@@ -69,7 +69,7 @@ class SgeOpTest extends Specification {
 	public void testScriptDownloadAndCompile() {
 		when:
         def sge = new SgeOp()
-		sge.root = "/my-root"
+		sge.path = "/my-root"
 		sge.sourcesTarball = "file.to.download"
 		def script = sge.scriptDownloadAndCompile()
 
@@ -82,7 +82,7 @@ class SgeOpTest extends Specification {
     public void testScriptDowloadBinaries() {
 		when:
         def sge = new SgeOp()
-		sge.root = "/my-root"
+		sge.path = "/my-root"
 		sge.binaryZipFile = "install.zip"
 		def script = sge.scriptDownloadBinaries()
 
@@ -97,7 +97,7 @@ class SgeOpTest extends Specification {
         // missing 'root' installation path
         // exception thrown
         when:
-        new SgeOp(root: "").validation()
+        new SgeOp(path: "").validation()
 
         then:
         thrown( AssertionError )
@@ -146,7 +146,7 @@ class SgeOpTest extends Specification {
 
     public void testValidationOK() {
         when:
-        new SgeOp().validation(new BlowConfig(size:2))
+        new SgeOp().validation(new BlowConfig(instanceNum: 2))
 
         then:
         notThrown( AssertionError )
@@ -158,10 +158,10 @@ class SgeOpTest extends Specification {
 
         when:
 		def sge = new SgeOp();
-		sge.root = '/some/path'
+		sge.path = '/some/path'
 		sge.cell = 'beta'
         sge.user = 'goofy'
-        sge.spoolPath = '/hola'
+        sge.spool = '/hola'
 		def script = sge.scriptInstallWorker()
 
         then:

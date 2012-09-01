@@ -9,7 +9,7 @@ class TestOperation extends TestOperationBase {
 
 	@Conf def value1;
 
-	@Conf("value-2") 
+	@Conf
 	String value2;
 
     BlowSession session

@@ -19,6 +19,7 @@
 
 package blow.command
 
+import blow.BlowSession
 import blow.shell.AbstractShellCommand
 import blow.shell.CommandCompletor
 import blow.ssh.SshConsole
@@ -37,6 +38,9 @@ class SshCommand extends AbstractShellCommand implements CommandCompletor {
     private String targetHost;
 
     private String targetCommand
+
+    /** The current session instance, injected by the framework */
+    private BlowSession session;
 
     @Override
     def String getName() { "ssh" }
@@ -99,10 +103,7 @@ class SshCommand extends AbstractShellCommand implements CommandCompletor {
          * Execute the SSH on the remote node
          */
 
-        def session = getSession();
-        def filter = session.filterByPublicAddress( makeRegexp(targetHost) )
-
-        def result = session.runScriptOnNodes( targetCommand, filter );
+        def result = session.runScriptOnNodes( targetCommand, targetHost );
         if( !result ) {
             println "Remote execution terminated with error(s)"
             printResponse(session.errors)
@@ -161,9 +162,8 @@ class SshCommand extends AbstractShellCommand implements CommandCompletor {
         /*
          * launch the terminal session
          */
-        def session = getSession();
         def user = session.conf.userName;
-        def key = session.conf.privateKeyFile
+        def key = session.conf.privateKey
 
 //        // find the xterm path
 //        def xterm = "which xterm".execute()?.text?.trim();

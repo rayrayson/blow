@@ -22,34 +22,123 @@ package blow.command
 import blow.BlowSession
 import blow.shell.Cmd
 import blow.shell.Completion
-import org.jclouds.compute.domain.NodeMetadata
+import blow.shell.Opt
+import blow.util.PromptHelper
 
 /**
  * Print out information details for the specified node
  *
  * @author Paolo Di Tommaso
  */
+@Mixin(PromptHelper)
 class NodesInfoCommand  {
 
     def BlowSession session
 
     @Cmd(summary="List the nodes available in the current running cluster")
-    def listnodes() {
+    def listnodes(
+        @Opt( opt='d', description='Show node details' ) Boolean showDetails
+    ) {
 
-        def nodes = session.listNodes() ;
-        if( nodes ) {
-            nodes.each { NodeMetadata node ->
-                println "${node.providerId}; ${node.getPublicAddresses()?.find()?.padLeft(15)}; ${node.state}; ${node.group}; ${node.getUserMetadata()?.'Role'}"
+
+
+//        def nodes = session.listNodes() ?.sort { BlowSession.BlowNodeMetadata node1, BlowSession.BlowNodeMetadata node2 ->
+//
+//            // sort by role
+//            def r1 = session.conf.roles.indexOf( node1.getNodeRole() )
+//            def r2 = session.conf.roles.indexOf( node2.getNodeRole() )
+//            def comp = r1 <=> r2
+//            // if are in the same role, sort by the name
+//            if( comp == 0 ) {
+//                comp = node1.getNodeName() <=> node2.getNodeName()
+//            }
+//
+//            return comp
+//        }
+
+        /*
+         * first pass, just to get some number for nice formatting
+         */
+        def lName = 0
+        def lType = 0
+        def lIp = 0
+        def lImage = 0
+        def lRam = 0
+        session.listNodes().each { BlowSession.BlowNodeMetadata node ->
+
+            // keep track of the longest node name
+            if( node.getNodeName()?.length()>lName ) {
+                lName = node.getNodeName().length()
             }
+
+            if( node.getNodeIp() ?.length() > lIp ) {
+                lIp =  node.getNodeIp() .length()
+            }
+
+            if( node.getImageId()?.length() > lImage ) {
+                lImage = node.getImageId().length()
+            }
+
+            def ram = node.getHardware() ?.getRam() ?.toString()
+            if( ram ?.length() > lRam ) {
+                lRam = ram.length()
+            }
+
+            if( node.getHardware()?.getId()?.length() > lType ) {
+                lType = node.getHardware().getId().length()
+            }
+
+        }
+
+
+        if( !session.allNodes ) {
+            println "(no nodes available)"
             return
         }
 
-        println "(no nodes available)"
+
+        session.allNodes.each { String name, BlowSession.BlowNodeMetadata node ->
+
+            // the node name
+            print "${name?.padRight(lName)}"
+
+            if( node == null ) {
+                println "  --"
+                return
+            }
+
+            /*
+             * print node info
+             */
+            def row = " (${node.providerId}); "
+
+            row += node.getNodeIp() ? "${node.getNodeIp()?.padRight(lIp)}" : "--".padRight(lIp)
+            row += "; "
+            row += "${node.state}"
+
+            if( showDetails == true ) {
+
+                row += "; " +
+                        "${node.getImageId().padRight(lImage)}; " +
+                        "${node.getHardware()?.getId().padRight(lType)}; " +
+                        "${node.getHardware()?.getProcessors()?.size()} cpu - " +
+                        "${node.getHardware()?.getRam().toString().padLeft(lRam)} MB"
+            }
+
+
+            println row
+
+        }
+
     }
 
-
+    /**
+     * Shows the detailed information of the spcified node
+     *
+     * @param nodeId
+     */
     @Cmd(summary="Shows the information details for the specified node")
-    @Completion({ cmdline -> session.findMatchingAttributes( cmdline, "providerId" ) })
+    @Completion({ cmdline -> session.findMatchingAttributes(cmdline) })
 
 	def nodeinfo ( String nodeId ) {
 
@@ -68,18 +157,34 @@ class NodesInfoCommand  {
 	}
 
 
-    @Cmd(summary="Shows the information details of the 'master' node")
-    public void masterinfo() {
-        def nodeId = session.getMasterMetadata()?.getId()
-        if( nodeId ) {
-            println session.getNodeInfoString( nodeId )
-        }
-        else {
-            println "(no master node info available)"
-        }
+    @Cmd(summary='Refresh the cluster nodes metadata')
+    public void refresh() {
+        session.refreshMetadata()
     }
 
+    @Cmd(summary='Save the current session data', usage='saveSession [file name]')
+    public void saveSession(String fileName) {
 
+
+        def file
+        if( fileName ) {
+            file = new File(fileName)
+            if( file.exists() ) {
+                def answer = promptYesOrNo("The file '$file' already exist. Do you want to overwrite it?")
+                if( answer != 'y' ) {
+                    return
+                }
+            }
+
+            file = session.persist(file)
+        }
+        else {
+            file = session.persist()
+        }
+
+        println "Session saved to file '${file}'"
+
+    }
 
 
 }

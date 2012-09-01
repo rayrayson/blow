@@ -45,49 +45,6 @@ class OperationHelper {
         return (clazz.getSuperclass() != Object.class)  ? getConfFields(clazz.getSuperclass(),fields) : fields
     }
 
-    /**
-     * The configuration properties are defined by the Plugin through the 'Conf' annotation
-     * <p>
-     * This method look for all the attributes defined in the operation that need to inject with
-     * values coming from the configuration file
-     *
-     * @param clazz the operation class
-     * @return A map associating the operation properties with the relative configuration attributes.
-     * For example:
-     *
-     * <pre>
-     * class Bean {
-     *
-     *   Conf("image-id") def imageId
-     *   Conf("region-id") def regionId
-     *   Conf("zone-id") def zoneId
-     *
-     *
-     * }
-     * </pre>
-     *
-     * <pre>
-     *   [
-     *        "image-id": imageId
-     *        "region-id": regionId
-     *        "zone-id": zoneId
-     *   ]
-     * </pre>
-     */
-    def static Map<String,String> getConfProperties(Class clazz) {
-        List<Field> fields = getConfFields(clazz);
-        Map<String,String> result = [:]
-        fields.each {
-            def configName = it.getName();
-            Conf aa = it.getAnnotation(Conf.class)
-            if( aa.value() ) {
-                configName = aa.value()
-            }
-            result.putAt(configName,it.getName())
-        }
-
-        return result
-    }
 
     /**
      * Calculate the hash code for an operation, including only
@@ -121,11 +78,9 @@ class OperationHelper {
         def result = [:]
 
         def fields = getConfFields(op.getClass())
-        def props = getConfProperties(op.getClass())
-        props ?.each { key, fieldName ->
-            def field = fields.find { Field it -> it.name == fieldName }
-            field?.setAccessible(true)
-            result.put( key, field?.get(op) )
+        fields ?.each { Field it ->
+            it.setAccessible(true)
+            result.put( it.name, it.get(op) )
         }
 
         return result
@@ -141,13 +96,19 @@ class OperationHelper {
         currentMap?.each { key, value ->
             // include only value different from the default
             if( value != defaultMap.get(key) ) {
+                if( value instanceof CharSequence ) {
+                    value = "'${value}'"
+                }
                 conf << "$key: $value"
             }
         }
 
         def result = opName(op)
         if( conf ) {
-            result += " { ${conf.join('; ')} }"
+            result += "( ${conf.join(', ')} )"
+        }
+        else {
+            result += '()'
         }
 
         return result

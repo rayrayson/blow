@@ -19,16 +19,17 @@
 
 package blow.operation
 
+import blow.BlowConfig
 import blow.BlowSession
 import blow.events.OnAfterClusterStartedEvent
 import blow.events.OnAfterClusterTerminationEvent
 import blow.events.OnBeforeClusterStartEvent
 import blow.events.OnBeforeClusterTerminationEvent
-import blow.util.BlockStorageHelper
 import blow.util.PromptHelper
 import blow.util.TraceHelper
 import com.google.common.eventbus.Subscribe
 import groovy.util.logging.Slf4j
+import blow.events.OnBeforeNodeLaunchEvent
 
 /**
  * Manage NFS configuration 
@@ -38,78 +39,95 @@ import groovy.util.logging.Slf4j
  */
 @Slf4j
 @Mixin(PromptHelper)
-@Mixin(BlockStorageHelper)
 @Operation("nfs")
 class NfsOp  {
-
-	/**
-	 * The volume ID of a Block Store to be mounted
-	 */
-	@Conf("volume-id") def volumeId
-
-	/**
-	 * The identifier of an existing snapshot which will be used to mount
-	 */
-	@Conf("snapshot-id") def snapshotId
 
 	/**
 	 * The NFS path to be used to export the mounted volume	
 	 */
 	@Conf def path
-	
-	/**
+
+    /**
+     *  Defines the storage property for the attached volume
+     */
+    @Conf def supply
+
+    /**
 	 * Linux device name to be used to mount the volume
 	 */
 	@Conf def device
-	
+
 	/**
 	 * Size of 
 	 */
 	@Conf Integer size = 10
 	
-	@Conf("delete-on-termination") 
-	def String deleteOnTermination = "false"
+	@Conf
+	def boolean deleteOnTermination
 
-    @Conf("make-snapshot-on-termination")
-    def String makeSnapshotOnTermination = "false"
+    @Conf
+    def boolean makeSnapshotOnTermination
 
 
     /* ---------- private declarations ------------- */
 
-    /** The current session object */
-    def BlowSession session
+    /**
+     * The current session object
+     */
+    private BlowSession session
 
-    /** Delegate volume operation */
+    /**
+     * Delegate volume operation
+     */
     private EbsVolumeOp volume
 
-	private String masterHostname
-
     private String userName
+
+    private String master
+
+    private String worker
 
 
     /**
      * Validate the configuration parameters raising an exception is something is wrong
      */
     @Validate
-    public void validate() {
+    public void validate(BlowConfig config) {
         log.debug "Validating NFS configuration"
         assert path, "You need to define the 'path' attribute in the NFS configuration"
         assert path.startsWith("/"), "The volume path value must begin with a '/' character: '${path}'"
 
-        if( snapshotId || volumeId ) {
+        /*
+        * Make sure that the 'roles' defined matches the component 'topology'
+        */
+        assert config.instanceNumFor(config.masterRole) == 1, "The NFS op requires the '${config.masterRole}' role to declare exactly one node"
+        assert config.instanceNumFor(config.workersRole) >= 1, "The NFS op requires the '${config.workersRole}' role to declare at least one node"
+
+        /*
+         * Validate the EBS volume
+         */
+        if( supply ) {
             volume = new EbsVolumeOp()
             volume.device = this.device
-            volume.snapshotId = this.snapshotId
-            volume.volumeId = this.volumeId != "new" ? this.volumeId : null // <-- note: for new volume
+            volume.supply = this.supply != "new" ? this.supply : null // <-- note: for new volume
             volume.path = this.path
             volume.size = this.size
             volume.deleteOnTermination = this.deleteOnTermination
             volume.makeSnapshotOnTermination = this.makeSnapshotOnTermination
-            volume.quiet = true  // <-- less info printing when embedding in this operation
+            volume.quiet = true  // <-- print less info when embedding in this operation
+            volume.applyTo = config.masterRole
 
             // validate the volume
-            volume.validate()
+            volume.validate(config)
         }
+
+
+        /*
+         * Keep track of the defined user name
+         */
+        userName = config.userName
+        master = config.masterRole
+        worker = config.workersRole
 
     }
 
@@ -123,15 +141,21 @@ class NfsOp  {
      * @param event The {@link OnBeforeClusterStartEvent} object
      */
     @Subscribe
-    public void  sanityCheck( OnBeforeClusterStartEvent event ) {
-
+    public void beforeClusterStart( OnBeforeClusterStartEvent event ) {
+        /*
+         * Initialize and check the volume
+         */
         if( volume ) {
             volume.session = this.session
-            volume.checkAndCreateVolume(event)
+            volume.beforeClusterStart(event)
         }
+    }
 
-        userName = session.conf.userName
-
+    @Subscribe
+    def void beforeNodeLaunch( OnBeforeNodeLaunchEvent event ) {
+        if( volume ) {
+            volume.beforeNodeLaunch(event)
+        }
     }
 
     /**
@@ -145,42 +169,36 @@ class NfsOp  {
      * @param event The {@link OnAfterClusterStartedEvent} notified when the cluster has started
      */
 	@Subscribe
-	public void configureNFS( OnAfterClusterStartedEvent event ) {
+	public void afterClusterStarted( OnAfterClusterStartedEvent event ) {
 		log.info "Configuring NFS file system for shared path '${path}'"
 
         /* mount the volume if required */
         if( volume ) {
-            volume.configureEbsVolume(event)
+            volume.afterClusterStarted(event)
         }
-
-        /*
-         * the master host nae
-         */
-        masterHostname = session.getMasterMetadata().getHostname()
 
 
         /*
          * run the logic tracing the execution time
          */
-        TraceHelper.debugTime( "NFS configuring master node", { configureMaster() }  )
-        TraceHelper.debugTime( "NFS configuring worker nodes", { configureWorkers() } )
+        TraceHelper.debugTime( "NFS configuring '${master}' node", { configureMaster() }  )
+        TraceHelper.debugTime( "NFS configuring '${worker}' node(s)", { configureWorkers() } )
     }
 
 
     @Subscribe
-    public void beforeTerminate( OnBeforeClusterTerminationEvent event ) {
+    public void beforeClusterTerminate( OnBeforeClusterTerminationEvent event ) {
         if( volume ) {
-            volume.beforeTerminate(event)
+            volume.beforeClusterTerminate(event)
         }
     }
 
     @Subscribe
-    public void afterTerminate( OnAfterClusterTerminationEvent event ) {
+    public void afterClusterTerminate( OnAfterClusterTerminationEvent event ) {
         if( volume ) {
-            volume.terminateAndDeleteVolume(event)
+            volume.afterClusterTerminate(event)
         }
     }
-
 
 
     /**
@@ -196,7 +214,7 @@ class NfsOp  {
             script = makePath() + script
         }
 
-		session.runScriptOnMaster( script, runAsRoot )
+		session.runScriptOnNodes( script, master, runAsRoot )
 
 	}
 
@@ -207,7 +225,7 @@ class NfsOp  {
 
 		if( session.conf.size < 2 ) { /* nothing to do */ return }
 		
-		session.runScriptOnWorkers(scriptWorker(), true)
+		session.runScriptOnNodes(scriptWorker(), worker, true)
 	}
 
 
@@ -267,7 +285,7 @@ class NfsOp  {
      */
 	protected String scriptWorker() {
         assert path
-        assert masterHostname
+        assert master
 
 	
 		"""\
@@ -290,7 +308,7 @@ class NfsOp  {
 		# Create mount point and mount it 
 		# 
 		mkdir -p ${path}
-		echo "${masterHostname}:${path}      ${path}      nfs     rw,hard,intr    0 0" >> /etc/fstab
+		echo "${master}:${path}      ${path}      nfs     rw,hard,intr    0 0" >> /etc/fstab
 		mount -a
 		"""	
 		.stripIndent()

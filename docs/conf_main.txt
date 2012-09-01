@@ -1,15 +1,15 @@
 Blow configuration
 ==================
 
-*Blow* configuration has to be defined in a file named ``blow.conf``. *Blow* will look 
+*Blow* configuration has to be defined in a file named ``blow.conf``. *Blow* will look
 for this file in the directory where the application has been launched and in the user home i.e.
-the path ``$HOME/.blow/blow.conf``. If both of them exist the values in the former will 
+the path ``$HOME/.blow/blow.conf``. If both of them exist the values in the former will
 have an higher priority, in other words, they will override the values defined in the 
 configuration file stored in the home directory. 
 
 A different configuration file can be provided using the CLI option ``--conf``. For example::
 
-  blow.jar --conf myconf.txt
+  blow.run --conf myconf.txt
 
 A common approach is to put *Blow* general properties in the ``$HOME/.blow/blow.conf``
 file, and place cluster specific properties in a file located in a different folder.
@@ -24,106 +24,116 @@ which virtual machine to use, the region where the cluster will run, the number 
 Configuration file syntax
 -------------------------
 
-The *Blow* configuration file uses the HOCON syntax, a human-friendly JSON superset. 
-It provides a more easy-to-use notation that allows omitting the ``{ }`` around the root object, 
-uses ``=`` as a synonym for ``:`` character, allows unquoted strings for any keys and values, etc.
+The easiest way to explain the syntax for the *Blow* configuration file is look at an example::
 
-In other words the ``blow.conf`` configuration file is a JSON formatted document, with a more 
-*relaxed* syntax, where some redundant delimiter characters can be omitted. 
+  accessKey 'xxyyzz'
+  secretKey '112233'
+  regionId 'us-east-1'
+  imageId 'ami-e565ba8c'
+  userName "$USER"
 
-To know more about the HOCON format and more advanced features supported by it,
-please refer to the project page available at this link: http://github.com/typesafehub/config .
-
-A basic *Blow* configuration file would be as follows::
-
-  my_cluster {
-  	region-id = us-east-1
-  	image-id: ami-e565ba8c
-  	size: 9
-  }
-  
-This file defines a cluster named ``my_cluster``, composed by ``99`` nodes that will be launched in the ``us-east-1`` region.
-
-The ``blow.conf`` configuration file can contain any number of cluster declarations as seen above.
-Each definition must have a unique name identifier and contain its own attributes within the curly brackets.
-
-Attributes placed at the top of the file, outside any cluster declaration, will be considered global attributes common to all 
-clusters. They can be overridden by any cluster within the scope of its declaration. 
-
-For example::
-
-  region-id = us-east-1
-  image-id: ami-e565ba8c
-
-  cluster_one {
-  	size: 10
-  }
-  
-  cluster_two {
-  	image-id: ami-a934bb8e
-  	size: 20
+  //
+  // Comment: first cluster
+  //
+  SimpleCluster {
+    instanceType 't1.micro'
+    instanceNum 2
   }
 
+  /*
+   * Comment: second cluster
+   */
+  SecondCluster {
+    imageId 'ami-a66a42d'
+    instanceType 'm1.xlarge'
+    instanceNum 100
+    operations {
+        s3cmd()
+        volume(path:'/some/path')
+    }
+  }
 
-Here we have defined two clusters, both of them in the region ``us-east-1``. The first uses the image ``ami-e565ba8c`` and
-will run ``10`` nodes. The second launches ``20`` nodes, but will use the machine image ``ami-a934bb8e`` since it overrides 
-the global ``image-id`` attribute declaration.
+The configuration file contains a list of properties definition and clusters definitions. A property is a
+simple *name* *value* pair. On each line you can have just one property definition. The property name can contain only
+alphanumeric characters plus the underscore character.
 
+Property string value must be single quoted or double quoted. Double quoted strings can contain environment variables which are
+interpolated in the string, i.e. the variable is replaced by the value the variable is holding when the property is evaluated.
+
+A cluster definition starts by an open curly bracket and ends with a closed curly bracket. It contains the properties
+for a specific cluster definition plus the list of *operation* to be applied in order to setup the cluster.
+
+Attributes placed at the top of the file, outside any cluster declaration, will be considered global attributes common to all
+clusters definitions. They can be overridden by any cluster within the scope of its declaration.
+
+The configuration can contain zero, one or multiple cluster definition. Each cluster name must be unique.
+
+Comments are possible be preceding by the comment by a double slash character: ``//`` or by wrapping the comment
+by a ``/*`` and ``*/`` delimiters.
+
+In the above example are defined two clusters. The first is named ``SimpleCluster``, runs in the region ``us-east-1``
+and it is made-up of 2 instances of the AMI ``ami-e565ba8c`` of type ``t1.micro``.
+
+The second one, named ``SecondCluster``, runs in the same region, but it is composed by 100 instances of the AMI ``ami-a66a42d``
+of type ``m1.xlarge``. Moreover it applies two operations which install the S3cmd_ tool and configure
+an *EBS* volume.
+
+.. _`S3cmd`: http://s3tools.org/s3cmd
 
 Available configuration attributes
 -----------------------------------
 
-Currently the following attributes can be defined in the ``blow.conf`` file (the ones marked with \* are mandatory):
+Currently the following attributes can be defined in the ``blow.config`` file (the ones marked with \* are mandatory):
 
-* ``access-key`` \*: The AWS account *Access Key ID*, available through the `AWS Security Credential`_ page.  
+* ``accessKey`` \*: The AWS account *Access Key ID*, available through the `AWS Security Credential`_ page.
 
-* ``secret-key`` \*: The AWS account *Secret Access Key*, available through the `AWS Security Credential`_ page.
+* ``secretKey`` \*: The AWS account *Secret Access Key*, available through the `AWS Security Credential`_ page.
 
-* ``region-id``: The AWS *Region ID* where the cluster has to be created. If it is not specified, the region `us-east-1` 
+* ``regionId``: The AWS *Region ID* where the cluster has to be created. If it is not specified, the region `us-east-1`
   will be used by default. Read more about regions in the `AWS Regions and Availability Zones`_ documentation.
 
-* ``zone-id``: The AWS *Region ID* where the cluster has to be created. If it is not specified,
+* ``zoneId``: The AWS *Region ID* where the cluster has to be created. If it is not specified,
   the zone `us-east-1a` will be used by default. Read more about regions in the `AWS Regions and Availability Zones`_ documentation.
 
-* ``image-id``: The Amazon EC2 machine image ID. In other words this is the identifier of the virtual machine used 
+* ``imageid``: The Amazon EC2 machine image ID. In other words this is the identifier of the virtual machine used
   to run the cluster nodes. The list of all machines is available at this page `Amazon Machine Images`_ . 
 
-* ``instance-type``: The type of the instance to launch. This attribute allows you to select the features
+* ``instanceType``: The type of the instance to launch. This attribute allows you to select the features
   of the virtual machine i.e. the type of processor(s), the amount of memory, the platform architecture (32 - 64 bits), etc. 
   The possible values are: ``t1.micro``, ``m1.small``, ``m1.medium``,  ``m1.large``, ``m1.xlarge``, ``m2.xlarge``, 
   ``m2.2xlarge``, ``m2.4xlarge``, ``c1.medium``, ``c1.xlarge``, ``cc1.4xlarge``, ``cc2.8xlarge``.
   The detailed description is available at the page `EC2 Instance Types`_. 
 
-* ``size``: The number of nodes of of which the cluster is made-up.
+* ``instanceNum``: The number of nodes of of which the cluster is made-up.
 
-* ``user-name``: The user name to log-in the remote nodes. If this value is not specified, the current logged user name will be used.
+* ``userName``: The user name to log-in the remote nodes. If this value is not specified, the current logged user name will be used.
 
-* ``create-user``: Set this value to ``true`` to force the creation of a user account defined by the property ``user-name``. If set
+* ``createUser``: Set this value to ``true`` to force the creation of a user account defined by the property ``userName``. If set
   to ``false`` the user name specified b the above property is must exist.
 
-* ``private-key``: The SSH *private* key file to access the remote nodes. If this value is not specified, the private key defined
+* ``privateKey``: The SSH *private* key file to access the remote nodes. If this value is not specified, the private key defined
   in the path ``$HOME/.ssh/id_rsa`` will be used. If this file does not exist, a new key-pair in the current directory will be created.   
 
-* ``public-key``: The SSH *public* key file required to authenticate the user remotely. If this value is not specified,
+* ``publicKey``: The SSH *public* key file required to authenticate the user remotely. If this value is not specified,
   the public key defined in the path ``$HOME/.ssh/id_rsa.pub`` will be used. If this file does not exist, 
   a new key-pair in the current directory will be created.   
 
-* ``key-pair``: The AWS Key-Pair used to authenticate user access to the remote notes
+* ``keyPair``: The AWS Key-Pair used to authenticate user access to the remote notes
 
-* ``inbound-ports``: The port to be opened in the remote nodes. It could be a single value, a comma separated list of
+* ``inboundPorts``: The port to be opened in the remote nodes. It could be a single value, a comma separated list of
   ports, or a range in the form ``n-m`` (from the port number ``n`` to the number ``m`` included). For example: ``22,80`` will open
   the ports 22 and 80, ``22,9000-9005`` will open the ports 22, 9000 up to 9005.
 
 .. note::
-  The ``inbound-ports`` MUST always contain the port 22 used by the SSH service as well as the port used by the
+  The ``inboundPorts`` MUST always contain the port 22 used by the SSH service as well as the port used by the
   Fast Data Transfer application (see below).
 
-* ``fdt-port``: The port used by the FDT application (default: 50000)
+* ``fdtPort``: The port used by the FDT application (default: 50000)
 
-* ``security-id``: The ID number of the AWS security group to be applied to the created nodes.
+* ``securityId``: The ID number of the AWS security group to be applied to the created nodes.
 
 .. important::
-  This property overrides the firewall configuration defined by the property ``inbound-ports``, so
+  This property overrides the firewall configuration defined by the property ``inboundPorts``, so
   if you use both of them the latter will be discarded.
 
 
@@ -136,29 +146,66 @@ Currently the following attributes can be defined in the ``blow.conf`` file (the
 
 
 
-Configuration example
----------------------
 
-:: 
 
-  my_cluster {
-    access-key = <your access key>
-    secret-key = <yout secret key>
-    region-id = us-east-1
-    zone-id = us-east-1d
-    image-id =  ami-e565ba8c
-    instance-type = t1.micro
-    size = 2
+*Informal* configuration BNF syntax
+-----------------------------------
 
-    operations = [
-        hostname
+::
 
-        { nfs = {
-            path: /soft
-            device: /dev/sdh1
-        }}
+    Conf:
+        PropertyDef* ClusterDef*
 
-        { sge = { root: /soft/sge6, installation-type: deploy } }
-    ]
-  }
+    Entry:
+        PropertyDef | ClusterDef
+
+    PropertyDef:
+        Indentifier Value
+
+    Identifier:
+        [A-Za-z0-9]*
+
+    Value:
+        Bool | Number | SingleQuoteString | DoubleQuoteString
+
+    Bool:
+        true | false
+
+    Number:
+        Integer | Decimal
+
+    Integer:
+        [0-9]+
+
+    Decimal:
+        [0-9]+ . [0-9]+
+
+    SingleQuoteString:
+        ' String '
+
+    DoubleQuoteString:
+        " String "
+
+    String:
+        groovy valid string
+
+    ClusterDef:
+        Identifier {
+            PropertyDef* OperationList
+        }
+
+    OperationList:
+        operation {
+            OperationDef*
+        }
+        OperationList*
+
+    OperationDef:
+        Identifier ( ParamList )
+
+    ParamList:
+        ParamDef | ParamDef , ParamList
+
+    ParamDef:
+        Identifier: Value
 

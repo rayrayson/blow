@@ -36,28 +36,28 @@ import groovy.util.logging.Slf4j
 @Operation("sge")
 class SgeOp {
 
-	@Conf("cluster-name")
+	@Conf
 	String clusterName = "cloud_sge"
 	
 	@Conf
-	String root = "/opt/sge6"
+	String path = "/opt/sge6"
 	
-	@Conf("qmaster-port")
+	@Conf
 	String qmasterPort = "6444"
 
-	@Conf("execd-port")
+	@Conf
 	String execdPort = "6445"
 	
 	@Conf 
 	String cell = "default"
 	
-	@Conf("admin-email")
+	@Conf
 	String adminEmail = "none@none.edue"
 	
 	/**
 	 * The SGE administration user
 	 */
-	@Conf("admin-user")
+	@Conf
 	String adminUser = ""
 	
 	@Conf
@@ -72,11 +72,11 @@ class SgeOp {
      * - deploy: deploy SGE using the binaries tarball
      * - config: just configure it, the binaries have to exist in the specified root folder
      */
-	@Conf("installation-mode")
+	@Conf
 	String installationMode = "deploy"
 	
-	@Conf("tmp")
-	String tempPath = "/tmp"
+	@Conf
+	String temp = "/tmp"
 
     /**
      * The SGE spool directory. It could be possible to enter a local folder to improve cluster performance
@@ -84,12 +84,12 @@ class SgeOp {
      * Read more about local spool dir here
      * http://gridscheduler.sourceforge.net/howto/nfsreduce.html
      */
-    @Conf("spool-dir")
-    String spoolPath
+    @Conf
+    String spool
 
 
     /** The current {@link BlowSession} */
-    BlowSession session
+    private BlowSession session
 
     /*
       * A blank-separated string containing the hostnames on which install and run the SGE nodes
@@ -99,17 +99,26 @@ class SgeOp {
     /** The current user */
     private String user
 
+    private String worker
+
+    private String master
+
 
     @Validate
     def validation( BlowConfig config ) {
         assert clusterName
-        assert root
+        assert path
         assert qmasterPort
         assert qmasterPort.isInteger()
         assert execdPort
         assert execdPort.isInteger()
         assert cell
-        assert config?.size > 1, "SGE operation requires at least TWO nodes"
+
+        /*
+         * Make sure that the 'roles' defined matches the component 'topology'
+         */
+        assert config.instanceNumFor(config.masterRole) == 1, "The SGE op requires the '${config.masterRole}' role to declare exactly one node"
+        assert config.instanceNumFor(config.workersRole) >= 1, "The SGE op requires the '${config.workersRole}' role to declare at least one node"
 
     }
 
@@ -123,17 +132,16 @@ class SgeOp {
 	
 	protected void configureTask() {
 
+        user = session.conf.userName
+        master = session.conf.masterRole
+        worker = session.conf.workersRole
 
         // the list of nodes that make up the cluster
-		nodes = session.listHostNames().join(" ")
+		nodes = session.listNodesNames().join(" ")
 
         // if not defined use the default spool path
-        if( !spoolPath ) {
-            spoolPath = "${root}/${cell}/spool"
-        }
-
-        if( !user ) {
-            user = session.conf.userName
+        if( !spool ) {
+            spool = "${path}/${cell}/spool"
         }
 
 		/*
@@ -141,8 +149,8 @@ class SgeOp {
 		 */
 		TraceHelper.debugTime("SGE configure ssh", { configureSsh() })
 		TraceHelper.debugTime("SGE copying conf file", { copySgeConfigFileToMaster() })
-		TraceHelper.debugTime("SGE installing master node", { installMasterNode() })
-		TraceHelper.debugTime("SGE installing worker nodes", { installWorkersNodes() } )
+		TraceHelper.debugTime("SGE installing '${master}' node", { installMasterNode() })
+		TraceHelper.debugTime("SGE installing '${worker}' nodes", { installWorkersNodes() } )
 		
 	} 
 	
@@ -159,9 +167,10 @@ class SgeOp {
 	} 
 	
 	protected copySgeConfigFileToMaster() {
+        assert master, "Missing 'master' node in SGE configuration"
+        log.debug "copySgeConfigFileToMaster"
 
-		def config = confTemplate()
-		session.copyToNodes( config, "/tmp/sge.conf", session.filterMasterNode() )
+		session.copyToNodes( confTemplate(), "/tmp/sge.conf", master )
 	}
 
     /**
@@ -179,13 +188,13 @@ class SgeOp {
             script = scriptDownloadBinaries()
         }
         else if( installationMode != "config" ) {
-            SgeOp.log.warn "Unknown SGE installation type: '${installationMode}'"
+            log.warn "Unknown SGE installation type: '${installationMode}'"
         }
 
         script += "\n" + scriptInstallMaster();
 
 
-        session.runScriptOnMaster(script)
+        session.runScriptOnNodes(script, master)
 
 	}  
 
@@ -195,7 +204,7 @@ class SgeOp {
      */
 	protected void installWorkersNodes() {
 
-		session.runScriptOnWorkers(scriptInstallWorker())
+		session.runScriptOnNodes(scriptInstallWorker(), worker)
 	}
 	
 	
@@ -241,33 +250,28 @@ class SgeOp {
 		#
 		# Install to targetHost directory
 		#
-		export SGE_ROOT="${root}"
-		mkdir -p "${root}"
+		export SGE_ROOT="${path}"
+		mkdir -p "${path}"
 		echo "Y" | scripts/distinst -all -local -noexit
 		
 		# Adding fake qmon 
-		touch "${root}/bin/linux-x64/qmon"
-		touch "${root}/utilbin/linux-x64/qmon"
+		touch "${path}/bin/linux-x64/qmon"
+		touch "${path}/utilbin/linux-x64/qmon"
 		""" 
 		.stripIndent()
 	} 
 	
 	protected String scriptDownloadBinaries() {
 	
-		assert tempPath
+		assert temp
 		assert binaryZipFile
-		assert root
+		assert path
 		
 		"""\
 		#
-		# Installing required component 
-		#
-		sudo yum install -y wget
-
-		#
 		# Download and unzip 
 		# 
-		cd ${tempPath}
+		cd ${temp}
 		wget -q -O sge6.zip ${binaryZipFile}
 		unzip sge6.zip
 		rm sge6.zip
@@ -275,10 +279,10 @@ class SgeOp {
 		#
 		# Install to targetHost directory
 		#
-		export SGE_ROOT="${root}"
-		[ -d ${root} ] && rm -rf ${root}
-		mkdir -p ${root}
-		mv ./sge6/* ${root}
+		export SGE_ROOT="${path}"
+		[ -d ${path} ] && rm -rf ${path}
+		mkdir -p ${path}
+		mv ./sge6/* ${path}
 		rm -rf ./sge6
 
 		""" 
@@ -288,29 +292,29 @@ class SgeOp {
 	
 	protected String scriptInstallMaster() {
 		
-		assert root, "Variable 'root' cannot be empty"
+		assert path, "Variable 'root' cannot be empty"
 		assert cell, "Variable 'cell' cannot be empty"
         assert user, "Variable 'user' cannot be empty"
-        assert spoolPath, "Variable 'spoolPath' cannot be empty"
+        assert spool, "Variable 'spool' cannot be empty"
 
 		"""\
         # Create the spool directory
-		[ ! -d ${spoolPath} ] && sudo mkdir -p ${spoolPath} && sudo chown -R ${user}:wheel ${spoolPath}
+		[ ! -d ${spool} ] && sudo mkdir -p ${spool} && sudo chown -R ${user}:wheel ${spool}
 
 		#
 		# Run the SGE the master node and the execd daemons 
 		# 
-		cd ${root}
+		cd ${path}
 		mv /tmp/sge.conf .
-		[ -d ${root}/${cell} ] && rm -rf ${root}/${cell}
+		[ -d ${path}/${cell} ] && rm -rf ${path}/${cell}
 		./inst_sge -m -x -auto ./sge.conf
 		sleep 1
 
 		#
 		# Add to the '.bash_profile'
 		#
-		source ${root}/${cell}/common/settings.sh
-		echo "source ${root}/${cell}/common/settings.sh" >> ~/.bash_profile
+		source ${path}/${cell}/common/settings.sh
+		echo "source ${path}/${cell}/common/settings.sh" >> ~/.bash_profile
 		
 		"""	
 		.stripIndent()
@@ -320,28 +324,28 @@ class SgeOp {
 	
 	protected String scriptInstallWorker() {
 		
-		assert root, "Variable 'root' cannot be empty"
+		assert path, "Variable 'root' cannot be empty"
 		assert cell, "Variable 'cell' cannot be empty"
         assert user, "Variable 'user' cannot be empty"
-        assert spoolPath, "Variable 'spoolPath' cannot be empty"
+        assert spool, "Variable 'spool' cannot be empty"
 
 		"""\
         # Create spool directory
-        [ ! -d ${spoolPath} ] && sudo mkdir -p ${spoolPath} && sudo chown -R ${user}:wheel ${spoolPath}
+        [ ! -d ${spool} ] && sudo mkdir -p ${spool} && sudo chown -R ${user}:wheel ${spool}
 
 		#
 		#  Install the 'execd' on worker nodes
 		#
-		export SGE_ROOT="${root}"
-		cd "${root}"
-		./inst_sge -x -auto ${root}/sge.conf
+		export SGE_ROOT="${path}"
+		cd "${path}"
+		./inst_sge -x -auto ${path}/sge.conf
 		sleep 1
 
 		#
 		# Add to the '.bash_profile'
 		#
-		source ${root}/${cell}/common/settings.sh
-		echo "source ${root}/${cell}/common/settings.sh" >> ~/.bash_profile
+		source ${path}/${cell}/common/settings.sh
+		echo "source ${path}/${cell}/common/settings.sh" >> ~/.bash_profile
 		"""	
 		.stripIndent()
 		
@@ -349,30 +353,30 @@ class SgeOp {
 	
 	protected String confTemplate()  {
 		assert clusterName, "Provide a valid 'cluster-name' in the SGE configuration"
-		assert root, "Provide a valid install 'root' path in the SGE configuration"
+		assert path, "Provide a valid install 'root' path in the SGE configuration"
 		assert cell, "Provide a valid 'cell' name in the SGE configuration (default)"
 		assert qmasterPort.isInteger() , "Provide a valid 'qmaster-port' value (6444)" 
 		assert execdPort,  "Provide a valid 'execd-port' value in the SGE configuration (6445)"
 		assert adminUser != null, "Provide the 'admin-user' in the SGE configuration (use blank to force the current user)"
 		assert nodes, "The SGE nodes cannot be empty "
-        assert spoolPath
+        assert spool
 		assert adminEmail
 
 		"""\
 		SGE_CLUSTER_NAME="${clusterName}"
-		SGE_ROOT="${root}"
+		SGE_ROOT="${path}"
 		SGE_QMASTER_PORT="${qmasterPort}"
 		SGE_EXECD_PORT="${execdPort}"
 		SGE_ENABLE_SMF="false"
 		CELL_NAME="${cell}"
 		ADMIN_USER="${adminUser}"
-		EXECD_SPOOL_DIR="${spoolPath}"
-		QMASTER_SPOOL_DIR="${spoolPath}/qmaster"
-		EXECD_SPOOL_DIR_LOCAL="${spoolPath}/execd"
+		EXECD_SPOOL_DIR="${spool}"
+		QMASTER_SPOOL_DIR="${spool}/qmaster"
+		EXECD_SPOOL_DIR_LOCAL="${spool}/execd"
 		GID_RANGE="20000-20100"
 		SPOOLING_METHOD="classic"
 		DB_SPOOLING_SERVER="none"
-		DB_SPOOLING_DIR="${root}/${cell}/spooldb"
+		DB_SPOOLING_DIR="${path}/${cell}/spooldb"
 		PAR_EXECD_INST_COUNT="20"
 		ADMIN_HOST_LIST="${nodes}"
 		SUBMIT_HOST_LIST="${nodes}"

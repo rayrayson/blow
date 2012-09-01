@@ -19,17 +19,15 @@
 
 package blow.operation
 
+import blow.BlowConfig
 import blow.BlowSession
 import blow.events.OnAfterClusterStartedEvent
-import blow.events.OnAfterClusterTerminationEvent
 import blow.events.OnBeforeClusterStartEvent
-import blow.events.OnBeforeClusterTerminationEvent
-import blow.exception.BlowConfigException
-import blow.util.BlockStorageHelper
 import blow.util.PromptHelper
 import blow.util.TraceHelper
 import com.google.common.eventbus.Subscribe
 import groovy.util.logging.Slf4j
+import blow.exception.BlowConfigException
 
 /**
  * Manage GlusterFS configuration
@@ -39,7 +37,6 @@ import groovy.util.logging.Slf4j
  */
 @Slf4j
 @Mixin(PromptHelper)
-@Mixin(BlockStorageHelper)
 @Operation("glusterfs")
 class GlusterFSOp  {
 
@@ -47,73 +44,60 @@ class GlusterFSOp  {
 
     /** The list links from where download and install the GlusterFS RMP(s) */
     @Conf
-    def rmp = [ "http://download.gluster.org/pub/gluster/glusterfs/3.2/3.2.4/Fedora/glusterfs-core-3.2.4-1.fc11.x86_64.rpm",
+    def rpm = [ "http://download.gluster.org/pub/gluster/glusterfs/3.2/3.2.4/Fedora/glusterfs-core-3.2.4-1.fc11.x86_64.rpm",
                 "http://download.gluster.org/pub/gluster/glusterfs/3.2/3.2.4/Fedora/glusterfs-fuse-3.2.4-1.fc11.x86_64.rpm" ]
 
     /** The GlusterFS volume name */
-    @Conf("volname")
-    String volname = "vol1"
-
-    /** The path on the underlying FS where the Gluster 'brick' is stored */
-    @Conf("brick-path")
-    String brickPath = "/gluster-data"
-
-	/**
-	 * The volume ID of a Block Store to be mounted
-	 */
-	@Conf("volume-id") def volumeId
-
-	/**
-	 * The identifier of an existing snapshot which will be used to mount 
-	 */
-	@Conf("snapshot-id") def snapshotId
+    @Conf
+    String volumeName = "vol1"
 
 	/**
 	 * The GlusterFS path to be used to export the mounted volume
 	 */
 	@Conf def path
-	
-	/**
-	 * Linux device name to be used to mount an EBS volume (if specified)
-	 */
-	@Conf String device
-	
-	/**
-	 * Size of 
-	 */
-	@Conf Integer size = 10
-	
-	@Conf("delete-on-termination") 
-	def String deleteOnTermination = "false"
 
-    @Conf("make-snapshot-on-termination")
-    def String makeSnapshotOnTermination = "false"
-
-    /** The current session injected by the framework. Note it must defined as 'public' field */
-    def BlowSession session
+    def List<String> bricks = []
+	
 
     // -------------------- private declarations --------------------
 
-    private String masterInstanceId
-	private String masterHostname
-    private boolean needFormatVolume
+    private BlowSession session
+	private String serverName
     private String userName
-
-    /** The path used to mount the EBS volume storage */
-    private String blockStorageMountPath
 
 
     /**
      * Validate the configuration parameters raising an exception is something is wrong
      */
     @Validate
-    public void validate() {
+    public void validate(BlowConfig conf) {
         log.debug "Validating GlusterFS configuration"
         assert path, "The attribute 'path' must be defined in the cluster configuration file"
         assert path.startsWith("/"), "Make sure the 'path' attribute starts with a '/' character"
-        assert volname, "The attribute 'volume-name' have to be entered in the configuration file"
-        assert brickPath, "The attribute 'brick-path' cannot be empty"
-        assert brickPath.startsWith("/"), "The attribute 'brick-path' must start with a '/'"
+        assert volumeName, "The attribute 'volume-name' have to be entered in the configuration file"
+
+        if( !serverName ) {
+            if( conf.instanceNumFor(conf.masterRole) == 1 ) {
+                log.debug("Using '${conf.masterRole}' as Gluster server")
+                serverName = conf.masterRole
+            }
+            else {
+                throw new BlowConfigException("GlusterFS require the property 'serverName' to be defined")
+            }
+        }
+
+        /*
+         * check the bricks
+         */
+        if( !bricks ) {
+            bricks = ["$serverName:/gfs/$volumeName"]
+        }
+        bricks.each {
+            assert nodeName(it)
+            assert nodePath(it) ?.startsWith("/"), "Gluster brick path for node '${nodeName(it)}' must start with a '/' character"
+            assert nodePath(it) != path, "Gluster brick path '${it}' cannot be the same as the mount path: '$path'"
+        }
+
     }
 
 
@@ -130,36 +114,14 @@ class GlusterFSOp  {
     public void  sanityCheck( OnBeforeClusterStartEvent event ) {
 
         /*
-         * If a 'snapshot' of a EBS volume id has been specified, it needs to mounted as an external device
-         * In this case the attribute 'device' is required to be entered
+         * configure some runtime operation attributes
          */
-        if( snapshotId || volumeId ) {
-            if( device && !session.markDevice(device) ) {
-                throw new BlowConfigException("The specified device name has been already used")
-            }
-
-            device = session.getNextDevice()
-            if( !device ) {
-                throw new BlowConfigException("Exausted device names. Please specify the device name explicitly in the cluster configuration")
-            }
-
-        }
-
+        this.userName = session.conf.userName
 
         /*
-        * check the snapshot
-        */
-        if( snapshotId ) {
-            checkSnapshot(snapshotId,session)
-        }
-
-        /*
-         * check the volumeId exists and it is allocated in the same availability zone
+         * TODO checks that the bricks names exists in the current definition
+         * if requires the list of names to be known before start the cluster
          */
-        if( volumeId && volumeId != "new" ) {
-            checkVolume(volumeId,session)
-        }
-
     }
 
     /**
@@ -177,146 +139,79 @@ class GlusterFSOp  {
 		log.info "Configuring GlusterFS file system for shared path '${path}'"
 
         /*
-        * configure some runtime operation attributes
-        */
-        this.masterInstanceId = session.getMasterMetadata().getProviderId()
-        this.masterHostname = session.getMasterMetadata().getHostname()
-        this.userName = session.conf.userName
-
-        /*
-         * define the mount path for the ebs volume
-         */
-        if( device ) {
-            blockStorageMountPath = "/mnt/" + new File(device).getName()
-        }
-
-        /*
          * run the logic tracing the execution time
          */
-        TraceHelper.debugTime( "GlusterFS attaching volume", { attachBlockStoreToMaster() } )
-        TraceHelper.debugTime( "GlusterFS installing components", { downloadAndInstall() } )
-        TraceHelper.debugTime( "GlusterFS configuring master node", { configureMaster() }  )
-        TraceHelper.debugTime( "GlusterFS configuring worker nodes", { configureClients() } )
+        TraceHelper.debugTime( "GlusterFS installing components" ) { downloadAndInstall() }
+        TraceHelper.debugTime( "GlusterFS configuring master node" ) { configureServer() }
+        TraceHelper.debugTime( "GlusterFS configuring worker nodes" ) { configureClients() }
     }
 
 
-
-    /**
-     * When the configuration flag {@link #deleteOnTermination} is {@code true}
-     * delete the attached volume before destroy the current running cluster
-     *
-     * @param event
-     */
-    @Subscribe
-    public void deleteVolume( OnAfterClusterTerminationEvent event ) {
-
-        /*
-         * TODO since the volume detach and delete could require
-         */
-        def boolean needToDelete = (deleteOnTermination == "true") && ( snapshotId || volumeId );
-        def boolean makeSnapshot = (volumeId && makeSnapshotOnTermination == "true")
-
-        log.debug("DeleteVolume - path: ${path}; volume: ${volumeId}; snapshot: ${snapshotId}; deleteOnTermination: ${needToDelete}; makeSnapshot: ${makeSnapshot} ")
-
-
-        /*
-         * Create a new snapshot before terminate
-         */
-        if( makeSnapshot ) {
-            log.info("Creating a snapshot for volume: ${volumeId} as requested by configuration")
-            def message = "Snapshot for volume ${volumeId} - Blow"
-            def waitFlag = needToDelete  // wait only if we need to delete the 'volume'
-            def snapshot = session.blockStore.createSnapshot(volumeId, message, waitFlag)
-            log.info("Created snapshot: ${snapshot.getId()} for volume: ${volumeId}")
-        }
-
-        if( !needToDelete ) {
-            if( volumeId ) {
-                log.info("The following volume: '${volumeId}' is still available.")
-            }
-            return
-        }
-
-
-        println "The volume ${volumeId} is going be DELETED."
-        if( promptYesOrNo("Do you confirm the deletion?") != 'y' ) {
-            return
-        }
-
-        /*
-         * Delete the volume
-         */
-        TraceHelper.debugTime( "Delete attached volume: '${volumeId}", {
-
-            session.getBlockStore().deleteVolume(volumeId)
-
-        })
-
-    }
-
-    /**
-     * Before terminate the cluster keep track of the Master node ID
-     *
-     * @param event
-     */
-    @Subscribe
-    public void fetchMasterId( OnBeforeClusterTerminationEvent event ) {
-        if( !masterInstanceId ) {
-            masterInstanceId = session.getMasterMetadata().getProviderId()
-        }
-    }
-
-    /**
-     *  Attach the specified volume/snapshot to the 'master' node
-     */
-    protected void attachBlockStoreToMaster() {
-        log.debug("Snapshot: ${snapshotId}; Volume: ${volumeId}")
-
-		/*
-		 * create a volume starting from the specified snapshot id 
-		 */
-		if( snapshotId ) {
-			def vol = session.getBlockStore().createVolume(size, snapshotId)
-			volumeId = vol.getId()
-		}
-		
-		/*
-		 * create a new volume
-		 */
-		if( volumeId == "new" ) {
-            log.debug "Creating new volume with size: $size G"
-			def vol = session.getBlockStore().createVolume(size)
-
-            log.info "New volume created with id ${vol.getId()}, size: ${vol.getSize()} G"
-            volumeId = vol.getId()
-            needFormatVolume = true // <-- set this flag to 'remember' to format the volume
-
-		}
-
-		/*
-		 * now attach the volume
-		 */
-		if( volumeId ) {
-            log.debug("Attaching vol: ${volumeId} to instance: ${masterInstanceId}; mount path: ${blockStorageMountPath}; device: ${device}")
-			session.getBlockStore().attachVolume( masterInstanceId, volumeId, blockStorageMountPath, device )
-		}
-		else { 
-			log.debug("Nothing to attach")
-		}
-				
-	}
 
     protected void downloadAndInstall() {
         session.runScriptOnNodes( getInstallScript(), null, RUN_AS_ROOT )
     }
 
-    /**
-     * Apply the 'master' configuration script
-     */
-	protected void configureMaster() {
 
-        def script = getBlockStorageMount() + '\n' + getConfMaster()
-		session.runScriptOnMaster( script, RUN_AS_ROOT )
+    static nodeName( String value ) {
+        def p = value.indexOf(':')
+        assert p != -1
+
+        value.substring(0,p)
+    }
+
+    static nodePath( String value ) {
+        def p = value.indexOf(':')
+        assert p != -1
+
+        value.substring(p+1)
+    }
+
+    /**
+     * Start the daemon and configure the Gluster volume
+     * <p>
+     * http://download.gluster.com/pub/gluster/glusterfs/3.2/Documentation/AG/html/chap-Administration_Guide-Setting_Volumes.html
+     *
+     */
+	protected void configureServer() {
+
+        /*
+         * Create the directory on each brick
+         */
+        def nodes = []
+        bricks.each {
+            def node = nodeName(it)
+            def dir  = nodePath(it)
+
+            def script = """\
+            mkdir -p $dir
+            chown -R ${userName}:wheel ${dir}
+            """
+            .stripIndent()
+
+            // add to the nodes list
+            nodes.add(node)
+
+            // run the script
+            session.runScriptOnNodes( script, node, true )
+
+        }
+
+        /*
+         * The main configuration script
+         */
+        def script = new StringBuilder()
+        script << "service glusterd start \n"
+
+        nodes.remove(serverName)
+        nodes.each { script << "gluster peer probe $it \n" }
+
+        // create and start
+        script << "gluster volume create ${volumeName} ${bricks.join(' ')} \n"
+        script << "gluster volume start ${volumeName} \n"
+
+
+		session.runScriptOnNodes( script.toString(), serverName, RUN_AS_ROOT )
 
 	}
 
@@ -328,54 +223,28 @@ class GlusterFSOp  {
 	}
 
 
-    protected String getBlockStorageMount() {
-        if( !device ) {
-            return ""
-        }
-
-        assert blockStorageMountPath
-
-        def script = ""
-        if( needFormatVolume ) {
-            script = """\
-            # Format the EBS volume if required
-            mkfs.ext3 ${device}; sleep 1
-            """
-            .stripIndent()
-        }
-
-        script += """\
-        # Mount the EBS volume if required
-        [ ! -e ${blockStorageMountPath} ] && mkdir -p ${blockStorageMountPath}
-        [ -f ${blockStorageMountPath} ] && echo "The path to be mounted must be a directory. Make sure the following path is NOT a file: '${blockStorageMountPath}'" && exit 1
-        mount ${device} ${blockStorageMountPath}; sleep 1
-        """
-        .stripIndent()
-    }
-
-
     /**
      * The GlusterFS install script
      * <p>
      * http://download.gluster.com/pub/gluster/glusterfs/3.2/Documentation/IG/html/chap-Installation_Guide-Installing.html
      *
-     * @return The BASH script to download and install the GlusterFS RMP
+     * @return The BASH script to download and install the GlusterFS RPM
      */
     protected String getInstallScript() {
 
         /*
-         * script fragment to download the RMPs
+         * script fragment to download the RPMs
          */
         def download = ""
-        rmp.each {
+        rpm.each {
             download += "wget -q ${it}\n"
         }
 
         /*
-         * Install all of them with the 'rmp' command
+         * Install all of them with the 'rpm' command
          */
         def install = ""
-        rmp.each { String item ->
+        rpm.each { String item ->
             def name = item.substring(item.lastIndexOf("/")+1)
             install += "rpm -Uvh ${name}\n"
         }
@@ -395,35 +264,6 @@ class GlusterFSOp  {
         return result.toString()
     }
 
-    /**
-     * Start the daemon and configure the Gluster volume
-     * <p>
-     * http://download.gluster.com/pub/gluster/glusterfs/3.2/Documentation/AG/html/chap-Administration_Guide-Setting_Volumes.html
-     *
-     *
-     * @return The master node configuration script
-     */
-    protected String getConfMaster() {
-        assert volname
-        assert masterHostname
-        assert brickPath
-        assert brickPath.startsWith("/")
-
-        def targetPath = blockStorageMountPath ? blockStorageMountPath + brickPath : brickPath
-
-        """\
-        # Start the Gluster daemon
-        service glusterd start
-
-        # Create a volume and start it
-        gluster volume create ${volname} ${masterHostname}:${targetPath}
-        gluster volume start ${volname}
-
-        # Assign the mounted to the current user
-        chown -R ${userName}:wheel ${targetPath}
-        """
-        .stripIndent()
-    }
 
     /**
      * Configure the Gluster client
@@ -435,7 +275,8 @@ class GlusterFSOp  {
      */
     protected String getConfClient() {
         assert path
-        assert volname
+        assert volumeName
+        assert serverName
 
         """\
         modprobe fuse
@@ -444,7 +285,7 @@ class GlusterFSOp  {
         [ ! -e ${path} ] && mkdir -p ${path}
         [ -f ${path} ] && echo "The path to be mounted must be a directory. Make sure the following path is NOT a file: '${path}'" && exit 1
 
-        mount -t glusterfs ${masterHostname}:/${volname} ${path}
+        mount -t glusterfs ${serverName}:/${volumeName} ${path}
         """
         .stripIndent()
     }

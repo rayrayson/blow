@@ -21,7 +21,6 @@ package blow
 
 import blow.exception.BlowConfigException
 import blow.exception.MissingKeyException
-import blow.operation.OperationFactory
 import blow.operation.OperationHelper
 import blow.operation.Validate
 import com.google.common.base.Charsets
@@ -32,8 +31,7 @@ import org.jclouds.domain.LoginCredentials
 
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
-
-import com.typesafe.config.*
+import blow.operation.HostnameOp
 
 /**
  * Contains all configuration required to handle a cluster 
@@ -50,14 +48,15 @@ class BlowConfig  {
     def accountId
 
 	def regionId 
-	def zoneId 
-	def imageId 
+	def zoneId
+
+	def imageId
 	def instanceType 
-	def size = 1
+    def instanceNum = 1
 
 	def userName
-	File publicKeyFile
-	File privateKeyFile
+	File publicKey
+	File privateKey
     def keyPair
 
     def Boolean createUser
@@ -69,93 +68,56 @@ class BlowConfig  {
     /** Which port to open using the syntax: n,m,from-to */
     def String inboundPorts
 
+    def List<String> roles = ['master','worker']
+
+    /** The role used by the 'master' node, by default defined as the first entry in the {@link #roles} list */
+    def String masterRole
+
+    /** The role used by the 'worker' nodes by default defined as the second entry in the {@link #roles} list */
+    def String workersRole
+
     /** The list of all operation defined in the configuration */
-	List operations
+	List operations = []
 
     /** The {@link org.jclouds.domain.LoginCredentials} object */
 	@Lazy
-    transient LoginCredentials credentials = {
-		log.debug "Creating lazy credential for user: ${userName} - key file: '${privateKeyFile}'"
+    protected transient LoginCredentials credentials = {
+		log.debug "Creating lazy credential for user: ${userName} - key file: '${privateKey}'"
 
-        String privateKey = Files.toString(privateKeyFile, Charsets.UTF_8);
-        return LoginCredentials.builder().user(userName).privateKey(privateKey).build();
+        String theKey = Files.toString(privateKey, Charsets.UTF_8);
+        return LoginCredentials.builder().user(userName).privateKey(theKey).build();
 
     }()
-
-    /** The operation factory   */
-    @Lazy
-	transient private OperationFactory operationFactory = { new OperationFactory( DynLoaderFactory.get() ) }()
 
 
     /** Protected constructor used only for testing purpose */
     protected BlowConfig () {
 
-    }
 
-
-	public BlowConfig( String conf, String clusterName = null ) {
-		this( ConfigFactory.parseString(conf), clusterName )	
 	}
-	
-	public BlowConfig( Config conf, String clusterName = null ) {
-		assert conf
 
-		if( clusterName ) {
-            if( !conf.hasPath(clusterName) ) {
-                throw new BlowConfigException("Unknwon cluster name: '${clusterName}'")
-            }
-			conf = conf.getConfig(clusterName).withFallback(conf);
-		}
+    def void initDefaults() {
 
-        /*
-         * The account ID
-         */
-        accountId = getString(conf, "account-id")
+        if( !regionId )  {
+            regionId = "us-east-1"
+        }
 
-		/*
-		 * credentials
-		 */
-		accessKey = getString(conf, "access-key") 		
-		secretKey = getString(conf, "secret-key")
-		
-		/*
-		 * region & zone
-		 */
-		regionId = getString(conf, "region-id", "us-east-1")
-		zoneId = getString(conf, "zone-id", regionId + "a" ) 
-		
-		/*
-		 * VM properties
-		 */
-		imageId = getString(conf, "image-id", null)
-		instanceType = getString(conf, "instance-type", "t1.micro")
-        securityId = getString(conf,"security-id")
-		
-		/*
-		 * the cluster size
-		 */
-		if( conf.hasPath("size") ) {
-			size = conf.getInt("size")
-		}
-		
-		/*
-		 * credential 
-		 */
-        createUser = getBool(conf, "create-user")
-		userName = getString(conf, "user-name", System.getProperty("user.name")) 
-		privateKeyFile = getFile(conf,"private-key")
-		publicKeyFile = getFile(conf,"public-key")
+        if( !zoneId ) {
+            zoneId = regionId + "a"
+        }
 
-        /*
-         * The cloud provider keyPair name
-         */
-        keyPair = getString(conf, "key-pair")
-        if( keyPair && !privateKeyFile ) {
+
+        if( !userName ) {
+            userName = System.getProperty("user.name")
+        }
+
+
+        if( keyPair && !privateKey ) {
             File keyFile = new File("./${keyPair}.pem")
             if( !keyFile.exists() ) keyFile = new File( System.properties['user.home'], ".ssh/${keyPair}.pem")
 
             if( keyFile.exists() ) {
-                privateKeyFile = keyFile
+                privateKey = keyFile
                 // it will be used the provider key-pair, so no user will be create
                 if( createUser == null ) createUser = false
             }
@@ -163,9 +125,9 @@ class BlowConfig  {
 
 
         // if not keys has been specified fallback to the default private key
-        if ( !keyPair && !privateKeyFile && !publicKeyFile ) {
-            privateKeyFile = getDefaultKeyFile()
-            publicKeyFile = new File( privateKeyFile.toString() + ".pub" )
+        if ( !keyPair && !privateKey && !publicKey ) {
+            privateKey = getDefaultKeyFile()
+            publicKey = new File( privateKey.toString() + ".pub" )
             // if are used the default key, the user have to be created remotely
             if( createUser == null ) createUser = true
         }
@@ -173,72 +135,102 @@ class BlowConfig  {
         /*
          * FDT port
          */
-        fdtPort = getInteger(conf, 'fdt-port', 50000)
+        if( !fdtPort ) {
+            fdtPort = 50000
+        }
 
         /*
          * Inbound ports
          */
-        inboundPorts = getString(conf, 'inbound-ports', "22,${fdtPort}")
+        if( !inboundPorts ) {
+            inboundPorts = "22,${fdtPort}"
+        }
 
 
-		/*
-		 * Fetch all the operation declared. Operations can be declared
-		 * as a single item or a list of operations configuration
-		 */
-		def operationsConfig
-		if( conf.hasPath("operations") ) {
-			
-			// we try first to read a list, if the user need just one operation it can be entered
-			// omitting the list syntax
-			def val = conf.getValue("operations")
-			operationsConfig = val instanceof ConfigList ? val : [ val ]
-			
-		}
-		else {
-			operationsConfig = []
-		}
-		
-		/*
-		 * create an instance for each declared operation
-		 */
-		def operationsList = []
-		operationsConfig.each {
-			
-			if( !( it instanceof ConfigValue ) ) {
-				throw new BlowConfigException( "Invalid operation declaration for: " + it )
-			}
-			
-			/*
-			 * create an instance for defined operation
-			 */
-			def op = operationFactory.createWithConf( it );
-			if( !op ) {
-				throw new BlowConfigException( "Invalid operation declaration for: " + it.render() )
-			}
+    }
 
-            // add to the operation list
-			operationsList.add( op )
-		}
-		
-		this.operations = operationsList
-	}
-		
-	
+
+    public String imageIdFor(String role) {
+        if( imageId instanceof Map ) {
+            return imageId[role]
+        }
+
+        return imageId
+    }
+
+    public String instanceTypeFor(String role) {
+        if( instanceType instanceof Map ) {
+            return instanceType[role]
+        }
+
+        return instanceType
+    }
+
+    public int instanceNumFor( String role ) {
+        if( instanceNum instanceof Map ) {
+            return instanceNum[role]
+        }
+
+        if( role != roles.last() ) {
+            return 1
+        }
+
+        return instanceNum - roles.size() +1
+    }
+
+
+    def String getMasterRole() {
+        masterRole ?: ( roles.size()>0 ? roles.get(0) : null )
+    }
+
+    def String getWorkersRole() {
+        workersRole ?: ( roles.size()>1 ? roles.get(1) : null )
+    }
+
 	def void checkValid() {
-		log.debug("Validation configuration") 
+		log.debug("Validating configuration")
 		
-		checkTrue( accessKey, "Missing Cloud access key")
-		checkTrue( secretKey, "Missing Cloud secret key")
-		checkTrue( imageId, "Missing VM 'image-id' in cluster configuration")
-		checkTrue( size>0, "Missing 'size' attribute. You need to specifiy the number of nodes in your cluster configuration")
-		
+		checkTrue( accessKey, "Missing 'accessKey' attribute in cluster configuration")
+		checkTrue( secretKey, "Missing 'secretKey' attribute in cluster configuration")
+		checkTrue( imageId, "Missing 'imageId' attribute in cluster configuration")
+
+        /*
+         * Check thar roles are valid
+         */
+        checkTrue( roles, "Missing 'roles' attribute in cluster configuration" )
+        roles.each {
+            checkTrue( it ==~ /[A-Za-z_\-]+/, "The following role is not valid: '${it}'. Roles can contain only alphabetic plus '-' and '_' chars" )
+        }
+
+        if( masterRole ) {
+            checkTrue( masterRole in roles, "The role defines by the attribute 'masterRole' should be defined in the 'roles' atributes as well" )
+        }
+
+        if( workersRole ) {
+            checkTrue( workersRole in roles, "The role defines by the attribute 'workersRole' should be defined in the 'roles' atributes as well" )
+        }
+
+        /*
+         * The property 'instanceNum' can be a single integer representing the number ot total
+         * instances to launch - or - a map specifying the number of instances in each 'role'
+         */
+        checkTrue( instanceNum, "Missing 'instanceNum' attribute. You need to specifiy the number of nodes in your cluster configuration")
+
+        if( instanceNum instanceof Map )  {
+            instanceNum.each { key, val ->
+                checkTrue( key in roles, "Unknown role definition '${key}' in 'instanceNum' declaration: '${instanceNum}' " )
+                checkTrue( val > 0, "Invalid number of instance for role '${key}' in 'instanceNum' declaration: '${instanceNum}'" )
+            }
+        }
+
+
 		/*
 		 * validate credentials
 		 */
-		checkTrue( userName, "Missing cluster user name. Please provide attribute 'user-name' in your configuration")
+		checkTrue( userName, "Missing cluster user name. Please provide attribute 'userName' in your configuration")
 
 
-        if( keyPair && (!privateKeyFile || !privateKeyFile.exists()) ) {
+        if( keyPair && (!privateKey || !privateKey.exists()) ) {
             throw new BlowConfigException("Missing key file for specified keypair '${keyPair}'")
         }
 
@@ -246,28 +238,28 @@ class BlowConfig  {
          * Verify keys
          */
         // now verify that this keys exists otherwise raise an exception
-        if( !privateKeyFile.exists() ) {
-            throw new MissingKeyException(privateKeyFile)
+        if( !privateKey.exists() ) {
+            throw new MissingKeyException(privateKey)
         }
 
-        if( createUser && !publicKeyFile.exists() ) {
-            throw new MissingKeyException(publicKeyFile)
+        if( createUser && !publicKey.exists() ) {
+            throw new MissingKeyException(publicKey)
         }
 
 
-        if( !privateKeyFile.text.startsWith("-----BEGIN RSA PRIVATE KEY-----") \
-            && !privateKeyFile.text.startsWith("-----BEGIN DSA PRIVATE KEY-----") \
-            && !privateKeyFile.text.startsWith("-----BEGIN PRIVATE KEY-----") )
+        if( !privateKey.text.startsWith("-----BEGIN RSA PRIVATE KEY-----") \
+            && !privateKey.text.startsWith("-----BEGIN DSA PRIVATE KEY-----") \
+            && !privateKey.text.startsWith("-----BEGIN PRIVATE KEY-----") )
         {
-             throw new BlowConfigException("Invalid private key file format: '$privateKeyFile'")
+             throw new BlowConfigException("Invalid private key file format: '$privateKey'")
         }
 
-        if( publicKeyFile )  {
-            if( !publicKeyFile.text.startsWith("ssh-rsa") \
-		    && !publicKeyFile.text.startsWith("ssh-dss") \
-		    && !publicKeyFile.text.startsWith("ssh") )
+        if( publicKey )  {
+            if( !publicKey.text.startsWith("ssh-rsa") \
+		    && !publicKey.text.startsWith("ssh-dss") \
+		    && !publicKey.text.startsWith("ssh") )
             {
-                throw new BlowConfigException("Invalid public key file format: '$publicKeyFile'")
+                throw new BlowConfigException("Invalid public key file format: '$publicKey'")
             }
         }
 
@@ -281,11 +273,11 @@ class BlowConfig  {
 
         int[] ports = getPortsArrays( inboundPorts )
         if( !( 22 in ports ) ) {
-            throw BlowConfigException("Missing SSH port (22) in declared 'inbound-ports' attribute.")
+            throw BlowConfigException("Missing SSH port (22) in declared 'inboundPorts' attribute.")
         }
 
         if( !( fdtPort in ports ) ) {
-            throw BlowConfigException("Missing FDT port ($fdtPort) in declared 'inbound-ports' attribute.")
+            throw BlowConfigException("Missing FDT port ($fdtPort) in declared 'inboundPorts' attribute.")
         }
 
 
@@ -298,7 +290,12 @@ class BlowConfig  {
 
     def void checkOperations() {
 
-        if( !operations ) return;
+        if( operations == null ) { operations = [] }
+
+        if( !operations.find { it.getClass()==HostnameOp } ) {
+            log.debug "Adding ${HostnameOp.getSimpleName()} operation by default"
+            operations.add(0, new HostnameOp())
+        }
 
         operations.each { op ->
             /*
@@ -353,7 +350,7 @@ class BlowConfig  {
                     break;
 
                 default:
-                    throw BlowConfig(cause);
+                    throw new BlowConfigException(cause);
             }
         }
         catch( BlowConfigException e ) {
@@ -368,49 +365,7 @@ class BlowConfig  {
 	private void checkTrue( def valid, String message) {
 		if( !valid ) throw new BlowConfigException(message)
 	} 
-	
-	private String getString( Config conf, String key, String defValue = null) {
-        return conf.hasPath(key) ? conf.getString(key) : defValue
-	}
 
-    private File getFile( Config conf, String key, File defValue = null ) {
-        def val = conf.hasPath(key) ? conf.getString(key) : null
-        return val ? new File(val) : defValue
-    }
-
-    private Boolean getBool( Config conf, String key, Boolean defValue = null ) {
-        def val = conf.hasPath(key) ? conf.getString(key) : null
-        return val ? Boolean.parseBoolean(val?.toLowerCase()) : defValue
-    }
-
-    private Integer getInteger( Config conf, String key, Integer defValue = null ) {
-        def val = conf.hasPath(key) ? conf.getString(key) : null
-        return val && val.isInteger() ? val.toInteger() : defValue
-    }
-	
-	def getConfMap() {
-
-		def result = [:]
-
-        result.put("user-name", userName)
-        result.put("key-pair", keyPair ?: '--')
-        result.put("private-key", privateKeyFile)
-        result.put("public-key", publicKeyFile ?: '--' )
-        result.put("create-user", createUser ?: false )
-        result.put("account-id", accountId ?: '--')
-        result.put("access-key", accessKey)
-		result.put("region-id", regionId)
-		result.put("zone-id", zoneId)
-		result.put("image-id", imageId)
-		result.put("instance-type",instanceType)
-        result.put("security-id",securityId ?: '--')
-		result.put("size", size)
-        result.put("inbound-ports", inboundPorts)
-        result.put("fdt-port", fdtPort)
-
-
-        return result
-	}
 
     private static getDefaultKeyFile() {
         def result = [:]
@@ -446,28 +401,24 @@ class BlowConfig  {
     }
 
     /**
-     * Given the configuration text, parse it and find the list of names of cluster definitions
-     *
-     * @param text The configuration text
-     * @return The list of cluster names defined
+     * @return The total number of instances to launch
      */
-    static def getClusterNames( final String text ) {
-        
-        getClusterNames(ConfigFactory.parseString(text))
-
-    }
-
-
-    static def getClusterNames( final Config config ) {
-        def names = []
-        config.root().entrySet() .each { entry ->
-            if( entry.value.valueType() == ConfigValueType.OBJECT ) {
-                names.add(entry.key)
-            }
+    def int getSize() {
+        if( instanceNum instanceof Integer ) {
+            return instanceNum
         }
 
-        return names
+        if( instanceNum instanceof Map ) {
+            def result = 0
+            instanceNum.each { key, value ->
+                result += value
+            }
+            return result
+        }
+
+        return 0
     }
+
 
     /**
      * Converts a port specification string to an array of integer.
@@ -514,29 +465,21 @@ class BlowConfig  {
 
     @Override
     def int hashCode() {
-        def val = HashCodeHelper.initHash()
-        val = HashCodeHelper.updateHash(val,accessKey)
-        val = HashCodeHelper.updateHash(val,secretKey)
-        val = HashCodeHelper.updateHash(val,accountId)
-        val = HashCodeHelper.updateHash(val,regionId)
-        val = HashCodeHelper.updateHash(val,zoneId)
-        val = HashCodeHelper.updateHash(val,imageId)
-        val = HashCodeHelper.updateHash(val,instanceType)
-        val = HashCodeHelper.updateHash(val,size)
-        val = HashCodeHelper.updateHash(val,userName)
-        val = HashCodeHelper.updateHash(val,publicKeyFile)
-        val = HashCodeHelper.updateHash(val,privateKeyFile)
-        val = HashCodeHelper.updateHash(val,keyPair)
-        val = HashCodeHelper.updateHash(val,createUser)
-        val = HashCodeHelper.updateHash(val,securityId)
+        def hash = HashCodeHelper.initHash()
+
+        def excludes = ['class','metaClass', 'operations', 'defaultKeyFile']
+        metaPropertyValues.each { PropertyValue prop ->
+            if( prop.name in excludes ) return
+            hash = HashCodeHelper.updateHash(hash,prop.value)
+        }
 
         operations?.each { Object op ->
             def opHash = OperationHelper.opHashCode( op )
-            val = HashCodeHelper.updateHash(val,opHash)
+            hash = HashCodeHelper.updateHash(hash,opHash)
         }
 
 
-        return val
+        return hash
     }
 
 

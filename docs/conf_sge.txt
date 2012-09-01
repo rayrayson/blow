@@ -7,9 +7,7 @@ who started contributing code since 2001.
 
 This page explain how install and configure automatically a *SGE* instance in a cluster managed by *Blow*.
 
-A full description of the *SGE* installation and configuration procedure is out of the scope of this manual.
-
-Read more about the Open Grid Scheduler project at the following link: http://gridscheduler.sourceforge.net
+To read more about the Open Grid Scheduler project at the following link: http://gridscheduler.sourceforge.net
 
 
 Basic SGE configuration
@@ -18,52 +16,81 @@ Basic SGE configuration
 The SGE configuration requires the operation ``sge`` to be added in the ``operations`` attribute
 in the cluster configuration file. 
 
-Currently is it required to install the *SGE* binary files in a directory shared by all nodes in the clusters. 
-This directory is the defined as the ``root`` installation directory and it needs to be specified as an attribute 
-in the ``sge`` operation configuration. For example::
+Currently it is required to install the *SGE* binary files in a directory shared by all nodes in the clusters.
+This directory has to be defined by the parameter ``path`` for the ``sge`` operation definition.
+For example::
 
-  my_cluster {
+  MyCluster {
   
-    image-id: ami_xxx
+    imageId: 'ami-xxx'
     :
-    operations [
-      hostname
-      {nfs { path: /soft }}
-      {sge { root: /soft/sge6 } }
-    ]
+    operations {
+        nfs(path: '/soft')
+        sge(path: '/soft/sge6')
+
+    }
+
   }
 
 In the above example, it is installed a shared directory named ``/soft``. The *SGE* is installed in the sub-directory 
 ``/soft/sge6``, moreover the ``sge`` operation starts the required daemon(s) both on the master node and the workers nodes
 as well as configure the environment variables.
 
-When the installation complete, wou will able to log-in in any remote node using a SSH client and verify 
+When the installation complete, you will able to log-in in any remote node using a SSH client and verify
 that the *SGE* installation process has been completed successfully with the command ``qhost``. It will display 
 the list of all running *SGE* nodes. 
 
+
+Local spool directory
+---------------------
+
+The spool directory for each SGE daemons is the greatest source of NFS traffic for Grid Engine.
+
+By configuring local spool directories, all that traffic can be redirected to the local disk on each compute host,
+thus isolating it from the rest of the network as well as reducing the I/O latency.
+
+Using *Blow* the SGE spool directory can be specified by simply providing the ``spool`` parameter in the ``sge`` operation
+definition. For example::
+
+
+  MyCluster {
+
+    imageId: 'ami-xxx'
+    :
+    operations {
+        nfs(path: '/soft')
+        sge(path: '/soft/sge6', spool: '/var/spool/sge')
+    }
+  }
+
+
+Read more about this at the following link http://gridscheduler.sourceforge.net/howto/nfsreduce.html
 
 
 SGE configuration attributes
 ----------------------------
 
-* ``root`` (\*): The root directory where the *SGE* binary files will be installed. It must be a shared 
+* ``path`` (\*): The root directory where the *SGE* binary files will be installed. It must be a shared
   directory accessible by all the nodes in the cluster.
-
-* ``installation-mode``: The type of installation
-
-* ``tmp``: The temporary path used during the installation process. If it is not specified, the path ``/tmp``
-  will used by default.
-
-* ``cluster-name``: The name for the cluster installation. If it is not specified, the value ``cloud_sge``
-  will used by default.
-
-* ``qmaster-port``: The *TCP* port used by the *SGE* qmaster daemon. Default value ``6444``.
-
-* ``execd-port``: The *TCP* port required by the *SGE* ``execd`` daemon. Default value ``6445``.
 
 * ``cell``: The name of the *SGE* instance. Default value ``default``.
 
-* ``admin-email``: The email address used by the *SGE* to send notification. Default value ``none@none.edue``
+* ``clusterName``: The name for the cluster installation. If it is not specified, the value ``cloud_sge``
+  will used by default.
+
+* ``installationMode``: The type of installation. The following values can be used: ``compile`` compiles the SGE binaries,
+  install it, and configure the daemons and clients on each node; ``deploy``: install a pre-compiled version of the
+  SGE binaries and configure it; ``config``: just configure the SGE daemons, the SGE binaries should be available in the specified ``path`` parameter.
+* ``execdPort``: The *TCP* port required by the *SGE* ``execd`` daemon. Default value ``6445``.
+
+* ``qmasterPort``: The *TCP* port used by the *SGE* qmaster daemon. Default value ``6444``.
+
+* ``adminEmail``: The email address used by the *SGE* to send notification. Default value ``none@none.edue``
+
+* ``spool``: The SGE spool directory, by default is used directory ``$path/$cell/spool``
+
+* ``temp``: The temporary path used during the installation process. If it is not specified, the path ``/tmp``
+  will used by default.
 
 
 

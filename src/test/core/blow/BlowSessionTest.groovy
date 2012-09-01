@@ -19,14 +19,34 @@
 
 package blow
 
+import blow.builder.BlowConfigBuilder
 import blow.operation.EbsVolumeOp
+import org.jclouds.domain.Location
+import org.jclouds.domain.LoginCredentials
+import org.jclouds.domain.ResourceMetadata
 import spock.lang.Specification
+import org.jclouds.compute.domain.*
 
 /**
  *
  *  @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
 class BlowSessionTest extends Specification {
+
+    def "test initMetadata "() {
+        when:
+        def session = new BlowSession()
+        session.conf.roles = ['a', 'b']
+        session.conf.instanceNum = [a:1, b:3]
+
+        session.metadataInitialize()
+        then:
+        session.allNodes.containsKey('a')
+        session.allNodes.containsKey('b1')
+        session.allNodes.containsKey('b2')
+        session.allNodes.containsKey('b3')
+        session.allNodes.containsKey('b4') == false
+    }
 
     def "test getNextDevice" () {
 
@@ -58,26 +78,25 @@ class BlowSessionTest extends Specification {
     }
 
     def testSaveReadSession() {
-        setup:
-        def CONF =
-            """
-				access-key = abc
-				secret-key = 123
-				size = 1
-
-				my-cluster {
-					access-key = xyz
-					size = 3
-					operations = [ {volume { path: /here }} ]
-				}
-				"""
 
         when:
-        def session = new BlowSession(new BlowConfig( CONF, "my-cluster" ), "my-cluster")
-        def file = session.persist()
+        def config = new BlowConfigBuilder('myCluster') . _ {
+            accessKey 'xyz'
 
+            myCluster {
+                operations {
+                    volume(path: '/root')
+                }
+            }
+
+        }
+
+        def session = new BlowSession(config, 'myCluster')
+        def file = session.persist()
+        println "saved file:" + file
+        println "operations: " + config.operations
         // read back
-        def serializedSession =  BlowSession.read('my-cluster')
+        def serializedSession =  BlowSession.read('myCluster')
 
         then:
         file.exists()
@@ -91,4 +110,285 @@ class BlowSessionTest extends Specification {
 
     }
 
+
+    def "test metadata" () {
+        when:
+        def session = new BlowSession()
+        session.conf.roles = ['node']
+        session.conf.instanceNum = 100
+        session.metadataInitialize()
+
+        session.nodeNamesMap.put('node001', '1')
+        session.nodeNamesMap.put('node002', '2')
+        session.nodeNamesMap.put('node003', '3')
+
+        session.nodeRolesMap.put('master', '1')
+        session.nodeRolesMap.put('worker', '2')
+        session.nodeRolesMap.put('worker', '3')
+
+        session.allNodes.put('node001', session.wrapNode(new MyNode(id: '1', ip: '1.1.1.1')))
+        session.allNodes.put('node002', session.wrapNode(new MyNode(id: '2', ip: '2.2.2.2')))
+        session.allNodes.put('node003', session.wrapNode(new MyNode(id: '3', ip: '3.3.3.3')))
+
+        then:
+        // master
+        session.allNodes['node001'].getId() == '1'
+        session.allNodes['node001'].getNodeName() == 'node001'
+        session.allNodes['node001'].getNodeIp() == '1.1.1.1'
+        session.allNodes['node001'].getNodeRole() == 'master'
+
+        // worker 1
+        session.allNodes['node002'].getId() == '2'
+        session.allNodes['node002'].getNodeName() == 'node002'
+        session.allNodes['node002'].getNodeIp() == '2.2.2.2'
+        session.allNodes['node002'].getNodeRole() == 'worker'
+
+        // worker 2
+        session.allNodes['node003'].getId() == '3'
+        session.allNodes['node003'].getNodeName() == 'node003'
+        session.allNodes['node003'].getNodeIp() == '3.3.3.3'
+        session.allNodes['node003'].getNodeRole() == 'worker'
+    }
+
+
+    def "test metadata refresh" () {
+        when:
+        def session = new BlowSession()
+        session.conf.roles = ['node']
+        session.conf.instanceNum = 10
+        session.metadataInitialize()
+
+        session.nodeNamesMap.put('node01', '1')
+        session.nodeNamesMap.put('node02', '2')
+        session.nodeNamesMap.put('node03', '3')
+
+        session.nodeRolesMap.put('master', '1')
+        session.nodeRolesMap.put('worker', '2')
+        session.nodeRolesMap.put('worker', '3')
+
+        session.allNodes.put('node01', session.wrapNode(new MyNode(id: '1', imageId: 'a123', ip: '1.1.1.1')))
+        session.allNodes.put('node02', session.wrapNode(new MyNode(id: '2', imageId: 'a123', ip: '2.2.2.2')))
+        session.allNodes.put('node03', session.wrapNode(new MyNode(id: '3', imageId: 'a123', ip: '3.3.3.3')))
+
+        def newSet = [ new MyNode(id: '1', imageId: 'a123', ip: '1.1.1.1'), new MyNode(id: '3', imageId: 'a321', ip: '3.3.3.4') ]
+        session.metadataUpdate( newSet )
+
+
+        then:
+        session.allNodes.size() == 10
+
+        // master
+        session.allNodes['node01'].getId() == '1'
+        session.allNodes['node01'].getNodeName() == 'node01'
+        session.allNodes['node01'].getNodeIp() == '1.1.1.1'
+        session.allNodes['node01'].getNodeRole() == 'master'
+        session.allNodes['node01'].getImageId() == 'a123'
+
+        session.allNodes['node02'] == null
+
+        // worker 2
+        session.allNodes['node03'].getId() == '3'
+        session.allNodes['node03'].getNodeName() == 'node03'
+        session.allNodes['node03'].getNodeIp() == '3.3.3.4'
+        session.allNodes['node03'].getNodeRole() == 'worker'
+        session.allNodes['node03'].getImageId() == 'a321'
+    }
+
+    def "test getNextName"() {
+
+        when:
+        def session = new BlowSession()
+        session.conf.instanceNum = 10
+
+        session.nodeRolesMap.put( 'worker', '2' )
+        session.nodeRolesMap.put( 'worker', '3' )
+
+        then:
+        session.getNextNodeName('master') == 'master'
+        session.getNextNodeName('worker') == 'worker3'
+
+    }
+
+
+    def "test getNextName_2"() {
+
+        when:
+        def session = new BlowSession()
+        session.conf.instanceNum = ['master':3, 'slave':100 ]
+        session.conf.roles = ['master','slave']
+
+        session.nodeRolesMap.put( 'master', '1' )
+        session.nodeRolesMap.put( 'slave', '2' )
+        session.nodeRolesMap.put( 'slave', '3' )
+        session.nodeRolesMap.put( 'slave', '4' )
+        session.nodeRolesMap.put( 'slave', '5' )
+
+        then:
+        session.getNextNodeName('master') == 'master2'
+        session.getNextNodeName('slave') == 'slave005'
+
+    }
+
+
+    def "test findNodeIDs" () {
+        when:
+        def session = new BlowSession()
+        session.nodeNamesMap.put('master', '1')
+        session.nodeNamesMap.put('slave1', '2')
+        session.nodeNamesMap.put('slave2', '3')
+        session.nodeNamesMap.put('slave3', '4')
+        session.nodeNamesMap.put('slave4', '5')
+
+        session.nodeRolesMap.put( 'master', '1' )
+        session.nodeRolesMap.put( 'slave', '2' )
+        session.nodeRolesMap.put( 'slave', '3' )
+        session.nodeRolesMap.put( 'slave', '4' )
+        session.nodeRolesMap.put( 'slave', '5' )
+
+        then:
+        session.findNodeIDs('master') == ['1']
+        session.findNodeIDs('slave') == ['2','3','4','5']
+        session.findNodeIDs(['master','slave']) == ['1','2','3','4','5']
+        session.findNodeIDs(['master','slave'] as String[]) == ['1','2','3','4','5']
+
+        session.findNodeIDs('slave1') == ['2']
+        session.findNodeIDs(['master','slave1']) == ['1','2']
+    }
+
+
+    def "test findNodeIDs (2)" () {
+        when:
+        def session = new BlowSession()
+        session.conf.roles = ['master']
+        session.conf.instanceNum
+
+        session.nodeNamesMap.put('master1', '1')
+        session.nodeNamesMap.put('master2', '2')
+
+        session.nodeRolesMap.put( 'master', '1' )
+        session.nodeRolesMap.put( 'master', '2' )
+
+        then:
+        session.findNodeIDs('master1') == ['1']
+        session.findNodeIDs('master2') == ['2']
+        session.findNodeIDs('master') == ['1','2']
+    }
+
+
 }
+
+class MyNode implements  NodeMetadata {
+
+    def id
+
+    def imageId
+
+    def hostname
+
+    def group
+
+    def ip
+
+
+    @Override
+    String getId() {
+        return id
+    }
+
+    @Override
+    String getHostname() {
+        return hostname
+    }
+
+    @Override
+    String getGroup() {
+        return group
+    }
+
+    @Override
+    Hardware getHardware() {
+        return null
+    }
+
+    @Override
+    String getImageId() {
+        return imageId
+    }
+
+    @Override
+    OperatingSystem getOperatingSystem() {
+        return null
+    }
+
+    @Override
+    NodeState getState() {
+        return null
+    }
+
+    @Override
+    int getLoginPort() {
+        return null
+    }
+
+    @Override
+    String getAdminPassword() {
+        return null  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    LoginCredentials getCredentials() {
+        return null  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    Set<String> getPublicAddresses() {
+        return new HashSet<String>([ip])
+    }
+
+    @Override
+    Set<String> getPrivateAddresses() {
+        return null  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    ComputeType getType() {
+        return null  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    String getProviderId() {
+        return id
+    }
+
+    @Override
+    String getName() {
+        return null  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    Location getLocation() {
+        return null  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    URI getUri() {
+        return null  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    Map<String, String> getUserMetadata() {
+        return null  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+
+    @Override
+    Set<String> getTags() {
+        return null  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    int compareTo(ResourceMetadata<ComputeType> o) {
+        return 0  //To change body of implemented methods use File | Settings | File Templates.
+    }
+}
+

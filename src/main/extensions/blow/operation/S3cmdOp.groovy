@@ -19,14 +19,13 @@
 
 package blow.operation
 
-import blow.BlowSession
 import blow.events.OnAfterClusterStartedEvent
 import blow.util.TraceHelper
 import com.google.common.eventbus.Subscribe
 import groovy.util.logging.Slf4j
-import org.jclouds.scriptbuilder.domain.CreateOrOverwriteFile
 import org.jclouds.scriptbuilder.domain.StatementList
 import org.jclouds.scriptbuilder.domain.Statements
+import blow.BlowSession
 
 /**
  * Install and configure 's3cmd' cmd line tools 
@@ -48,6 +47,8 @@ class S3cmdOp  {
     @Conf String useHttps = ""
     @Conf String version = "1.0.1"
 
+    private BlowSession session
+
     @Validate
     def void validation() {
         assert version, "The 'version' attribute cannot be empty"
@@ -58,15 +59,11 @@ class S3cmdOp  {
     public void installS3cmd( OnAfterClusterStartedEvent event ) {
         log.info "Configuring s3cmd"
 
-        TraceHelper.debugTime ( "Install S3Cmd", {
-
-            execute( event.session )
-
-        } )
+        TraceHelper.debugTime ("Install S3Cmd") { execute() }
 
     }
 
-	public void execute(BlowSession session) {
+	public void execute() {
         assert version
 
         if( !accessKey ) accessKey = session.conf.accessKey
@@ -75,7 +72,7 @@ class S3cmdOp  {
         // copy the s3 configuration file remotely
         def s3lines = [];
         s3conf().eachLine { s3lines.add(it) }
-        def s3file = new CreateOrOverwriteFile("s3conf", s3lines);
+        def s3file = Statements.createOrOverwriteFile("s3conf", s3lines)
 
         // the export path
         def export = """\
@@ -96,13 +93,12 @@ class S3cmdOp  {
         sudo yum install -y wget
 		wget -q http://sourceforge.net/projects/s3tools/files/s3cmd/${version}/s3cmd-${version}.zip/download
         unzip s3cmd-${version}.zip
-        rm -rf s3cmd-${version}.zip
         chmod +x s3cmd-${version}/s3cmd
         mv s3cmd-${version} \$HOME
         ${export}
         cat s3conf | s3cmd --configure
         rm s3conf
-        rm s3cmd-${version}.zip
+        rm -rf s3cmd-${version}.zip
 		"""
         .stripIndent()
 

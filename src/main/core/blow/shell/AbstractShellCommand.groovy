@@ -19,7 +19,6 @@
 
 package blow.shell
 
-import blow.BlowSession
 import groovy.util.logging.Slf4j
 
 /**
@@ -30,17 +29,6 @@ import groovy.util.logging.Slf4j
  */
 @Slf4j
 abstract class AbstractShellCommand implements ShellCommand {
-
-	/** 
-	 * The owner shell instance which uses this command. This value will be 'injected' by
-	 * the managing creator object
-	 */
-	BlowShell shell
-	
-	/**
-	 * Accessor method to the 'blow' instance
-	 */
-	final BlowSession getSession() { shell.session }
 
 	/**
 	 * Define the command command name used in the 'shell' interface,
@@ -59,7 +47,8 @@ abstract class AbstractShellCommand implements ShellCommand {
     @Override
     public  String getHelp() { getSummary() }
 
-
+    @Override
+    public void free() { }
 
 
 }

@@ -20,17 +20,17 @@ the ``operations`` attribute in the cluster definition. It creates and starts a 
 in the configured cluster. It also starts the Gluster server and export the volume using the *path* specified with the ``path``
 attribute in the *operation* configuration. For example::
 
-  my_cluster {
-    image-id: ..
+  MyCluster {
+    imageId: '..'
     :
-    operations [
-      hostname
-      { gluster: { path: /scratch  }}
-    ]
+    operations {
+        glusterfs(path: '/scratch')
+    }
+
   }
 
 
-The above declaration creates the ``/scratch`` directory in the master node, start the NFS daemon
+The above declaration creates the ``/scratch`` directory in the master node, start the Gluster daemon
 and export that folder to the client nodes. Also it will create the same directory on all the client nodes
 and mount the network shared folder.  
 
@@ -39,14 +39,13 @@ volumes are to be exported.
 
 For example:: 
 
-  my_cluster {
-    image-id: ..
+  MyCluster {
+    imageId: '..'
     :
-    operations [
-      hostname
-      { nfs: { path: /scratch }}
-      { nfs: { path: /data  }}
-    ]
+    operations {
+      glusterfs( path: '/scratch'  )
+      glusterfs( path: '/data' )
+    }
   }
 
 

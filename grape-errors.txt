@@ -1,0 +1,13 @@
+GRAPE errors: 
+
+:
+Got hexagonit.recipe.download 1.5.0.
+Getting distribution for 'RestrictedPython'.
+SyntaxError: ('invalid syntax', ('build/bdist.linux-x86_64/egg/RestrictedPython/tests/before_and_after27.py', 30, 17, '    x = {y: y for y in whatever if y}\n'))
+
+SyntaxError: ('invalid syntax', ('build/bdist.linux-x86_64/egg/RestrictedPython/tests/security_in_syntax27.py', 6, 13, '    {y: y for _restricted_name in x}\n'))
+
+SyntaxError: ('invalid syntax', ('/root/grape/.eggs/tmpIABLkW/RestrictedPython-3.6.0-py2.6.egg/RestrictedPython/tests/before_and_after27.py', 30, 17, '    x = {y: y for y in whatever if y}\n'))
+
+SyntaxError: ('invalid syntax', ('/root/grape/.eggs/tmpIABLkW/RestrictedPython-3.6.0-py2.6.egg/RestrictedPython/tests/security_in_syntax27.py', 6, 13, '    {y: y for _restricted_name in x}\n'))
+

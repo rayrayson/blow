@@ -28,7 +28,7 @@ import blow.events.*
 @Operation("trace")
 class TraceOp {
 
-    BlowSession session
+    private BlowSession session
 
 	@Override
 	public void execute() { }

@@ -1,3 +1,13 @@
+2012-09-01, version 0.7.0
+- Session persistence accross restarts
+- New configuration file syntax based on Groovy BuilderSupport
+- Uniform nodes naming
+- Refactored Volume, NFS and SGE operation
+- Support for Amazon epheremeral volumes
+- Advanced topoplogies configuration
+- S3 client integration
+- Upgrade to JClouds 1.4.2
+
 2012-07-20, version 0.6.3
 - New fcp command to upload/download data command based on Fast Data Transfer - http://monalisa.cern.ch/FDT/
 - New 'inbound-ports' configurtation property

@@ -57,8 +57,8 @@ class StorageCommands  {
      */
     @Cmd( name="listvolumes",
           summary="Display the list of volumes in the current region",
-          usage="listvolumes [options] [volume-id ..]")
-    @Completion( { findVolumesCompletion(it) } )
+          usage="listvolumes [options] [node name]")
+    @Completion({ cmdline -> session.findMatchingAttributes(cmdline) })
 
     def void listVolumes(
             @Opt(opt="r", longOpt="region", arg="region-id", description="Specify a different region")
@@ -69,14 +69,13 @@ class StorageCommands  {
             Boolean printZone,
             @Opt(opt='s', longOpt='snapshot', description="Include the snapshot from which the volume has been created")
             Boolean printSnapshot,
-            @Opt(opt='I', longOpt='filter-by-instance', optional=true, len=1, description='Show only volumes used by the specified instance. If the instance-id is not specified, it shows the volumes used to the current master node')
-            def instanceId,
-            @Opt(opt='S', longOpt='filter-by-snapshot', arg='snapshot-id', description='Show only volumes created by the specified spanshot-id.')
+            @Opt(opt='S', longOpt='filter-by-snapshot', arg='snapshot-id', description='Show only volumes created by the specified spanshot-id')
             String snapshotId,
-            List<String> volumeIds )
+            List<String> nodes )
     {
 
-        def list = shell.session.blockStore.listVolumes(volumeIds, regionId)
+        def list = shell.session.blockStore.listVolumes(null, regionId)
+        def allCount = list.size()
 
         /*
          * filter by snapshot
@@ -85,23 +84,28 @@ class StorageCommands  {
             list = list.findAll{  Volume vol -> vol.getSnapshotId() == snapshotId }
         }
 
-
         /*
-         * apply the instance-id restriction if specified
+         * The restriction by 'name' are possible only if the regionId is not specify
          */
-        if( instanceId != null && instanceId == true ) {
-            // if the instance-id is not specified by the user
-            // retrieve the one of the master node
-            instanceId = session.getMasterMetadata()?.getProviderId()
-        }
+        if( !regionId ) {
 
-        if( instanceId ) {
-            list = list.findAll { Volume vol ->
-                // the attachment getId property returns the instance id to which the volume is attached
-                // in this way we get only the volumes that are attached to the specified instanceid
-                (vol.getAttachments() *. getId()) .contains(instanceId)
+            def hintRequired
+            def attachedVolumesId = []
+            if( !nodes ) {
+                nodes = new ArrayList(session.allNodes.keySet())
+                hintRequired = true
+            }
+
+            nodes.each {
+                attachedVolumesId.addAll( findAttachedVolumeIDs(it) )
+            }
+            list = list.findAll { Volume vol -> vol.getId() in attachedVolumesId }
+
+            if( hintRequired && list.size() != allCount) {
+                println "Hint: List of volumes in this cluster. To see all volumes available in this region use the option '--region ${session.conf.regionId}'."
             }
         }
+
 
         /*
          * any volume found
@@ -233,8 +237,8 @@ class StorageCommands  {
      *      The volume-id from which create the snapshot
      */
     @Cmd( name="createsnapshot",
-          summary="Create a snapshot from given the specified EBS volume id",
-          usage="createsnapshot [options] snapshot-id")
+          summary="Create a snapshot from given the specified EBS volume-id",
+          usage="createsnapshot [options] volume-id")
 
     @Completion( { findVolumesCompletion(it) } )
 
@@ -304,17 +308,22 @@ class StorageCommands  {
     }
 
 
-//
-//    @Cmd ( summary='Delete an AWS volume', usage='deletevolume <volume-id>' )
-//    def void deletevolume( String volId ) {
-//        if( !volId ) {
-//            throw new CommandSyntaxException('Specify the ID of the volume to delete')
-//        }
-//
-//
-//        session.getBlockStore().deleteVolume()
-//
-//    }
+    private List<String> findAttachedVolumeIDs(def criteria) {
+
+        def result = []
+        def nodes = criteria ? session.listNodes(criteria) : session.listNodes()
+
+        nodes .each { BlowSession.BlowNodeMetadata node ->
+
+            node.getHardware() .getVolumes() .each { org.jclouds.compute.domain.Volume vol ->
+                result.add(vol.getId())
+            }
+        }
+
+        return result
+
+    }
+
 
 
 }

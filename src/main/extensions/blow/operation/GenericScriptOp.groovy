@@ -30,18 +30,17 @@ import com.google.common.eventbus.Subscribe
  */
 abstract public class GenericScriptOp {
 
-    @Conf("run-as-root")
+    @Conf
     boolean runAsRoot = false
+
+    private BlowSession session
 
     def abstract String script();
 
     @Subscribe
     public void run( OnAfterClusterStartedEvent event ) {
 
-        def BlowSession session = event.session
-        def filter = event.session.filterAll();
-
-        session.runScriptOnNodes( script(), filter, runAsRoot )
+        session.runScriptOnNodes( script(), null, runAsRoot )
 
     }
 

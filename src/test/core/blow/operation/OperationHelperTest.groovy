@@ -41,9 +41,9 @@ class OperationHelperTest extends Specification {
 
     def "test toString" () {
         expect:
-        OperationHelper.opToString( new SimpleOp() ) == "SimpleOp"
-        OperationHelper.opToString( new AnnotatedOp() ) == "hola"
-        OperationHelper.opToString( new AnnotatedOp(val1: 'uno', val2:'due')) == "hola { val1: uno; val2: due }"
+        OperationHelper.opToString( new SimpleOp() ) == "SimpleOp()"
+        OperationHelper.opToString( new AnnotatedOp() ) == "hola()"
+        OperationHelper.opToString( new AnnotatedOp(val1: 'uno', val2:'due')) == "hola( val1: 'uno', val2: 'due' )"
     }
 
 
@@ -59,17 +59,6 @@ class OperationHelperTest extends Specification {
 
     }
 
-    def void testGetConfProps() {
-
-        when:
-        Map<String,String> fields = OperationHelper.getConfProperties( TestOperation.class )
-
-        then:
-        "value1" == fields["value1"]
-        "value2" == fields["value-2"]
-        "baseValue" == fields["baseValue"]
-
-    }
 
 }
 

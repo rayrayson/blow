@@ -102,7 +102,7 @@ EXAMPLES
         cmdline += ' -jar ' + fdtJarFile.toString()
         cmdline += ' -p ' + session.conf.fdtPort.toString()
         cmdline += ' -noupdates'
-        cmdline += ' -sshKey ' + session.conf.privateKeyFile.absolutePath
+        cmdline += ' -sshKey ' + session.conf.privateKey.absolutePath
         cmdline += ' -remote ' + '\'FDT_JAR="${FDT_HOME:-$HOME}/fdt.jar"; [ ! -e $FDT_JAR ] && wget -q http://s3-eu-west-1.amazonaws.com/cbcrg-eu/fdt.jar -O $FDT_JAR; java -jar $FDT_JAR\''
 
         // some optional parameter

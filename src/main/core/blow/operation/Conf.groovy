@@ -35,5 +35,5 @@ import java.lang.annotation.Retention;
 @Target( ElementType.FIELD )
 @Retention(RUNTIME)
 public @interface Conf {
-	String value() default ""
+
 }

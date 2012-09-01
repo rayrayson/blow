@@ -21,31 +21,49 @@ package blow.util
 
 import groovy.util.logging.Slf4j
 
+import java.lang.reflect.Field
+
 /**
+ *  Helper class to inject field values in to a class instance.
+ *
  *
  *  @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
 @Slf4j
 class InjectorHelper {
 
-
     /**
      * Inject the {@link blow.shell.BlowShell} and {@link blow.BlowSession} instances in the method's declaring object
      */
-    private void injectFields(def obj, def instances) {
+    public void injectFields(def obj, def instancesToInject) {
         assert obj
-        assert instances
+        assert instancesToInject
 
-        log.debug("Injecting to ${obj} fields: ${instances}")
+        log.trace("Injecting to ${obj} fields: ${instancesToInject}")
+        inject( obj.getClass(), obj, instancesToInject )
 
-        obj.getMetaClass().getProperties().each { MetaProperty field ->
+    }
+    
+    private static void inject( Class clazz, def obj, def values ) {
+        log.trace "Inject for class: ${clazz.name} fields: ${clazz.declaredFields *. name} with values: ${values}"
+        clazz.getDeclaredFields() .each{ Field field ->
 
-            for( def it : instances ) {
-                if ( it?.getClass() == field.type ) {
-                    field.setProperty(obj, it)
+            for( def val : values ) {
+                if ( val?.getClass() == field.type ) {
+                    log.trace "Injecting field: ${clazz.getSimpleName()}#${field.name}"
+                    field.setAccessible(true)
+                    field.set(obj,val)
                     break
                 }
             }
         }
+
+        // visit super-class
+        if( clazz.getSuperclass() != Object ) {
+            inject(clazz.getSuperclass(), obj, values)
+        }
+
+
     }
+    
 }

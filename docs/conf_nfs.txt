@@ -14,16 +14,15 @@ The NFS operation
 -----------------
 
 The NFS setup is carried out by the Blow *operation* named ``nfs``. This operation has to be added to
-the ``operations`` attribute in the cluster definition. The path to share needs to be specified as an
-attribute of the ``nfs`` operation. For example::
+the ``operations`` attribute in the cluster definition. The path to share needs to be specified as a
+parameter of the ``nfs`` operation. For example::
 
-  my_cluster {
-    image-id: ..
+  MyCluster {
+    imageId '..'
     :
-    operations [
-      hostname
-      { nfs: { path: /scratch  }}
-    ]
+    operations {
+        nfs(path: '/scratch')
+    }
   }
 
 
@@ -31,62 +30,64 @@ The above declaration will create the ``/scratch`` directory in the master node,
 and export that folder to the client nodes. Also it will create the same directory on all the client nodes
 and mount the network shared folder.  
 
-It is possible to share more than one NFS folder by simply repeating the ``nfs`` entry as many times as the folders are to be exported. 
+It is possible to share more than one NFS folder by simply repeating the ``nfs`` entry as many times as the folders
+are to be exported.
 
 For example:: 
 
-  my_cluster {
-    image-id: ..
+  MyCluster {
+    imageId: ..
     :
-    operations [
-      hostname
-      { nfs: { path: /scratch }}
-      { nfs: { path: /data  }}
-    ]
+    operations {
+          nfs(path: '/scratch')
+          nfs(path: '/data')
+    }
+
   }
 
 
-When you start an Amazon EC2 instance, you get a certain amount of storage that depends on the instance type.
-This storage is defined as *ephemeral* because it is NOT persisted on the system shut-down. In other words
-you lose all your data when the machine is switched off. 
-
-To save your data indefinitely you have to use the `Amazon Elastic Block Store`_ (EBS) service. Amazon EBS volumes 
-provide storage that persists independently from the life of an instance, and can be attached to a running
-Amazon EC2 instance and exposed as a Linux device within the instance. 
-
-.. _`Amazon Elastic Block Store`: http://aws.amazon.com/ebs/
    
 
-Mount and share an EBS volume
------------------------------
+Mount and share an EBS volume or snapshots
+------------------------------------------
 
-Once you have created an EBS volume, to get it configured in your cluster all you need to do is to specify the 
-property ``volume-id`` in the ``nfs`` configuration. For example::
+When you start an Amazon EC2 instance, you get a certain amount of storage that depends on the instance type.
+This storage is defined as *ephemeral* because it is NOT persisted on the system shut-down. In other words
+you lose all your data when the machine is switched off.
 
-  my_cluster {
-    image-id: ..
+To save your data indefinitely you have to use the `Amazon Elastic Block Store`_ (EBS) service. Amazon EBS volumes
+provide storage that persists independently from the life of an instance, and can be attached to a running
+Amazon EC2 instance and exposed as a Linux device within the instance.
+
+.. _`Amazon Elastic Block Store`: http://aws.amazon.com/ebs/
+
+Once you have created an EBS volume, to get it configured in your cluster all you need to do is to specify its
+identifier in the ``supply`` parameter for the ``nfs`` operation. For example::
+
+  MyCluster {
+    imageId: '..'
     :
-    operations [
-      hostname
-      { nfs: { path: /data, volume-id: vol-123  }}
-    ]
+    operations {
+        nfs(path: '/data', supply: 'vol-123' )
+    }
+
   }  
 
 
 The above configuration will attach the specified volume to the *master* node, mount it and configure
 the NFS sharing. The content of the EBS volume will be accessible on all nodes using the path ``/data``. 
 
-To create a new empty volume, just provide the value ``new`` for the attribute ``volume-id``.
-To specify the size of the new volume, just provide the attribute ``size`` with the number
+To create a new empty volume, just provide the value ``new`` for the parameter ``supply``.
+To specify the size of the new volume, just provide the parameter ``size`` with the number
 of GB required. For example::
 
-  my_cluster {
-    image-id: ..
+  MyCluster {
+    imageId: ..
     :
-    operations [
-      hostname
-      { nfs: { path: /data, volume-id: new, size: 50  }}
-    ]
+    operations {
+        nfs(path: '/data', supply: 'new', size: 50)
+    }
+
   }  
 
 
@@ -96,47 +97,22 @@ If the attribute ``size`` is omitted it will create a 10 GB volume by default.
   This creates a new volume each time you launch a new instance.
 
 
-Mount and share an EBS snapshot
--------------------------------
 
-Amazon EBS also provides the ability to create point-in-time snapshots of volumes, 
-which are persisted to Amazon S3. These snapshots can be used as the starting point for 
-new Amazon EBS volumes, and protect data for long-term durability.
-
-A common use case is to create a new EBS volume with the content of a previously saved snapshot. 
-
-Using *Blow* this can be done by simply replacing the ``volume-id`` with the attribute ``snapshot-id`` 
-in the ``nfs`` operation configuration, and providing the identifier of a the snapshot previously created.
-
-Optionally, you can specify the size of the new volume, just providing the attribute ``size`` with the number
-of GB required.  For example::
-
-  my_cluster {
-    image-id: ..
-    :
-    operations [
-      hostname
-      { nfs: { path: /data, snapshot-id: < the id >, size: 50  }}
-    ]
-  }  
-
-The new resulting volume, is not deleted on the cluster shut-down, and its content can re reused later on the
+The new resulting volume, is not deleted on the cluster shut-down, and its content can reused later on the
 next restart.
- 
-It this is not required, you can delete it on the cluster termination,
-adding the attribute ``delete-on-terminate`` as shown below::
 
-  my_cluster {
-    image-id: ..
+It this is not required, you can delete it on the cluster termination,
+adding the parameter ``deleteOnTermination`` as shown below::
+
+  MyCluster {
+    imageId: '..'
     :
-    operations [
-      hostname
-      { nfs: { 
-           path: /data, 
-           snapshot-id: < the id >, 
-           size: 50  
-           delete-on-termination: true
-       }}
-    ]
-  } 
- 
+    operations {
+        nfs(  path: '/data', supply: 'snap-nnn', size: 50, deleteOnTermination: true )
+    }
+
+  }
+
+
+It is event possible to create, mount and share a new volume with the content provided by snapshot, by simply
+providing the identifier of the snapshot in the ``supply`` parameter as explained above.

@@ -17,21 +17,23 @@
  *   along with Blow.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package blow.operation
+package blow.shell;
+
+
+import java.lang.annotation.ElementType
+import java.lang.annotation.Retention
+import java.lang.annotation.Target
+
+import static java.lang.annotation.RetentionPolicy.RUNTIME
 
 /**
- * Use this interface to handle to be able to customize configuration properties
- * inject in any operation
+ * Mark the 'free' method for a command
+ * 
+ * @author Paolo Di Tommaso
  *
- *
- * Created with IntelliJ IDEA.
- * Author: ptommaso
- * Date: 4/3/12
- * Time: 4:38 PM
- * To change this template use File | Settings | File Templates.
  */
-public interface ConfHolder {
-
-    public void setConfProperty( String name, Object value )
+@Target( ElementType.METHOD )
+@Retention(RUNTIME)
+public @interface CmdFree {
 
 }

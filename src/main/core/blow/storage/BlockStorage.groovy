@@ -41,7 +41,9 @@ import java.util.concurrent.TimeoutException
 
 @Slf4j
 class BlockStorage {
-	
+
+    final static private long DEFAULT_DELAY = 15000
+
 	final ComputeServiceContext context;
 	
 	final BlowConfig conf
@@ -80,7 +82,7 @@ class BlockStorage {
 	   // TODO add a timeout constraint
 	   while( status != Attachment.Status.ATTACHED ) {
 		   log.debug "Waiting the volume to be attached ($status)"
-		   sleep(30000)
+		   sleep(DEFAULT_DELAY)
 		   // query for the attachment status
 		   vol = ebs.describeVolumesInRegion(conf.regionId, volumeId).find({true})
 		   attachment = vol.getAttachments().find( { it.getDevice() == device } )
@@ -261,30 +263,7 @@ class BlockStorage {
 	   
    }
 
-//    def Volume deleteVolumeNoWait( String volumeId ) {
-//
-//        Volume vol = findVolume(volumeId)
-//        if( !vol ) return null
-//
-//        if( vol.getStatus() == Volume.Status.)
-//        /*
-//         * Before detach the volume
-//         * Note: detaching EBS volume could take a lot of time
-//         */
-//        log.debug "Detaching volume: '${volumeId}' "
-//        ebs.detachVolumeInRegion(conf.regionId, volumeId, true, null)
-//        try {
-//            waitForVolumeAvail(vol, 10 * 60 * 1000)
-//            log.debug "Deleting volume: '${volumeId}' "
-//            ebs.deleteVolumeInRegion( conf.regionId, volumeId )
-//        }
-//        catch( TimeoutException e ) {
-//            log.warn( e.getMessage() );
-//            log.warn("Detaching volume: '${volumeId}' is requiring too much time. Volume has not been deleted. YOU WILL HAVE TO DELETE IT MANUALLY!!")
-//        }
-//
-//    }
-//
+
    
    def waitForVolumeAvail( Volume vol, long timeout = 5 * 60 * 1000 ) {
 	   
@@ -294,7 +273,7 @@ class BlockStorage {
 	  def startTime = System.currentTimeMillis();
 	  while( vol.getStatus() != Volume.Status.AVAILABLE && (System.currentTimeMillis()-startTime < timeout) ) {
 		  log.debug "Vol status: ${vol.getStatus()}"
-		  sleep(25000)
+		  sleep(DEFAULT_DELAY)
 		  vol = ebs.describeVolumesInRegion(conf.regionId, vol.getId()).find({true})
 	  }
 	  
@@ -315,7 +294,7 @@ class BlockStorage {
         def startTime = System.currentTimeMillis();
         while( snap.getStatus() != Snapshot.Status.COMPLETED && (System.currentTimeMillis()-startTime < timeout) ) {
             log.debug "Snapshot status: ${snap.getStatus()}"
-            sleep(25000)
+            sleep(DEFAULT_DELAY)
             def opt = DescribeSnapshotsOptions.Builder.snapshotIds(snap.getId())
             snap = ebs.describeSnapshotsInRegion(conf.regionId, opt).find()
         }
@@ -399,7 +378,13 @@ class BlockStorage {
         }
     }
 
-
+    /**
+     * Delete a snapshot in the current region
+     *
+     * @param snapshotId The ID of the snapshot to delete e.g. snap-123456
+     * @return The {@link Snapshot} instance of the snapshot deleted - or - {@code null}
+     * if the specified snapshot does not exist
+     */
     def Snapshot deleteSnapshot( String snapshotId ) {
         log.debug("Deleting snapshot: '$snapshotId'")
 
