@@ -1,22 +1,22 @@
 Tutorial
 ========
 
-This short tutorial shows how to configure and run a SGE cluster in the Amazon public cloud.
+This short tutorial shows how to configure and run a SGE cluster in the Amazon public cloud using *Blow*.
 
-The cluster is made up of 5 nodes, as showed in the picture below. One node is defined as
-the SGE *master* node, and the remaining 4 instances will act as the *worker* nodes in the SGE cluster.
+The cluster is made up of 5 nodes, as showed in the picture below. One node is defined as the SGE *master* node,
+and the remaining 4 instances will act as the *worker* nodes in the SGE cluster.
 
 To the *master* node are attached and mounted two EBS volumes. The first contains the application binaries and
-is exported using the *Network File System* (NFS) with the path ``/soft``.
+is exported via a *Network File System* (NFS) share with the path ``/soft``.
 
-The second volume is used to share applications data and is exported with a NFS sharing the with the path ``/scratch``.
+The second volume is used to share applications data and is exported by a NFS share with the path ``/scratch``.
 
 .. image:: images/cluster.png
    :width: 600
 
 
-It is assumed that you have a basic knowledge of the *SGE* resource manages workflow. A detailed explanation of *SGE* concepts
-and commands is available at this link: http://gridscheduler.sourceforge.net/howto/howto.html
+It is assumed that you have, at least, a basic knowledge of the *SGE* grid engine workflow. A detailed explanation of *SGE*
+concepts and commands is available at this link: http://gridscheduler.sourceforge.net/howto/howto.html
 
 
 
@@ -24,7 +24,7 @@ and commands is available at this link: http://gridscheduler.sourceforge.net/how
 ----------------------------------------------
 
 The latest *Blow* executable distribution is available at `this link`_. Download and
-save it somewhere on your machine.
+save it somewhere on your computer.
 
 If you are running a \*nix system (Linux, Mac OS X, etc.) grant the execute permission
 to the downloaded *JAR* file, with the following command::
@@ -54,7 +54,7 @@ where the ``blow.run`` was downloaded. ::
       operations {
           nfs(path: '/soft')
           nfs(path: '/scratch')
-          sge(path: 'root: /soft/sge6')
+          sge(path: '/soft/sge6')
       }
   }
 
@@ -69,7 +69,7 @@ It installs the SGE resource manager in the shared path ``/soft/sge6`` and a sec
 
 The *Blow* command needs to be executed using the command line interface. It has the following syntax::
 
-  blow.run [blow options] [command name [command parameters] ]
+  blow.run [options] [command name [command parameters] ]
 
 If the *command name* is omitted it will run in the *interactive* mode, waiting for commands to be executed.
 
@@ -82,11 +82,11 @@ If the *command name* is omitted it will run in the *interactive* mode, waiting 
 
 For the sake of this example start *Blow* in the interactive mode. Open a terminal window, 
 move to the directory where the configuration file and the *Blow* executable have been saved and
-specify the following command::
+type the command::
 
   ./blow.run
   
-If a SSH key-pair cannot be found in the current directory or in the ``$HOME/.ssh/`` path,
+If a SSH `key pair` cannot be found in the current directory or in the ``$HOME/.ssh/`` path,
 it will prompt you to create a new key pair.
 Answer ``y`` and press enter to proceed. 
 
@@ -99,7 +99,7 @@ When done you will get the *Blow* prompt as shown below::
 
   blow [BlowSimpleCluster] $
 
-Before launching the cluster you may verify its configuration by entering the ``conf`` command on the *Blow* prompt.
+Before launching the cluster you may verify the configuration by entering the ``conf`` command on the *Blow* prompt.
 Something similar to example shown below will appear on your screen::
 
     blow [BlowSimpleCluster] $ conf
@@ -128,7 +128,11 @@ When ready, launch the cluster by entering the command ``start``::
 
   blow [BlowSimpleCluster] $ start
   
-  
+.. warning::
+  Your Amazon AWS account will be charged correspondingly the number of instances launched, their configuration and how
+  long you will keep them running. For the sake of this tutorial we have used five instances of type ``t1.micro``, which
+  costs $0.02 by hour for each instance.
+
 It will take a few minutes to start the virtual machines, configure them and install the SGE daemons.
 When it is finished something similar to the following output will appear on your screen::
 
@@ -224,4 +228,4 @@ current directory::
 When you have done this, don't forget to shutdown the cluster along with all the running instances.
 
 Log out from the remote node using the ``exit`` command and stop the cluster, by entering
-the command ``terminate`` on the *Blow* prompt.
+the command ``terminate`` at the *Blow* prompt.
