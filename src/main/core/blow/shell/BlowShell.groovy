@@ -21,18 +21,15 @@ package blow.shell
 
 import blow.builder.BlowConfigBuilder
 import blow.util.CmdLine
+import blow.util.InjectorHelper
 import blow.util.KeyPairBuilder
 import com.google.inject.Guice
 import jline.Completor
 import jline.ConsoleReader
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-
-import java.lang.reflect.InvocationTargetException
-
 import blow.*
 import blow.exception.*
-import blow.util.InjectorHelper
 
 /**
  * The Pilot shell runner 
@@ -80,7 +77,7 @@ class BlowShell {
      * The main entry on the program command line. Usually it is the cluster configuration name.
      * This value is define the by {@link #init} method and then read during the program @{link #run}
      */
-    private String mainEntry
+    private String clusterNameToUse
 
     /**
      * The program global options as returned by {@link CliBuilder#parse} method.
@@ -101,93 +98,6 @@ class BlowShell {
      */
     def String currentCluster;
 
-	/**
-	 * Defines the 'help' command used by the shell
-	 */
-	class HelpCmd extends AbstractShellCommand implements CommandCompletor {
-
-        String cmd
-
-		@Override
-		public String getName() { "help" }
-
-        @Override
-        public void parse( def args ) {  cmd = args ? args.head() : null  }
-
-		@Override
-		public void invoke() {
-
-            if( !cmd ) {
-                printUsage()
-            }
-            else if( availableCommands[cmd] ) {
-                def help = availableCommands[cmd].getHelp()?.trim()
-                println help ?: "(no help available)"
-            }
-            else {
-                println "Unknown command: '${cmd}'"
-            }
-		}
-
-		@Override
-		public String getSummary() {
-			"Print this help"
-		}
-
-        @Override
-        List<String> findOptions(String cmdline) {
-            def result = []
-            availableCommands.keySet().each() { if(!cmdline || it.startsWith(cmdline)) result.add(it) }
-            result.sort()
-        }
-    }
-	
-	/**
-	 * Defines the 'use' command to switch between different configuration
-	 */
-	class UseCmd extends AbstractShellCommand {
-
-        private String clusterName
-
-		@Override
-		public String getName() { "use" }
-
-        def void parse( def args ) {  clusterName = args?.size()>0 ? args.head() : currentCluster }
-
-		@Override
-		public void invoke() {
-			println "Switching > ${clusterName}"
-			useCluster(clusterName)
-		}
-
-		@Override
-		public String getSummary() {
-			"Switch to a different cluster configuration"
-		} }
-
-    /** Command to print the blow version */
-    class VersionCmd extends AbstractShellCommand {
-        public String getName() { "version" }
-        public String getSummary() { "Print the program version and build info"}
-        public void invoke() {
-            println "Version: ${Project.version} - Build timestap: ${Project.timestamp.format('dd/MM/yyyy HH.mm')}"
-        } }
-	
-	/**
-	 * Exit from the shell environment 
-	 */
-	class ExitCmd extends AbstractShellCommand {
-
-		public String getName() { "exit" }
-
-        public String getSummary() { "Quit the current shell session" }
-
-		@Override
-		public void invoke() {
-			throw new ShellExit()
-		} }
-	
-	static class ShellExit extends RuntimeException {} 
 
 	/**
 	 * This class handle the automatic shell completion feature 
@@ -270,14 +180,6 @@ class BlowShell {
 
 		loader = DynLoaderFactory.get()
 		
-		/*
-		 * add the availableCommands
-		 */
-		addCommand( new HelpCmd() )
-		addCommand( new UseCmd() )
-        addCommand( new VersionCmd() )
-		addCommand( new ExitCmd() )
-
 		loader.shellCommands.each { clazz -> addCommand(clazz) }
         
         loader.shellMethods.each {  method -> addCommand( new ShellMethodAdapter(this, method) ) }
@@ -350,7 +252,7 @@ class BlowShell {
         }
 
         // define the cluster name as the 'main' entry
-        mainEntry = clusterName
+        clusterNameToUse = clusterName
 
         // the first argument as the command to execute
         if( args.size()>0 ) {
@@ -549,35 +451,29 @@ class BlowShell {
                 cmdObj.parse(args)
                 cmdObj.invoke()
             }
+
             /*
              * handles the various exceptions
              */
             catch( ShellExit e ) {
                 throw e
             }
+            catch( CommandSyntaxException e ) {
+                def show = []
+                if( e.getMessage() ) { show << e.getMessage()?.trim() }
+                def hh = cmdObj.getHelp()?.trim()
+                if( hh ) show << hh
+                println show.join('\n\n')
+            }
+            catch( OperationAbortException e ) {
+                message = "Operation aborted: '${cmdObj.getName()}'"
+                log.warn(message)
+            }
             catch( IllegalShellOptionException e ) {
                 message = e.getMessage()
                 log.warn(message,e)
             }
-            catch( InvocationTargetException e ) {
-                if( e.getCause() instanceof CommandSyntaxException ) {
-                    def show = []
-                    if( e.getCause()?.getMessage() ) { show << e.getCause().getMessage()?.trim() }
-                    def hh = cmdObj.getHelp()?.trim()
-                    if( hh ) show << hh
 
-                    println show.join('\n\n')
-                }
-                else if( e.getCause() instanceof OperationAbortException ) {
-                    message = "Operation aborted: '${cmdObj.getName()}'"
-                    log.warn(message)
-                }
-                else {
-                    message = e.getCause()?.getMessage() ?: (e.getMessage() ?: e.toString())
-                    log.error(message,e)
-                }
-
-            }
             catch( Exception e ) {
                 message = e.getMessage() ?: (e.getCause()?.getMessage() ?: e.toString())
                 log.error(message, e)
@@ -598,31 +494,14 @@ class BlowShell {
 	@Override
 	public void run() {
 
-        /*
-         * as special case, if the 'help' string is entered, the
-         * command usage string is printed
-         */
-        if( mainCommand?.name == "help" ) {
-            def cmdName = mainCommand?.args && mainCommand.args.size()>0 ? mainCommand.args[0] : null
-            if(  !cmdName ) {
-                printUsage()
-            }
-            else if( availableCommands.containsKey( cmdName ) ) {
-                print "${cmdName}: "
-                println availableCommands[cmdName].getSummary() ?: "(no help available)"
-            }
-            else {
-                println "Unknown command: '${cmdName}'"
-            }
-            System.exit(0)
-        }
-
 
         /*
          * This should be the normal case
          * Initialize the cluster configuration with the entered name
          */
-        useCluster( mainEntry )
+        if( mainCommand?.name != "help" ) {
+            useCluster( clusterNameToUse )
+        }
 
 
 		/*
@@ -751,7 +630,7 @@ class BlowShell {
         max = max.length() // <-- note: the above returns the longest item, so now we get the real max value
 
         // print the 'help' for each command
-        availableCommands.each {
+        availableCommands.sort().each {
             name, _action ->
             println " ${name.padRight(max)} ${_action.getSummary()?.trim() ?: ''}"
         }

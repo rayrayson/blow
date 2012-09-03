@@ -19,46 +19,16 @@
 
 package blow.shell
 
+import com.beust.jcommander.Parameter
+
 /**
- * Shell command have to implement this interface
+ * Base class for Shell methods parameter
+ *
+ *  @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
-public interface ShellCommand {
+abstract class CmdParams {
 
-	/**
-	 * Define the shell command name
-	 * 
-	 * @return the string to be entered into the shell to invoke this command
-	 */
-	String getName();
+    @Parameter(names=['-h','--help'], description='Prints the command help', help=true)
+    Boolean help
 
-	/**
-	 * Parse the command arguments provided by the user
-	 * 
-	 * @param args
-     * @return An object representing the parsed command line arguments
-	 */
-	void parse( List<String> args )
-	
-	/**
-	 * Run the command
-	 */
-	void invoke();
-
-    /**
-     * @return One line description for the command
-     */
-    String getSummary()
-
-    /**
-     * @return The help string for this command
-     */
-    String getHelp()
-
-    /**
-     * Destroy the command and release all associated resources
-     */
-    void free();
-
-
-	
 }

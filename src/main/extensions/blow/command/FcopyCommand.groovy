@@ -25,7 +25,8 @@ import groovy.util.logging.Slf4j
 import lia.util.net.copy.FDT
 import org.apache.commons.io.IOUtils
 import blow.exception.CommandSyntaxException
-import blow.shell.Opt
+import com.beust.jcommander.Parameter
+import blow.shell.CmdParams
 
 /**
  *  Fast copy file(s) to/from a remote host.
@@ -45,9 +46,44 @@ class FcopyCommand {
 
     public static final String CMD_DESCRIPTION = ''
 
+    /**
+     * Fast copy parameters HOLDER
+     */
+    static class FastCopyParams extends CmdParams {
 
-    @Cmd(name='fcp', summary='Fast copy file(s) to/from a remote host', usage='fcp [host1:]source-path [host2:]target-path',
-         description='''\
+        @Parameter(names='-bio', description='Blocking I/O mode')
+        boolean blockingMode;
+
+        @Parameter(names='-iof', description='Non-blocking I/O retry factor')
+        boolean retryFactor;
+
+        @Parameter(names='-limit', description='Restrict the transfer speed at the specified rate' )
+        String limit;
+
+        @Parameter(names='-md5', description='Enables MD5 checksum for every file involved in the transfer')
+        Boolean md5;
+
+        @Parameter(names='-printStats', description='Various statistics about buffer pools, sessions, etc will be printed')
+        Boolean printStats;
+
+        @Parameter(names='-bs', description='Size for the I/O buffers')
+        Integer bufferSize;
+
+        @Parameter(names='-N', description='Disable Nagle algorithm')
+        boolean disableNagle;
+
+        @Parameter(names='-ss', description='Set the TCP SO_SND_BUFFER size')
+        Integer windowSize;
+
+        @Parameter(names='-P', description='Number of paralel streams to use')
+        int numOfStreams = 4;
+
+        @Parameter
+        List<String> files
+    }
+
+    @Cmd( name='fcp', summary='Fast copy file(s) to/from a remote host', usage='fcp [host1:]source-path [host2:]target-path',
+          description='''\
 fcp copies files between the local file system and a remote host. Source and target paths may contain a host specification to indicate that the file is to be copied to/from that host.
 
 The source path can be a file or a directory specification, if a directory is specified all its content will be copied recursively. The target path MUST specify the target folder that will contain the copied file.
@@ -67,26 +103,15 @@ EXAMPLES
   fcp -P 8 10.1.1.1:/path/to/file1 /folder
       Copy the remote file named 'file1' to the local directory named 'folder', using 8 parallel streams
       ''' )
-    def void copy(
-            @Opt(opt='bio', description='Blocking I/O mode') Boolean blockingMode,
-            @Opt(opt='iof', arg='iof', description='Non-blocking I/O retry factor') Boolean retryFactor,
-            @Opt(opt='limit', description='Restrict the transfer speed at the specified rate', arg='rate') def limit,
-            @Opt(opt='md5', description='Enables MD5 checksum for every file involved in the transfer') Boolean md5,
-            @Opt(opt='printStats', description='Various statistics about buffer pools, sessions, etc will be printed') Boolean printStats,
-            @Opt(opt='bs', arg='buffSize', description='Size for the I/O buffers') def bufferSize,
-            @Opt(opt='N', description='Disable Nagle algorithm') Boolean disableNagle,
-            @Opt(opt='ss', arg='wsz', description='Set the TCP SO_SND_BUFFER size')  def windowSize,
-            @Opt(opt='P', arg='noOfStreams', description='Number of paralel streams to use. Default is 4.') def numOfStreams,
+    def void copy( FastCopyParams params ) {
 
-            List<String> files ) {
-
-        if( files?.size() < 2 ) {
+        if( params.files?.size() < 2 ) {
             throw new CommandSyntaxException('Please specify the source path and the target path of the file(s) to copy')
         }
 
         nodeFound = false
-        for( int i=0; i<files.size(); i++ ) {
-            files[i] = resolveHostName(files[i])
+        for( int i=0; i<params.files.size(); i++ ) {
+            params.files[i] = resolveHostName(params.files[i])
         }
 
         if( !nodeFound ) {
@@ -106,21 +131,21 @@ EXAMPLES
         cmdline += ' -remote ' + '\'FDT_JAR="${FDT_HOME:-$HOME}/fdt.jar"; [ ! -e $FDT_JAR ] && wget -q http://s3-eu-west-1.amazonaws.com/cbcrg-eu/fdt.jar -O $FDT_JAR; java -jar $FDT_JAR\''
 
         // some optional parameter
-        if( blockingMode ) cmdline += ' -bio'
-        if( retryFactor ) cmdline += "-iof $retryFactor"
-        if( limit ) cmdline += " -limit $limit"
-        if( md5 ) cmdline += " -md5"
-        if( printStats ) cmdline += ' -printStats'
-        if( bufferSize ) cmdline += ' -bs ' + bufferSize
-        if( disableNagle ) cmdline += ' -N'
-        if( windowSize ) cmdline += ' -ss ' + windowSize
-        if( numOfStreams ) cmdline += ' -P ' + numOfStreams
+        if( params.blockingMode ) cmdline += ' -bio'
+        if( params.retryFactor ) cmdline += "-iof ${params.retryFactor}"
+        if( params.limit ) cmdline += " -limit ${params.limit}"
+        if( params.md5 ) cmdline += " -md5"
+        if( params.printStats ) cmdline += ' -printStats'
+        if( params.bufferSize ) cmdline += ' -bs ' + params.bufferSize
+        if( params.disableNagle ) cmdline += ' -N'
+        if( params.windowSize ) cmdline += ' -ss ' + params.windowSize
+        if( params.numOfStreams ) cmdline += ' -P ' + params.numOfStreams
 
         // always use the recursive mode
         cmdline += ' -r'
 
         // append the list of files to upload
-        files.each {
+        params.files.each {
             cmdline += ' ' + it
         }
 

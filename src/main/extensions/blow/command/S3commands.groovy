@@ -24,7 +24,6 @@ import blow.exception.CommandSyntaxException
 import blow.shell.BlowShell
 import blow.shell.Cmd
 import blow.shell.CmdFree
-import blow.shell.Opt
 import blow.util.PromptHelper
 import com.google.common.collect.ImmutableSet
 import com.google.inject.Module
@@ -50,6 +49,8 @@ import org.jclouds.netty.config.NettyPayloadModule
 import java.text.DecimalFormat
 import javax.ws.rs.core.MediaType
 import blow.BlowConfig
+import blow.shell.CmdParams
+import com.beust.jcommander.Parameter
 
 /**
  *
@@ -122,21 +123,32 @@ class S3commands {
     }
 
     /**
+     * Parameters for S3 'list' command
+     */
+    static class ListParams extends  CmdParams {
+
+        @Parameter(names='-r', description='List S3 content recursively')
+        Boolean recursive;
+
+        @Parameter
+        List<String> args
+
+    }
+
+    /**
      * List of the buckets in the S3 account
      */
     @Cmd(usage='s3ls [options] [path]', summary='List the content of your S3 storage')
-    def void s3ls (
-            @Opt(opt='r',description='List S3 content recursively')
-            Boolean recursive,
-            String path)
+    def void s3ls ( ListParams params )
     {
 
+        def path = params.args ? params.args[0] : null
 
         if( path?.startsWith('s3://') ) {
             path = path.substring('s3://'.length())
         }
 
-        def result = list( path, recursive==true )
+        def result = list( path, params.recursive==true )
 
         /*
          * Print the result
@@ -208,14 +220,29 @@ class S3commands {
         return resultSet
     }
 
+    /**
+     * Parameter class for 's3cp' command
+     */
+    static class CopyParams extends CmdParams {
 
+        @Parameter(names='--region', description='When copying to a new bucket, specify the region where it have to be created')
+        String regionId;
+
+        @Parameter
+        List<String> files
+
+    }
+
+    /**
+     * S3 copy command
+     *
+     * @param params
+     */
     @Cmd(summary='Copy a file to/from S3 Storage')
-    def void s3cp (
-                @Opt(longOpt='region', arg='region-id',description='When copying to a new bucket, specify the region where it have to be created')
-                String regionId,
-                String source,
-                String target  )
+    def void s3cp ( CopyParams params )
     {
+        def source = params.files ? params.files[0] : null
+        def target = params.files.size()>1 ? params.files[1] : null
 
         if( !source ) { throw new CommandSyntaxException("Please specify the source object") }
         if( !target ) { throw new CommandSyntaxException("Please specify the target object") }
@@ -252,7 +279,7 @@ class S3commands {
                return
             }
 
-            copyToS3(file, target, regionId)
+            copyToS3(file, target, params.regionId)
             return
         }
 

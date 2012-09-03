@@ -22,8 +22,9 @@ package blow.command
 import blow.BlowSession
 import blow.shell.Cmd
 import blow.shell.Completion
-import blow.shell.Opt
 import blow.util.PromptHelper
+import blow.shell.CmdParams
+import com.beust.jcommander.Parameter
 
 /**
  * Print out information details for the specified node
@@ -35,10 +36,21 @@ class NodesInfoCommand  {
 
     def BlowSession session
 
-    @Cmd(summary="List the nodes available in the current running cluster")
-    def listnodes(
-        @Opt( opt='d', description='Show node details' ) Boolean showDetails
-    ) {
+    /**
+     * Parameter class for the 'listnodes' command
+     */
+    static class ListNodesParams extends CmdParams {
+        @Parameter( names='-d', description='Show node details' )
+        Boolean showDetails
+    }
+
+    /**
+     * List the nodes that made-up the cluster
+     *
+     * @param params
+     */
+    @Cmd(name='listnodes', summary="List the nodes available in the current running cluster")
+    def void listNodes( ListNodesParams params ) {
 
 
 
@@ -116,7 +128,7 @@ class NodesInfoCommand  {
             row += "; "
             row += "${node.state}"
 
-            if( showDetails == true ) {
+            if( params.showDetails == true ) {
 
                 row += "; " +
                         "${node.getImageId().padRight(lImage)}; " +
@@ -137,13 +149,13 @@ class NodesInfoCommand  {
      *
      * @param nodeId
      */
-    @Cmd(summary="Shows the information details for the specified node")
+    @Cmd(name='nodeinfo', summary="Shows the information details for the specified node")
     @Completion({ cmdline -> session.findMatchingAttributes(cmdline) })
 
-	def nodeinfo ( String nodeId ) {
+	def void nodeInfo ( String nodeId ) {
 
         if( !nodeId ) {  
-            println "(please spoecify the node-id for which show the info)"
+            println "(please specify the node-id for which show the info)"
             return
         }
 
@@ -159,12 +171,14 @@ class NodesInfoCommand  {
 
     @Cmd(summary='Refresh the cluster nodes metadata')
     public void refresh() {
+        print 'refreshing ...'
         session.refreshMetadata()
+        print '\r'
+        listNodes( new ListNodesParams() )
     }
 
     @Cmd(summary='Save the current session data', usage='saveSession [file name]')
     public void saveSession(String fileName) {
-
 
         def file
         if( fileName ) {

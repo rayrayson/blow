@@ -20,6 +20,7 @@
 package blow.command
 
 import blow.BlowSession
+import blow.exception.CommandSyntaxException
 import blow.shell.AbstractShellCommand
 import blow.shell.CommandCompletor
 import blow.ssh.SshConsole
@@ -42,9 +43,12 @@ class SshCommand extends AbstractShellCommand implements CommandCompletor {
     /** The current session instance, injected by the framework */
     private BlowSession session;
 
+    private boolean showHelp
+
     @Override
     def String getName() { "ssh" }
 
+    @Override
     def String getSummary() {
         "Launch a SSH session with a remote node"
     }
@@ -60,17 +64,20 @@ class SshCommand extends AbstractShellCommand implements CommandCompletor {
      * @param args
      */
     @Override
-    def void parse( def args ) {
+    def void parse( List<String> args ) {
 
         if( args ) {
             targetHost = args.head()
             targetCommand = args.size()>1 ? args.tail().join(' ') : null
+
+            showHelp = args.contains('-h') || args.contains('--help')
         }
         else {
             targetHost = null
             targetCommand = null
         }
     }
+
 
     /**
      * Find out all the possible alternatives for the command list completion
@@ -89,9 +96,13 @@ class SshCommand extends AbstractShellCommand implements CommandCompletor {
     @Override
     void invoke() {
 
+        if( showHelp ) {
+            print getHelp()
+            return
+        }
+
         if( !targetHost ) {
-            println "Provide the node IP address to which connect. "
-            return;
+            throw new CommandSyntaxException("Specify the node IP address to which connect")
         }
 
         if( !targetCommand ) {

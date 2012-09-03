@@ -20,15 +20,16 @@
 package blow.command
 
 import blow.BlowSession
+import blow.exception.CommandSyntaxException
 import blow.shell.BlowShell
 import blow.shell.Cmd
+import blow.shell.CmdParams
 import blow.shell.Completion
-import blow.shell.Opt
+import com.beust.jcommander.Parameter
+import groovy.util.logging.Slf4j
 import org.jclouds.ec2.domain.Attachment
 import org.jclouds.ec2.domain.Snapshot
 import org.jclouds.ec2.domain.Volume
-import groovy.util.logging.Slf4j
-import blow.exception.CommandSyntaxException
 
 /**
  * Shell command managing EBS volumes and snapshots
@@ -41,6 +42,31 @@ class StorageCommands  {
     // injected by the framework
     def BlowShell shell
     def BlowSession session
+
+    /**
+     * Parameters holder for 'listVolumes' command
+     */
+    static class ListVolumeParams extends CmdParams {
+
+        @Parameter( names=['-r','--region'], description="Specify a different region" )
+        String regionId;
+
+        @Parameter(names=['-a','--attachment'], description='Include the attachments in the report')
+        boolean printAttachments;
+
+        @Parameter( names=['-z','--zone'], description='Include the availability zone in the report' )
+        boolean printZone;
+
+        @Parameter(names=['-s','--snapshot'], description="Include the snapshot from which the volume has been created")
+        boolean printSnapshot;
+
+        @Parameter(names=['-S','--filter-by-snapshot'], description='Show only volumes created by the specified spanshot-id')
+        String snapshotId;
+
+        @Parameter
+        List<String> nodes
+
+    }
 
     /**
      * Prints the list of volumes
@@ -59,44 +85,32 @@ class StorageCommands  {
           summary="Display the list of volumes in the current region",
           usage="listvolumes [options] [node name]")
     @Completion({ cmdline -> session.findMatchingAttributes(cmdline) })
-
-    def void listVolumes(
-            @Opt(opt="r", longOpt="region", arg="region-id", description="Specify a different region")
-            String regionId,
-            @Opt(opt='a',longOpt='attachment', description='Include the attachments in the report')
-            Boolean printAttachments,
-            @Opt(opt='z', longOpt='zone', description='Include the availability zone in the report')
-            Boolean printZone,
-            @Opt(opt='s', longOpt='snapshot', description="Include the snapshot from which the volume has been created")
-            Boolean printSnapshot,
-            @Opt(opt='S', longOpt='filter-by-snapshot', arg='snapshot-id', description='Show only volumes created by the specified spanshot-id')
-            String snapshotId,
-            List<String> nodes )
+    def void listVolumes( ListVolumeParams params )
     {
 
-        def list = shell.session.blockStore.listVolumes(null, regionId)
+        def list = session.blockStore.listVolumes(null, params.regionId)
         def allCount = list.size()
 
         /*
          * filter by snapshot
          */
-        if( snapshotId ) {
-            list = list.findAll{  Volume vol -> vol.getSnapshotId() == snapshotId }
+        if( params.snapshotId ) {
+            list = list.findAll{  Volume vol -> vol.getSnapshotId() == params.snapshotId }
         }
 
         /*
          * The restriction by 'name' are possible only if the regionId is not specify
          */
-        if( !regionId ) {
+        if( !params.regionId ) {
 
             def hintRequired
             def attachedVolumesId = []
-            if( !nodes ) {
-                nodes = new ArrayList(session.allNodes.keySet())
+            if( !params.nodes ) {
+                params.nodes = new ArrayList(session.allNodes.keySet())
                 hintRequired = true
             }
 
-            nodes.each {
+            params.nodes.each {
                 attachedVolumesId.addAll( findAttachedVolumeIDs(it) )
             }
             list = list.findAll { Volume vol -> vol.getId() in attachedVolumesId }
@@ -128,17 +142,17 @@ class StorageCommands  {
 
 
             // print out the availability zone
-            if( printZone ) {
+            if( params.printZone ) {
                 line.append(vol.getAvailabilityZone()) .append('; ')
             }
 
-            if( printSnapshot && vol.getSnapshotId()) {
+            if( params.printSnapshot && vol.getSnapshotId()) {
                 line.append( vol.getSnapshotId() ).append("; ")
             }
 
 
             // print out the attachments if required
-            if( printAttachments ) {
+            if( params.printAttachments ) {
                 vol.getAttachments().each { Attachment att ->
 
                     line.append("\n  > attached to: ")
@@ -171,6 +185,22 @@ class StorageCommands  {
     } 
 
     /**
+     * Parameters holder for the command 'list snapshots'
+     */
+    static class ListSnapParams extends CmdParams {
+
+        @Parameter(names=['-d','--description'], description="Include the snapshot 'description' in the report")
+        boolean printDescription
+
+        @Parameter(names=['-v','--volume'],  description="Include the associated volume-id in the report")
+        boolean printVolume
+
+        @Parameter
+        List<String> snapshotIds
+    }
+
+
+    /**
      * Prints the list of the snapshots
      *
      * @param printDescription
@@ -182,17 +212,9 @@ class StorageCommands  {
           summary="Display the list of snapshots available in the current region",
           usage="listsnapshots [options]")
     
-    def void listSnapshots(
+    def void listSnapshots( ListSnapParams params ) {
 
-            @Opt(opt="d", longOpt="description", description="Include the snapshot 'description' in the report")
-            Boolean printDescription,
-
-            @Opt(opt="v", longOpt="volume", description="Include the associated volume-id in the report")
-            Boolean printVolume,
-            List<String> snapshotIds )
-    {
-
-        def list = session.blockStore.listSnapshots(snapshotIds)
+        def list = session.blockStore.listSnapshots(params.snapshotIds)
         if( !list ) {
             println "(no volumes found)"
             return
@@ -211,7 +233,7 @@ class StorageCommands  {
             /*
              * include the volume info if required
              */
-            if( printVolume ) {
+            if( params.printVolume ) {
                 def vol = snapshot.getVolumeId() ?: ""
                 line.append(vol.padRight(8)).append("; ")
             }
@@ -219,13 +241,22 @@ class StorageCommands  {
             /*
              * include the snapshot description if required
              */
-            if( printDescription ) {
+            if( params.printDescription ) {
                 def txt = snapshot.getDescription()
                 line.append( txt ? "\"$txt\"" : "")
             }
 
             println line
         }
+    }
+
+
+    static class CreateSnapshotParams extends CmdParams {
+        @Parameter(names=['-d','--description'], description="Snapshot description (shorter than 255 chars)")
+        String description;
+
+        @Parameter
+        List<String> volumeId;
     }
 
     /**
@@ -242,12 +273,9 @@ class StorageCommands  {
 
     @Completion( { findVolumesCompletion(it) } )
 
-    def void createSnapshot(
-            @Opt(opt='d', longOpt='description', len=1, description="Snapshot description (shorter than 255 chars)")
-            String description,
-            String volumeId
-    ) {
-        final ebs = shell.session.blockStore
+    def void createSnapshot( CreateSnapshotParams params ) {
+        final ebs = session.blockStore
+        final def volumeId = params.volumeId ? params.volumeId[0] : null
 
         if( !volumeId ) {
             throw new CommandSyntaxException('You need to specify the volume-id as command parameter')
@@ -259,7 +287,7 @@ class StorageCommands  {
             return
         }
 
-        if( description?.length() > 255 ) {
+        if( params.description?.length() > 255 ) {
             println "Please provide a shorter description"
             return
         }
@@ -272,9 +300,9 @@ class StorageCommands  {
          * create the snapshot
          */
 
-        def snapshot = ebs.createSnapshot(volumeId, description, false)
+        def snapshot = ebs.createSnapshot(volumeId, params.description, false)
 
-        println "Creating snapshot: ${snapshot.getId()}. It can take some minutes to complete."
+        println "Creating snapshot: '${snapshot.getId()}'. It can take some minutes to complete."
 
     }
 
@@ -287,7 +315,7 @@ class StorageCommands  {
     @Cmd( name='deletesnapshot',
           summary = 'Delete an AWS snapshot',
           usage='deletesnapshot <snapshot-id>')
-    def void deletesnapshot( String snapshotId ) {
+    def void deleteSnapshot( String snapshotId ) {
         if( !snapshotId ) {
             throw new CommandSyntaxException('Provide on the command line the id of the snapshot to delete')
         }
