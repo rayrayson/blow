@@ -1,3 +1,11 @@
+version 0.7.1
+- Refactored command parameters API
+- HostnameOp renamed to DefaultOp
+- Installing cross-platform package manager symlink 'blowpkg'
+- Promp user for access credentials, if missing
+- Shell history
+- Initial Hadoop support
+
 2012-09-01, version 0.7.0
 - Session persistence accross restarts
 - New configuration file syntax based on Groovy BuilderSupport

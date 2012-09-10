@@ -45,7 +45,7 @@ class GlusterFSOpTest extends Specification {
         def gluster = new GlusterFSOp()
         def expected = """\
         # Install required dependencies
-        yum -y install wget fuse fuse-libs
+        blowpkg -y install fuse fuse-libs
 
         # Download and install the Gluster components
         wget -q http://download.gluster.org/pub/gluster/glusterfs/3.2/3.2.4/Fedora/glusterfs-core-3.2.4-1.fc11.x86_64.rpm

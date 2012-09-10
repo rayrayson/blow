@@ -67,7 +67,7 @@ class AppendTextOp {
         TraceHelper.debugTime("Appending to '${to}' at nodes: ${applyTo?:'(all)'} ") {
 
             def lines = []
-            text.eachLine {  lines.add(it) }
+            text.eachLine {  lines.add(it?.toString()) }
             def appender = Statements.appendFile(to, lines)
             session.runStatementOnNodes(appender,applyTo,root)
 

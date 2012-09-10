@@ -27,14 +27,19 @@ import groovy.util.logging.Slf4j
 import org.jclouds.scriptbuilder.domain.Statements
 
 /**
- * Configure the <code>/etc/hostname</code> file in each node in the cluster
+ * Default operation executed on any node. It does
+ * <ul>
+ * <li>Install 'wget'</li>
+ * <li>Configure host names</li>
+ * <ul>
+ *
  * 
  * @author Paolo Di Tommaso
  *
  */
 @Slf4j
-@Operation("hostname")
-class HostnameOp  {
+@Operation
+class DefaultOp {
 
 
     /*
@@ -60,34 +65,63 @@ class HostnameOp  {
 	 * 
 	 */
 	protected void configureHostsTask( ) {
-		
-	   /*
-	    * Make a list containing each node a pair (IP address - Node name)
-	    * to be appended to the node 'hosts' file
-	    */
-	   List<String> hostnameList = []
-	   session.listNodes().each { BlowSession.BlowNodeMetadata node ->
+
+        /*
+         * Create a link named 'blow_pkg' to the platform package manager
+         * (zypper, yum, apt-get) so all the following script can refers
+         * to it independently the target platform
+         */
+        String createPackageManagerAlias = '''\
+        
+        if command -v zypper &>/dev/null; then
+          FILENAME=`which zypper`
+        elif command -v yum &>/dev/null; then
+          FILENAME=`which yum`
+        elif command -v apt-get &>/dev/null; then
+          FILENAME=`which apt-get`
+        else
+          FILENAME=''
+        fi
+
+        if [ -z $FILENAME ]; then
+          echo 'Cannot find any package manager'
+        else
+          FOLDER=`dirname $FILENAME`; cd $FOLDER
+          ln -s "$FILENAME" blowpkg
+          cd -
+        fi
+
+        '''
+        .stripIndent()
+
+	    /*
+	     * Make a list containing each node a pair (IP address - Node name)
+	     * to be appended to the node 'hosts' file
+	     */
+	    List<String> hostnameList = []
+	    session.listNodes().each { BlowSession.BlowNodeMetadata node ->
 		   hostnameList.add( String.format("%s\t%s", node.getPrivateAddresses().find(), node.getNodeName()) )
-	   }
+	    }
 			   
 
-       /*
-        * This script using the node public
-        */
-       def setHostname = """\
-       yum install -y wget
-       HOSTIP=`wget -q -O - http://169.254.169.254/latest/meta-data/local-ipv4`
-       HOSTNAME=`cat /etc/hosts | grep \$HOSTIP | cut -f 2`
-       hostname \$HOSTNAME
-       """
-       .stripIndent()
+        /*
+         * This script using the node public
+         */
+        def setHostname = """\
+        blowpkg install -y wget unzip
+        HOSTIP=`wget -q -O - http://169.254.169.254/latest/meta-data/local-ipv4`
+        HOSTNAME=`cat /etc/hosts | grep -F \$HOSTIP | cut -f 2`
+        hostname \$HOSTNAME
+        """
+        .stripIndent()
 
 
-       def statementsToRun = Statements.newStatementList(
+        def statementsToRun = Statements.newStatementList(
+               Statements.exec(createPackageManagerAlias),
                Statements.appendFile("/etc/hosts", hostnameList),
                Statements.exec(setHostname) )
 
-       session.runStatementOnNodes(statementsToRun, null, true)
+        session.runStatementOnNodes(statementsToRun, null, true)
 
 
 	}

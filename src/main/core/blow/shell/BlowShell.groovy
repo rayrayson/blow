@@ -24,10 +24,9 @@ import blow.util.CmdLine
 import blow.util.InjectorHelper
 import blow.util.KeyPairBuilder
 import com.google.inject.Guice
+import groovy.util.logging.Slf4j
 import jline.Completor
 import jline.ConsoleReader
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import blow.*
 import blow.exception.*
 
@@ -38,27 +37,31 @@ import blow.exception.*
  *
  */
 @Mixin(InjectorHelper)
+@Slf4j
 class BlowShell {
 
     /**
-     * Note: create the logger lazily so it is possible to configure the logging
-     * subsystem dynamically
-     * <p>
-     * See script 'logback.groovy'
+     * Declares static be make it accessible like a singleton (it will exist
+     * always no more than one shell instance)
      */
-    @Lazy
-    Logger log = { LoggerFactory.getLogger(BlowShell) }()
+	static ConsoleReader console
 
 	private BlowSession session;
-	
-	private ConsoleReader console 
 
 	private DynLoader loader;
 
+    static final homePathConfigFile = new File( System.getProperty("user.home"), ".blow/blow.conf" )
+
+    static final homePathHistoryFile = new File( System.getProperty("user.home"), ".blow/history" )
+
     private File userConfigFile = new File("./blow.conf")
 
-    @Lazy
-    private BlowConfigBuilder configBuilder = { parseConfigFile() } ()
+    private BlowConfigBuilder configBuilder
+
+    def BlowConfigBuilder getConfigBuilder() {
+        if( !configBuilder )  { configBuilder=parseConfigFile() }
+        return configBuilder
+    }
 
     /**
      * The map of the {@link  ShellCommand} available in this shell instance
@@ -77,7 +80,7 @@ class BlowShell {
      * The main entry on the program command line. Usually it is the cluster configuration name.
      * This value is define the by {@link #init} method and then read during the program @{link #run}
      */
-    private String clusterNameToUse
+    private String clusterNameRequested
 
     /**
      * The program global options as returned by {@link CliBuilder#parse} method.
@@ -189,6 +192,8 @@ class BlowShell {
 		 */
 		console = new ConsoleReader()
 		console.setBellEnabled(false)
+        console.useHistory=false
+        console.history.setHistoryFile(homePathHistoryFile)
 		console.addCompletor( new ShellCompletor() )
 		
 	}
@@ -252,7 +257,7 @@ class BlowShell {
         }
 
         // define the cluster name as the 'main' entry
-        clusterNameToUse = clusterName
+        clusterNameRequested = clusterName
 
         // the first argument as the command to execute
         if( args.size()>0 ) {
@@ -267,7 +272,7 @@ class BlowShell {
      * @return The list of cluster names defined in the current used configuration file
      */
     def List<String> listClusters() {
-        configBuilder.getClusterNames()
+        getConfigBuilder().getClusterNames()
     }
 
 
@@ -289,15 +294,15 @@ class BlowShell {
     protected BlowConfigBuilder parseConfigFile( ) {
 
         def currentPathConfig = userConfigFile
-        def homePathConfig = new File( System.getProperty("user.home"), ".blow/blow.conf" )
+
 
         log.debug( "User conf file [${currentPathConfig.exists()}]: " + currentPathConfig )
-        log.debug( "Home conf file [${homePathConfig.exists()}]: " + homePathConfig )
+        log.debug( "Home conf file [${homePathConfigFile.exists()}]: " + homePathConfigFile )
 
         def configFiles = []
 
-        if( homePathConfig.exists() ) {
-            configFiles << homePathConfig
+        if( homePathConfigFile.exists() ) {
+            configFiles << homePathConfigFile
         }
 
         if( currentPathConfig.exists() ) {
@@ -308,7 +313,7 @@ class BlowShell {
             System.err.println """\
 								Missing configuration file. Configuration have to be specified using one (or both) the following paths:
 								 - '$currentPathConfig'
-								 - '$homePathConfig'
+								 - '$homePathConfigFile'
 								""" .stripIndent()
 
             System.exit(1)
@@ -328,7 +333,7 @@ class BlowShell {
          * If no cluster has been specified try to use the default one
          */
         if( !clusterName ) {
-            def names = configBuilder.getClusterNames()
+            def names = getConfigBuilder().getClusterNames()
             if( names.size() == 1 ) {
                 clusterName = names[0]
                 log.debug("Choosing by default cluster: ${clusterName} ")
@@ -359,9 +364,9 @@ class BlowShell {
         }
 
         if( serialized ) {
-            def newConf = configBuilder.buildConfig( clusterName )
-            if( serialized.confHashCode != newConf.hashCode() ) {
-                def answer = prompt("The configuration has changed. Do you want to (C)ontinue previous session, load the (N)ew configuration file or (E)exit?", ['c','n','e'])
+            def newConfig = getConfigBuilder().buildConfig( clusterName )
+            if( serialized.confHashCode != newConfig.hashCode() ) {
+                def answer = prompt("The configuration has changed. Do you want to C)ontinue previous session, load the N)ew configuration file or E)exit?", ['c','n','e'])
                 if( 'e' == answer ) {
                     System.exit(0)
                 }
@@ -384,10 +389,17 @@ class BlowShell {
 
             while( true ) {
                 try {
-                    config = configBuilder.buildConfig( clusterName )
+                    config = getConfigBuilder().buildConfig( clusterName )
                     config.checkValid()
                     // configuration validated -> exit from the loop
                     break
+                }
+                catch( MissingAccessCredentials e ) {
+                    println "Missing AWS credentials -- Please provide the information as requested below"
+                    promptForAccessCredentials(config)
+                    // note: invalidate the 'configBuilder' to force to re-parse it in the next iteration
+                    // by the 'getConfigBuilder()' method
+                    configBuilder = null
                 }
                 catch( MissingKeyException e ) {
                     def answer = prompt("The required key file: '${e.keyFile}' does not exist. Do you Blow to create it?", ['y','n'])
@@ -432,7 +444,10 @@ class BlowShell {
         // return the session
         return session
 	} 
-	
+
+
+
+
 	/**
 	 * Execute the requested command
 	 */
@@ -500,7 +515,7 @@ class BlowShell {
          * Initialize the cluster configuration with the entered name
          */
         if( mainCommand?.name != "help" ) {
-            useCluster( clusterNameToUse )
+            useCluster( clusterNameRequested )
         }
 
 
@@ -508,25 +523,31 @@ class BlowShell {
 		 * if an command is provided, execute and return
 		 */
 		if( mainCommand ) {
-			execute( mainCommand.name, mainCommand.args )
-			return;
+            mainCommand.with {
+                execute( name, args )
+                addToHistory( name, args)
+            }
+            return;
 		}
 
 		/*
 		 * otherwise enter in a 'shell' loop
 		 */
 		while( true ) {
-		
-			def line = CmdLine.splitter( prompt() )
-			if( !line || line.size()==0 ) { continue }
+		    
+            def line = prompt()
+			def cmdLine = CmdLine.splitter(line)
+			if( !cmdLine || cmdLine.size()==0 ) { continue }
+
 
 			try {
-				execute( line.head(), line.tail() );
+				execute( cmdLine.head(), cmdLine.tail() );
+                addToHistory(line)
 			}
 			catch( ShellExit e ) { break }
 			catch( Throwable e ) {
-				System.err.println "Cannot execute: '${line.join(' ')}'. Cause: ${e.getMessage()}"
-                log.debug("Error executing command: '${line.join(' ')}'", e)
+				System.err.println "Cannot execute: '${line}'. Cause: ${e.getMessage()}"
+                log.debug("Error executing command: '${line}'", e)
 			}
 						
 		}
@@ -564,7 +585,19 @@ class BlowShell {
 		if( session ) session.close()
         log.trace 'After close session'
 	} 
-	
+
+    /**
+     * Add the command to the command line history
+     */
+
+    def void addToHistory( String name, def args = null ) {
+
+        def cmd = name
+        cmd += (args instanceof Collection) ? ' ' + args.join(' ') : ( args ? args.toString() : '' )
+        console.history.addToHistory(cmd)
+
+    }
+
 	/**
 	 * Just wait for an user console entry 
 	 * 
@@ -604,7 +637,81 @@ class BlowShell {
     }
 
     def String promptYesOrNo( String query ) {
-         prompt(query,['y','n'])
+        prompt(query,['y','n'])
+    }
+
+    /**
+     * Prompt the users for the AWS access credentials and store them
+     * in to the default configuration file
+     *
+     * @param config The current {@link BlowConfig} object
+     */
+    def void promptForAccessCredentials(BlowConfig config) {
+
+        def defAccessKey = config.accessKey
+        def defSecretKey = config.secretKey
+        def defAccountId = config.accountId
+
+        def strAccessKey = defAccessKey ? " [${defAccessKey}]" : ''
+        def strSecretKey = defSecretKey ? " [${defSecretKey}]" : ''
+        def strAccountId = defAccountId ? " [${defAccountId}]" : ' (optional)'
+
+        def value
+        while( true ) {
+            print "Enter the AWS Access key${strAccessKey}: "
+            value = console.readLine() ?: defAccessKey
+            if ( value ) break
+        }
+        defAccessKey = value
+
+
+        while( true ) {
+            print "Enter the AWS Secret key${strSecretKey}: "
+            value = console.readLine() ?: defSecretKey
+            if (value) break
+        }
+        defSecretKey = value
+
+
+        print "Enter the AWS Account id${strAccountId}: "
+        defAccountId = console.readLine() ?: defAccountId
+
+
+        def text = homePathConfigFile.getText()
+        text = addOrReplaceAccessProperties(text, defAccessKey,defSecretKey,defAccountId)
+        homePathConfigFile.setText(text)
+
+        log.info "Note: credential store in the following file: ${homePathConfigFile}"
+    }
+
+    static String addOrReplaceAccessProperties(String text, String accessKey, String secretKey, String accountId) {
+
+        def pattern = /accessKey '.+'/
+        if ( text =~ pattern ) {
+            text = text.replaceAll(pattern, "accessKey '${accessKey}'")
+        }
+        else {
+            text += "accessKey '${accessKey}'\n"
+        }
+
+        pattern = /secretKey '.+'/
+        if ( text =~ pattern ) {
+            text = text.replaceAll(pattern, "secretKey '${secretKey}'")
+        }
+        else {
+            text += "secretKey '${secretKey}'\n"
+        }
+
+        pattern = /accountId '.+'/
+        if ( text =~ pattern ) {
+            text = text.replaceAll(pattern, accountId ? "accountId '${accountId}'" : '' )
+        }
+        else if( accountId ) {
+            text += "accountId '${accountId}'\n"
+        }
+
+        return text
+
     }
 
     /**
@@ -683,6 +790,9 @@ class BlowShell {
         cli.h( longOpt: "help", "Show this help")
 
         options = cli.parse(args)
+        if( !options ) {
+            System.exit()
+        }
 
         /*
          * Initialize Guice and create a shell instance
@@ -690,26 +800,26 @@ class BlowShell {
         Guice.createInjector();
 		BlowShell shell = new BlowShell();
         // trace the command line
-        shell.log.debug "**** Launching ${Project.name} - ver ${Project.version} ****"
-        shell.log.debug "cmdline: \"${args?.join(' ') ?: ''}\""
+        log.debug ">>>>> Launching ${Project.name} - ver ${Project.version} <<<<<"
+        log.debug "cmdline: \"${args?.join(' ') ?: ''}\""
 
         /*
          * Shutdown runtime
          */
         Runtime.getRuntime().addShutdownHook {
-            shell?.log?.debug "---- Finalizing ${Project.name} ----"
             if( shell?.session?.saveOnExit ) {
                 def file = shell.session.persist()
                 if( file ) {
-                    shell.log?.info "Session saved to file: $file"
+                    log.info "Session saved to file: $file"
                 }
             }
+            log.debug "===== Terminated ${Project.name} ====="
         }
 
         def confFileName = options?.conf ?: null
         def clusterName = options?.cluster ?: null
 
-        if( options.help ) {
+        if( options?.help ) {
             shell.printUsage()
             System.exit(0)
         }
@@ -723,7 +833,7 @@ class BlowShell {
             shell.close()
         }
         catch( Exception e ) {
-            shell.log.error(e.getMessage() ?: e.toString(), e)
+            log.error(e.getMessage() ?: e.toString(), e)
             System.exit(1)
         }
 

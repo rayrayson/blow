@@ -254,7 +254,7 @@ class GlusterFSOp  {
          */
         def result = new StringBuilder()
             .append("# Install required dependencies\n")
-            .append("yum -y install wget fuse fuse-libs\n")
+            .append("blowpkg -y install fuse fuse-libs\n")
             .append("\n")
             .append("# Download and install the Gluster components\n")
             .append(download)

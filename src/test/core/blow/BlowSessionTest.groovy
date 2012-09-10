@@ -33,6 +33,20 @@ import org.jclouds.compute.domain.*
  */
 class BlowSessionTest extends Specification {
 
+
+    def "test listNodes" () {
+        when:
+        def session = new BlowSession()
+        session.conf.instanceNum = 5
+        session.metadataInitialize()
+
+        then:
+        session.listNodesNames('master') == ['master']
+        session.listNodesNames('worker') == ['worker1','worker2','worker3','worker4']
+        session.listNodesNames() == ['master','worker1','worker2','worker3','worker4']
+
+    }
+
     def "test initMetadata "() {
         when:
         def session = new BlowSession()

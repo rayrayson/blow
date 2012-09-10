@@ -34,7 +34,7 @@ class ShellCommands {
 
     BlowShell shell
 
-    @Cmd(summary='Print this help')
+    @Cmd(summary='Prints this help')
     @Completion( { cmdline -> helpOptions(cmdline) } )
     def void help(String cmd)
     {
@@ -77,7 +77,7 @@ class ShellCommands {
     /**
      * Print the Blow version
      */
-    @Cmd(summary="Print the program version and build info")
+    @Cmd(summary="Prints the program version and build info")
     def void version () {
         println "Version: ${Project.version} - Build timestap: ${Project.timestamp.format('dd/MM/yyyy HH.mm')}"
     }
@@ -85,10 +85,22 @@ class ShellCommands {
     /**
      * Terminate the Blow shell session
      */
-    @Cmd(summary="Quit the current shell session")
+    @Cmd(summary="Quits from the current Blow session")
     def void exit() {
         throw new ShellExit()
     }
 
+
+    @Cmd(summary='Clears the console screen')
+    def void clear() {
+        shell.console.clearScreen()
+    }
+
+    @Cmd(summary='Shows the history of entered commands')
+    def void history() {
+       shell.console.history.getHistoryList().each {
+           println it
+       }
+    }
 
 }

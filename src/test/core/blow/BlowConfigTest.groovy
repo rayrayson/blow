@@ -25,6 +25,46 @@ import blow.builder.BlowConfigBuilder
 
 class BlowConfigTest extends Specification {
 
+    def "test regionId" () {
+        when:
+        def conf1 = new BlowConfig(regionId:'eu-west-1')
+        def conf2 = new BlowConfig(regionId: 'ap-northeast-1')
+        def conf3 = new BlowConfig(regionId: 'xxx')
+
+        then:
+        conf1.regionId == 'eu-west-1'
+        conf1.zoneId == 'eu-west-1a'
+
+        conf2.regionId == 'ap-northeast-1'
+        conf2.zoneId == 'ap-northeast-1a'
+
+        conf3.regionId == 'xxx'
+        conf3.zoneId == new BlowConfig().zoneId
+    }
+
+    def "test zoneId" () {
+        when:
+        def conf1 = new BlowConfig()
+        def conf2 = new BlowConfig(zoneId: 'ap-northeast-1c')
+        def conf3 = new BlowConfig(zoneId: 'eu-west-1b')
+        def conf4 = new BlowConfig(zoneId: 'xxx')
+
+        then:
+        conf1.regionId == 'us-east-1'
+        conf1.zoneId == 'us-east-1a'
+
+        conf2.regionId == 'ap-northeast-1'
+        conf2.zoneId == 'ap-northeast-1c'
+
+        conf3.regionId == 'eu-west-1'
+        conf3.zoneId == 'eu-west-1b'
+
+        conf4.regionId == conf1.regionId
+        conf4.zoneId == 'xxx'
+
+    }
+
+
     def "test instanceType" () {
         when:
         def conf = new BlowConfig()

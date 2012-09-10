@@ -21,6 +21,7 @@ package blow
 
 import blow.eventbus.OrderedEventBus
 import blow.exception.BlowConfigException
+import blow.exception.BlowException
 import blow.exception.DirtySessionException
 import blow.exception.OperationAbortException
 import blow.operation.OperationHelper
@@ -65,7 +66,6 @@ import java.util.concurrent.*
 import static com.google.common.base.Predicates.not
 import static org.jclouds.compute.predicates.NodePredicates.TERMINATED
 import static org.jclouds.compute.predicates.NodePredicates.inGroup
-import blow.exception.BlowException
 
 /**
  * Base session initializer
@@ -273,21 +273,16 @@ class BlowSession {
 
 	public BlockStorage getBlockStore() { blockstore }
 
-    /**
-     * Submit the specified event to the registered plugins
-     *
-     * @param event
-     */
-    protected void postEvent( def event ) {
-        assert event
 
+    def void safeTry(Closure closure) {
         try {
-            eventBus.post(event)
+            closure.call()
         }
         catch( OperationAbortException e ) {
             // just pass through
             throw e
         }
+
         catch( Exception e ) {
             if( e instanceof InvocationTargetException ) {
                 e = e.getCause()
@@ -338,7 +333,9 @@ class BlowSession {
 		/*
 		 * send the cluster create event
 		 */
-		postEvent( new OnBeforeClusterStartEvent(session: this, clusterName: clusterName) )
+		safeTry {
+           eventBus.post( new OnBeforeClusterStartEvent(session: this, clusterName: clusterName) )
+        }
 
         /*
          * Delete previously created security-group with the same name
@@ -386,7 +383,9 @@ class BlowSession {
 		/*
 		 * notify the cluster creation 	
 		 */
-		postEvent( new OnAfterClusterStartedEvent(session: this, clusterName:clusterName, nodes: listNodes() ) )
+		safeTry {
+            eventBus.post(new OnAfterClusterStartedEvent(session: this, clusterName:clusterName, nodes: listNodes() ))
+        }
 
         /*
          * refresh the nodes metadata to be sure that are updated after the previous event
@@ -433,26 +432,32 @@ class BlowSession {
             template.getOptions().as(AWSEC2TemplateOptions).securityGroupIds(conf.securityId)
         }
         else {
-            int[] ports = BlowConfig.getPortsArrays ( conf.inboundPorts )
+            int[] ports = conf.inboundPorts.flatten() as int[]
             template.getOptions().inboundPorts(ports)
         }
 
 		/*
 		 * send the before creation event
 		 */
-		postEvent( new OnBeforeNodeLaunchEvent(
-			session: this,
-			clusterName: clusterName, 
-			numberOfNodes: numberOfNodes, 
-			role: role, 
-			options: template.getOptions()
-			) )
+        safeTry {
+            eventBus.post( new OnBeforeNodeLaunchEvent(
+                    session: this,
+                    clusterName: clusterName,
+                    numberOfNodes: numberOfNodes,
+                    role: role,
+                    options: template.getOptions()
+            )  )
+        }
 
 		/*
 		 * Start the requested nodes
 		 */
-        log.debug "Creating nodes cluster: $clusterName; numberOfNodes: $numberOfNodes; role: $role; template: $template"
-		def setOfNodes = compute.createNodesInGroup(clusterName, numberOfNodes, template)
+        def setOfNodes = Collections.emptySet()
+        safeTry {
+            log.debug "Creating nodes cluster: $clusterName; numberOfNodes: $numberOfNodes; role: $role; template: $template"
+            setOfNodes = compute.createNodesInGroup(clusterName, numberOfNodes, template)
+        }
+
 
         /*
          * Update session metadata
@@ -462,14 +467,16 @@ class BlowSession {
 		/*
 		 * send the after creation event
 		 */
-		postEvent( new OnAfterNodeLaunchEvent(
-			session: this,
-			clusterName: clusterName, 
-			numberOfNodes: numberOfNodes, 
-			role: role, 
-			nodes: (setOfNodes.size()==1 ? setOfNodes.find() : setOfNodes)
-			) )
-	
+	    safeTry {
+            eventBus.post(new OnAfterNodeLaunchEvent(
+                    session: this,
+                    clusterName: clusterName,
+                    numberOfNodes: numberOfNodes,
+                    role: role,
+                    nodes: (setOfNodes.size()==1 ? setOfNodes.find() : setOfNodes)
+            ))
+        }
+
 		/*
 		 * returns the set of metadata for the started nodes
 		 */
@@ -490,7 +497,9 @@ class BlowSession {
 		/*
 		 * notify the event
 		 */
-		postEvent( new OnBeforeClusterTerminationEvent(session: this, clusterName: groupName) );
+        safeTry {
+            eventBus.post(new OnBeforeClusterTerminationEvent(session: this, clusterName: groupName))
+        }
 
         /*
          * Cancel any pending refresh timer to avoid any potential side effects
@@ -509,7 +518,9 @@ class BlowSession {
 		/*
 		 * sent the complete notification
 		 */
-		postEvent( new OnAfterClusterTerminationEvent(session: this, clusterName: groupName, nodes: result) );
+        safeTry {
+            eventBus.post(new OnAfterClusterTerminationEvent(session: this, clusterName: groupName, nodes: result))
+        }
 
         // reschedule a metadata refresh to reflect the changes applied
         // and keep it running because this process can takes some seconds (or minutes) to complete
@@ -526,7 +537,7 @@ class BlowSession {
 		return result
 	}
 
-    synchronized protected metadataInitialize() {
+    synchronized protected void metadataInitialize() {
 
         int tot = 0;
         conf.roles.each { tot += conf.instanceNumFor(it) }
@@ -995,13 +1006,28 @@ class BlowSession {
         return result
     }
 
+    /**
+     * List the node nodes in the current configuration
+     * @param whichRole The nodes group role name for which the list is required
+     * @return A collection of node names
+     */
+    def Collection<String> listNodesNames( String whichRole = null ) {
+        def result = []
 
-    def Collection<String> listNodesNames( ) {
-        listNodes().collect { BlowNodeMetadata node ->
-            node.getNodeName()
+        if( whichRole ) {
+            allNodes.keySet().each {
+                if ( it.startsWith(whichRole) ) {
+                result.add(it)
+            }}
         }
+        else {
+            result.addAll(allNodes.keySet())
+        }
+
+        result
     }
-	
+
+
 	def close() {
         log.trace('Closing session')
 		if( contextCreated ) context?.close()

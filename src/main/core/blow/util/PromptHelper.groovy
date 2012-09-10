@@ -19,6 +19,8 @@
 
 package blow.util
 
+import blow.shell.BlowShell
+
 /**
  *
  *  @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
@@ -34,7 +36,7 @@ class PromptHelper {
 
         def line
         while( true ) {
-            line = System.console().readLine(prompt)
+            line = BlowShell.console.readLine(prompt)
             if( !accept || accept.call(line) ) {
                 break
             }

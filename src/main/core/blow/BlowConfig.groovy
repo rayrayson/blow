@@ -31,7 +31,9 @@ import org.jclouds.domain.LoginCredentials
 
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
-import blow.operation.HostnameOp
+
+import blow.operation.DefaultOp
+import blow.exception.MissingAccessCredentials
 
 /**
  * Contains all configuration required to handle a cluster 
@@ -47,11 +49,11 @@ class BlowConfig  {
 	def secretKey
     def accountId
 
-	def regionId 
-	def zoneId
+	def regionId = 'us-east-1'
+	def zoneId = 'us-east-1a'
 
-	def imageId
-	def instanceType 
+	def imageId = 'ami-e565ba8c'
+	def instanceType = 't1.micro'
     def instanceNum = 1
 
 	def userName
@@ -66,9 +68,9 @@ class BlowConfig  {
     def int fdtPort = 9000
 
     /** Which port to open using the syntax: n,m,from-to */
-    def String inboundPorts
+    def List<Integer> inboundPorts
 
-    def List<String> roles = ['master','worker']
+    def List<Integer> roles = ['master','worker']
 
     /** The role used by the 'master' node, by default defined as the first entry in the {@link #roles} list */
     def String masterRole
@@ -96,15 +98,44 @@ class BlowConfig  {
 
 	}
 
+    def void setRegionId( String value ) {
+        assert value, "Property 'regionId' cannot be empty"
+
+        regionId = value
+
+        if( value ==~ /^\w{2,}\-\w{4,}\-\d$/ ) {
+            // set also the region to the
+            zoneId = value + 'a'
+        }
+
+    }
+
+    def void setZoneId( String value ) {
+        assert value, "Property 'zoneId' cannot be empty"
+
+        zoneId = value
+
+        // if the zone matches the expected pattern assign the regionId as well
+        // to the same value less the last character
+        if( value ==~ /^(\w{2,}\-\w{4,}\-\d)\w$/ ) {
+            regionId = value.substring(0, value.length()-1)
+        }
+    }
+
+    def boolean hasInboundPort( int port ) {
+        for( def item : inboundPorts ) {
+            if( item instanceof Range && port in item ) {
+                return true
+            }
+            else if( port == item ) {
+                return true
+            }
+        }
+
+        return false
+    }
+
     def void initDefaults() {
-
-        if( !regionId )  {
-            regionId = "us-east-1"
-        }
-
-        if( !zoneId ) {
-            zoneId = regionId + "a"
-        }
 
         if( !userName ) {
             userName = System.getProperty("user.name")
@@ -142,7 +173,7 @@ class BlowConfig  {
          * Inbound ports
          */
         if( !inboundPorts ) {
-            inboundPorts = "22,${fdtPort}"
+            inboundPorts = [22, fdtPort]
         }
 
 
@@ -188,32 +219,41 @@ class BlowConfig  {
 
 	def void checkValid() {
 		log.debug("Validating configuration")
-		
-		checkTrue( accessKey, "Missing 'accessKey' attribute in cluster configuration")
-		checkTrue( secretKey, "Missing 'secretKey' attribute in cluster configuration")
-		checkTrue( imageId, "Missing 'imageId' attribute in cluster configuration")
+
+        /*
+         * Checks that the access credentials are available
+         */
+        if( !accessKey || !secretKey ) {
+            throw new MissingAccessCredentials()
+        }
+
+        /*
+         * Check AMI details are defined
+         */
+		checkTrue( imageId, "Missing 'imageId' property in cluster configuration")
+        checkTrue( instanceType, "Missing 'instanceType' property in cluster configuration" )
 
         /*
          * Check thar roles are valid
          */
-        checkTrue( roles, "Missing 'roles' attribute in cluster configuration" )
+        checkTrue( roles, "Missing 'roles' property in cluster configuration" )
         roles.each {
             checkTrue( it ==~ /[A-Za-z_\-]+/, "The following role is not valid: '${it}'. Roles can contain only alphabetic plus '-' and '_' chars" )
         }
 
         if( masterRole ) {
-            checkTrue( masterRole in roles, "The role defines by the attribute 'masterRole' should be defined in the 'roles' atributes as well" )
+            checkTrue( masterRole in roles, "The role defines by the property 'masterRole' should be defined in the 'roles' atributes as well" )
         }
 
         if( workersRole ) {
-            checkTrue( workersRole in roles, "The role defines by the attribute 'workersRole' should be defined in the 'roles' atributes as well" )
+            checkTrue( workersRole in roles, "The role defines by the property 'workersRole' should be defined in the 'roles' atributes as well" )
         }
 
         /*
          * The property 'instanceNum' can be a single integer representing the number ot total
          * instances to launch - or - a map specifying the number of instances in each 'role'
          */
-        checkTrue( instanceNum, "Missing 'instanceNum' attribute. You need to specifiy the number of nodes in your cluster configuration")
+        checkTrue( instanceNum, "Missing 'instanceNum' property. You need to specifiy the number of nodes in your cluster configuration")
 
         if( instanceNum instanceof Map )  {
             instanceNum.each { key, val ->
@@ -226,7 +266,7 @@ class BlowConfig  {
 		/*
 		 * validate credentials
 		 */
-		checkTrue( userName, "Missing cluster user name. Please provide attribute 'userName' in your configuration")
+		checkTrue( userName, "Missing cluster user name. Please provide property 'userName' in your configuration")
 
 
         if( keyPair && (!privateKey || !privateKey.exists()) ) {
@@ -270,13 +310,12 @@ class BlowConfig  {
         }
 
 
-        int[] ports = getPortsArrays( inboundPorts )
-        if( !( 22 in ports ) ) {
-            throw BlowConfigException("Missing SSH port (22) in declared 'inboundPorts' attribute.")
+        if( !hasInboundPort(22) ) {
+            throw BlowConfigException("Missing SSH port (22) in declared 'inboundPorts' property.")
         }
 
-        if( !( fdtPort in ports ) ) {
-            throw BlowConfigException("Missing FDT port ($fdtPort) in declared 'inboundPorts' attribute.")
+        if( !hasInboundPort(fdtPort) ) {
+            throw BlowConfigException("Missing FDT port ($fdtPort) in declared 'inboundPorts' property.")
         }
 
 
@@ -291,9 +330,9 @@ class BlowConfig  {
 
         if( operations == null ) { operations = [] }
 
-        if( !operations.find { it.getClass()==HostnameOp } ) {
-            log.debug "Adding ${HostnameOp.getSimpleName()} operation by default"
-            operations.add(0, new HostnameOp())
+        if( !operations.find { it.getClass()==DefaultOp } ) {
+            log.debug "Adding ${DefaultOp.getSimpleName()} operation by default"
+            operations.add(0, new DefaultOp())
         }
 
         operations.each { op ->
@@ -431,6 +470,7 @@ class BlowConfig  {
      * @param ports
      * @return
      */
+    @Deprecated
     static def getPortsArrays( String ports ) {
 
         def result = []

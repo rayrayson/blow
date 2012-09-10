@@ -49,6 +49,95 @@ class BlowShellTest extends Specification {
 
     }
 
+    def "test addOrReplaceAccessProperties" () {
+
+        when:
+        def text = ''
+        def result = BlowShell.addOrReplaceAccessProperties(text,'aaa', 'bbb', 'ccc')
+        def expected =
+            """\
+            accessKey 'aaa'
+            secretKey 'bbb'
+            accountId 'ccc'
+            """
+            .stripIndent()
+
+        then:
+        result == expected
+
+    }
+
+    def "test addOrReplaceAccessProperties (2)" () {
+
+        when:
+        def text =
+            """\
+            accessKey 'j53jk5'
+            secretKey 'k42j4k2j'
+            accountId '9ds90ds0'
+            """
+                    .stripIndent()
+        def result = BlowShell.addOrReplaceAccessProperties(text,'abc', 'efg', 'xyz')
+        def expected =
+            """\
+            accessKey 'abc'
+            secretKey 'efg'
+            accountId 'xyz'
+            """
+                    .stripIndent()
+
+        then:
+        result == expected
+
+    }
+
+
+
+    def "test addOrReplaceAccessProperties (3)" () {
+
+        when:
+        def text =
+            """\
+            accessKey 'j53jk5'
+            secretKey 'k42j4k2j'
+            accountId '9ds90ds0'
+            """
+                    .stripIndent()
+        def result = BlowShell.addOrReplaceAccessProperties(text,'abc', 'efg', '')
+        def expected =
+            """\
+            accessKey 'abc'
+            secretKey 'efg'
+
+            """
+                    .stripIndent()
+
+        then:
+        result == expected
+
+    }
+
+    def "test addOrReplaceAccessProperties (4)" () {
+
+        when:
+        def text =
+            """\
+            secretKey 'k42j4k2j'
+            """
+                    .stripIndent()
+        def result = BlowShell.addOrReplaceAccessProperties(text, 'abc', 'efg', '8899')
+        def expected =
+            """\
+            secretKey 'efg'
+            accessKey 'abc'
+            accountId '8899'
+            """
+                    .stripIndent()
+
+        then:
+        result == expected
+
+    }
 
     def "test CliBuilder " () {
 

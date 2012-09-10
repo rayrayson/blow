@@ -33,6 +33,7 @@ Currently Blow is able to configure:
 * EBS volumes
 * EBS snapshots
 * Open Grid Engine (SGE)
+* Hadoop cluster
 
 Moreover it provides:
 

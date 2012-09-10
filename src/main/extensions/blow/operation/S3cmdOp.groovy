@@ -90,7 +90,6 @@ class S3cmdOp  {
          * - delete useless stuff
          */
 		String script = """\
-        sudo yum install -y wget
 		wget -q http://sourceforge.net/projects/s3tools/files/s3cmd/${version}/s3cmd-${version}.zip/download
         unzip s3cmd-${version}.zip
         chmod +x s3cmd-${version}/s3cmd

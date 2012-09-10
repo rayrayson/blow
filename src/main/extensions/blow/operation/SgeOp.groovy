@@ -230,8 +230,8 @@ class SgeOp {
 		#
 		# Installing required component 
 		#
-		sudo yum install -y csh wget
-		sudo yum -y groupinstall 'Development Tools' 'Development Libraries'
+		sudo blowpkg install -y csh
+		sudo blowpkg -y groupinstall 'Development Tools' 'Development Libraries'
 		
 		#
 		# Downloading and compiling OGE 
@@ -305,7 +305,7 @@ class SgeOp {
 		# Run the SGE the master node and the execd daemons 
 		# 
 		cd ${path}
-		mv /tmp/sge.conf .
+		cp /tmp/sge.conf .
 		[ -d ${path}/${cell} ] && rm -rf ${path}/${cell}
 		./inst_sge -m -x -auto ./sge.conf
 		sleep 1

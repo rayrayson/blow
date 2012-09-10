@@ -130,7 +130,7 @@ class BlowConfigBuilderTest extends Specification {
                 accessKey '9999'
 
                 operations ('master') {
-                    hostname()
+                    DefaultOp()
                 }
 
                 operations('slave') {

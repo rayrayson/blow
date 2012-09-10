@@ -248,6 +248,10 @@ class NfsOp  {
     }
 
     /**
+     * TODO
+     * Fedora 16 has changed
+     * http://raman-kumar.blogspot.com.es/2011/12/nfs-setup-in-fedora16.html
+     *
      * @return The BASH script to configure the NSF on the 'master' node
      */
 	protected String scriptMaster( ) {
@@ -255,7 +259,7 @@ class NfsOp  {
 
 		"""\
 		# Installing nfs components 
-		yum install -y nfs-utils rpcbind
+		blowpkg install -y nfs-utils rpcbind
 		
 		# disable selinux 
 		setenforce 0
@@ -290,7 +294,7 @@ class NfsOp  {
 	
 		"""\
 		# Installing nfs components 
-		yum install -y nfs-utils rpcbind
+		blowpkg install -y nfs-utils rpcbind
 		
 		# disable selinux 
 		setenforce 0
