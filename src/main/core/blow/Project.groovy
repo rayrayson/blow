@@ -6,7 +6,7 @@ package blow
  */
 final class Project {
            final static def name = "blow"
-           final static def number = "0.7.1"
-           final static def version = "0.7.1_1347283359873"
-           final static def timestamp = new Date(1347283359873)
+           final static def number = "0.7.2"
+           final static def version = "0.7.2_1349436906475"
+           final static def timestamp = new Date(1349436906475)
 }

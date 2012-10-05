@@ -273,12 +273,22 @@ class NfsOp  {
 		#
 		# Configuring services
 		#
-		service rpcbind start
-		service nfs start
-		service nfslock start
-		chkconfig --level 2345 rpcbind on
-		chkconfig --level 2345 nfs on
-		chkconfig --level 2345 nfslock on
+		if command -v systemctl &>/dev/null; then
+		  systemctl stop iptables.service
+          systemctl stop ip6tables.service
+          systemctl disable iptables.service
+          systemctl disable ip6tables.service
+		  systemctl start rpcbind.service
+		  systemctl start nfs-server.service
+		  systemctl start nfs-lock.service
+		else
+		  service rpcbind start
+		  service nfs start
+		  service nfslock start
+		  chkconfig --level 2345 rpcbind on
+		  chkconfig --level 2345 nfs on
+		  chkconfig --level 2345 nfslock on
+		fi
 		""" 
 		.stripIndent()
 		
@@ -303,11 +313,16 @@ class NfsOp  {
 		#
 		# Configuring services
 		#
-		service rpcbind start
-		service nfslock start
-		chkconfig --level 2345 rpcbind on
-		chkconfig --level 2345 nfslock on
-		
+		if command -v systemctl &>/dev/null; then
+		  systemctl start rpcbind.service
+		  systemctl start nfs-lock.service
+		else
+		  service rpcbind start
+		  service nfslock start
+		  chkconfig --level 2345 rpcbind on
+		  chkconfig --level 2345 nfslock on
+		fi
+
 		#
 		# Create mount point and mount it 
 		# 

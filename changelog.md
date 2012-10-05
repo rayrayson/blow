@@ -1,4 +1,7 @@
-version 0.7.1
+2012-10-05, Version 0.7.2 
+- Improved support for Linux Fedora 16 
+
+2012-09-10, Version 0.7.1
 - Refactored command parameters API
 - HostnameOp renamed to DefaultOp
 - Installing cross-platform package manager symlink 'blowpkg'

@@ -54,12 +54,6 @@ class SgeOp {
 	@Conf
 	String adminEmail = "none@none.edue"
 	
-	/**
-	 * The SGE administration user
-	 */
-	@Conf
-	String adminUser = ""
-	
 	@Conf
 	String binaryZipFile = "https://s3.amazonaws.com/cbcrg-lab/sge6.zip"
 	
@@ -194,7 +188,7 @@ class SgeOp {
         script += "\n" + scriptInstallMaster();
 
 
-        session.runScriptOnNodes(script, master)
+        session.runScriptOnNodes(script, master, true)
 
 	}  
 
@@ -204,7 +198,7 @@ class SgeOp {
      */
 	protected void installWorkersNodes() {
 
-		session.runScriptOnNodes(scriptInstallWorker(), worker)
+		session.runScriptOnNodes(scriptInstallWorker(), worker, true)
 	}
 	
 	
@@ -230,8 +224,8 @@ class SgeOp {
 		#
 		# Installing required component 
 		#
-		sudo blowpkg install -y csh
-		sudo blowpkg -y groupinstall 'Development Tools' 'Development Libraries'
+		blowpkg install -y csh
+		blowpkg -y groupinstall 'Development Tools' 'Development Libraries'
 		
 		#
 		# Downloading and compiling OGE 
@@ -284,6 +278,7 @@ class SgeOp {
 		mkdir -p ${path}
 		mv ./sge6/* ${path}
 		rm -rf ./sge6
+		chown -R ${user}:wheel ${path}
 
 		""" 
 		.stripIndent()	
@@ -298,8 +293,12 @@ class SgeOp {
         assert spool, "Variable 'spool' cannot be empty"
 
 		"""\
-        # Create the spool directory
-		[ ! -d ${spool} ] && sudo mkdir -p ${spool} && sudo chown -R ${user}:wheel ${spool}
+		# Install csh
+		if ! command -v csh  &>/dev/null; then blowpkg install -y csh; fi
+
+		# Create the spool directory
+		[ -d '${spool}' ] || mkdir -p '${spool}'
+		chown -R ${user}:wheel '${spool}'
 
 		#
 		# Run the SGE the master node and the execd daemons 
@@ -314,7 +313,7 @@ class SgeOp {
 		# Add to the '.bash_profile'
 		#
 		source ${path}/${cell}/common/settings.sh
-		echo "source ${path}/${cell}/common/settings.sh" >> ~/.bash_profile
+		echo "source ${path}/${cell}/common/settings.sh" >> ~${user}/.bash_profile
 		
 		"""	
 		.stripIndent()
@@ -330,8 +329,12 @@ class SgeOp {
         assert spool, "Variable 'spool' cannot be empty"
 
 		"""\
-        # Create spool directory
-        [ ! -d ${spool} ] && sudo mkdir -p ${spool} && sudo chown -R ${user}:wheel ${spool}
+		# Install csh
+		if ! command -v csh  &>/dev/null; then blowpkg install -y csh;  fi
+
+		# Create the spool directory
+		[ -d '${spool}' ] || mkdir -p '${spool}'
+		[ `stat -f -c %T '${spool}'` != "nfs" ] && chown -R ${user}:wheel '${spool}'
 
 		#
 		#  Install the 'execd' on worker nodes
@@ -345,8 +348,8 @@ class SgeOp {
 		# Add to the '.bash_profile'
 		#
 		source ${path}/${cell}/common/settings.sh
-		echo "source ${path}/${cell}/common/settings.sh" >> ~/.bash_profile
-		"""	
+		echo "source ${path}/${cell}/common/settings.sh" >> ~${user}/.bash_profile
+		"""
 		.stripIndent()
 		
 	} 
@@ -357,8 +360,8 @@ class SgeOp {
 		assert cell, "Provide a valid 'cell' name in the SGE configuration (default)"
 		assert qmasterPort.isInteger() , "Provide a valid 'qmaster-port' value (6444)" 
 		assert execdPort,  "Provide a valid 'execd-port' value in the SGE configuration (6445)"
-		assert adminUser != null, "Provide the 'admin-user' in the SGE configuration (use blank to force the current user)"
 		assert nodes, "The SGE nodes cannot be empty "
+        assert user
         assert spool
 		assert adminEmail
 
@@ -369,7 +372,7 @@ class SgeOp {
 		SGE_EXECD_PORT="${execdPort}"
 		SGE_ENABLE_SMF="false"
 		CELL_NAME="${cell}"
-		ADMIN_USER="${adminUser}"
+		ADMIN_USER="${user}"
 		EXECD_SPOOL_DIR="${spool}"
 		QMASTER_SPOOL_DIR="${spool}/qmaster"
 		EXECD_SPOOL_DIR_LOCAL="${spool}/execd"
