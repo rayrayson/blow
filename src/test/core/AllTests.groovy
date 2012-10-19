@@ -54,6 +54,7 @@ import blow.util.CmdLineTest;
     blow.util.InjectorHelperTest.class,
     blow.util.KeyPairBuilderTest.class,
     blow.util.QuoteStringTokenizerTest.class,
+    blow.util.WebHelperTest,
 
     blow.command.SshCommandTest.class,
     blow.command.S3CommandTest.class,

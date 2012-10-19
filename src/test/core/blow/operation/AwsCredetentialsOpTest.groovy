@@ -38,8 +38,8 @@ class AwsCredetentialsOpTest extends Specification {
         aws.session.conf.secretKey = 's3cret'
 
         then:
-        aws.script() .contains( 'export AWS_ACCESS_KEY_ID=1234' )
-        aws.script() .contains( 'export AWS_SECRET_ACCESS_KEY=s3cret' )
+        aws.script() .contains( 'export AWS_ACCESS_KEY=1234' )
+        aws.script() .contains( 'export AWS_SECRET_KEY=s3cret' )
         aws.script() .contains( 'AWSAccessKeyId=1234' )
         aws.script() .contains( 'AWSSecretKey=s3cret' )
 

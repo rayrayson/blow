@@ -404,5 +404,13 @@ class MyNode implements  NodeMetadata {
     int compareTo(ResourceMetadata<ComputeType> o) {
         return 0  //To change body of implemented methods use File | Settings | File Templates.
     }
+
+    NodeMetadata.Status getStatus() {
+        return null  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    String getBackendStatus() {
+        return null  //To change body of implemented methods use File | Settings | File Templates.
+    }
 }
 

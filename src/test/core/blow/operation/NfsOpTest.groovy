@@ -33,7 +33,6 @@ public class NfsOpTest extends Specification {
 
         then:
         tpl.contains("echo \"/mydata	*(rw,async,no_root_squash,no_subtree_check)\" >> /etc/exports")
-		tpl.contains("exportfs -ra")
 
 
 	}

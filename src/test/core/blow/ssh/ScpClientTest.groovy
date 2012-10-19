@@ -114,14 +114,14 @@ class ScpClientTest {
 	@Test
 	public void testDownload() {
 		
-		def target = new File("./s3_upload")
+		def target = new File("./file_used_by_blow_testset")
 		if( target.exists() ) target.delete()
 		
 		ScpClient client = new ScpClient( host:"palestine.crg.es" )
 		def key = new File(System.properties['user.home'], '.ssh/id_rsa')
         client.connect("ptommaso",key)
 		
-		client.download("./s3_upload" )
+		client.download("./file_used_by_blow_testset" )
 		
 		assert ( target .exists() )
 	} 

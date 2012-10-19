@@ -1,4 +1,17 @@
-2012-10-05, Version 0.7.2 
+2012-10-16, Version 0.7.3
+- Upgrate JClouds to version 1.5.2 (to support EC2 instance hi1_4xlarge)
+- Added support for EC2 placement-groups (see BlowConfig#placementGroup)
+- Better support for ephemeral volumes (if not mounted they are formatted)
+- Support for file system type for volumes that require to be formatted
+- Fix a bug on home directory creation
+- Since this version cluster name in configuration file have to be in lowercase (due to constraint in AWS API)
+- SGE now can be launched also with a single node 
+
+2012-10-12, Version 0.7.2.1
+- Supporting new device name '/dev/xvd..' mounting volumes
+- Disabled firewall by defualt (moved into the DefaultOp)
+
+2012-10-05, Version 0.7.2
 - Improved support for Linux Fedora 16 
 
 2012-09-10, Version 0.7.1

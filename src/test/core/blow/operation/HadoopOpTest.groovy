@@ -20,6 +20,7 @@
 package blow.operation
 
 import blow.BlowSession
+import blow.util.WebHelper
 import spock.lang.Specification
 
 /**
@@ -158,4 +159,14 @@ class HadoopOpTest extends Specification {
         hadoop.deployNodesList == ['master2', 'worker1', 'worker2', 'worker3']
 
     }
+
+    def "test resource" () {
+        when:
+        def op = new HadoopOp()
+
+        then:
+        WebHelper.checkURLExists(op.tarball)
+
+    }
+
 }

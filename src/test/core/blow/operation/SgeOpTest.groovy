@@ -21,6 +21,7 @@ package blow.operation
 
 import spock.lang.Specification
 import blow.BlowConfig
+import blow.util.WebHelper
 
 class SgeOpTest extends Specification {
 
@@ -63,8 +64,10 @@ class SgeOpTest extends Specification {
 		def script = sge.scriptInstallMaster()
 
         then:
+        script .contains( "[ -d '${sge.spool}' ] || mkdir -p '${sge.spool}'")
+        script .contains( "chown -R ${sge.user}:wheel '${sge.spool}'" )
+        script .contains( './inst_sge -m -x -auto ./sge.conf' )
         script .contains( '/some/path/alpha/common/settings.sh' )
-        script .contains( '[ ! -d /hola ] && sudo mkdir -p /hola && sudo chown -R goofy:wheel /hola' )
 	}
 	
 	public void testScriptDownloadAndCompile() {
@@ -167,7 +170,9 @@ class SgeOpTest extends Specification {
 
         then:
 		script .contains( '/some/path/beta/common/settings.sh' )
-        script .contains( '[ ! -d /hola ] && sudo mkdir -p /hola && sudo chown -R goofy:wheel /hola' )
+        script .contains( "[ -d '${sge.spool}' ] || mkdir -p '${sge.spool}'" )
+        script .contains( "[ `stat -f -c %T '${sge.spool}'` != \"nfs\" ] && chown -R ${sge.user}:wheel '${sge.spool}'" )
+        script .contains( "./inst_sge -x -auto ${sge.path}/sge.conf" )
 	}
 
 
@@ -180,5 +185,14 @@ class SgeOpTest extends Specification {
         then:
 		script.contains("ssh-keygen -f ~/.ssh/id_rsa -N ''")
 		
-	} 
+	}
+
+    public void testUrls() {
+        when:
+        def op = new SgeOp()
+
+        then:
+        WebHelper.checkURLExists(op.binaryZipFile)
+        WebHelper.checkURLExists(op.sourcesTarball)
+    }
 }

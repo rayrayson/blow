@@ -170,7 +170,7 @@ class Build {
 					pathelement path: pathClasses
 				}
 
-				javac source: "1.5", target: "1.5", debug: "on"
+				javac source: "1.6", target: "1.6", debug: "on"
 			}
 			
 

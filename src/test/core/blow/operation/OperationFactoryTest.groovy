@@ -22,7 +22,6 @@ package blow.operation;
 
 import blow.DynLoader
 import blow.TestOperation
-import org.codehaus.groovy.util.HashCodeHelper
 import spock.lang.Shared
 import spock.lang.Specification
 
@@ -53,18 +52,20 @@ public class OperationFactoryTest extends Specification {
     def testOperationHashCode() {
 
         when:
-        def op = new TestOperation()
-        op.baseValue = 0
-        op.value1 = 1
-        op.value2 = "due"
+        def op1 = new TestOperation()
+        op1.baseValue = 0
+        op1.value1 = 1
+        op1.value2 = "due"
 
-        def hash = HashCodeHelper.initHash()
-        hash = HashCodeHelper.updateHash(hash,1)
-        hash = HashCodeHelper.updateHash(hash,"due")
-        hash = HashCodeHelper.updateHash(hash,0)
+        def op2 = new TestOperation()
+        op2.baseValue = 0
+        op2.value1 = 1
+        op2.value2 = "due"
+
+
 
         then:
-            hash == OperationHelper.opHashCode(op)
+            OperationHelper.opHashCode(op1) == OperationHelper.opHashCode(op2)
 
 
     }
