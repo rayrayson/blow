@@ -57,19 +57,19 @@ class EbsVolumeOp {
      * - ephemeral virtual device e.g. ephemeral0, ephemeral1, etc
      */
     @Conf
-    def String supply
+    String supply
 
     /**
      * The path used to mount the EBS volume
      */
     @Conf
-    def path
+    String path
 
     /**
      * Linux device name to be used to mount the volume
      */
     @Conf
-    def device
+    String device
 
     /**
      * Size of
@@ -82,6 +82,9 @@ class EbsVolumeOp {
 
     @Conf
     def boolean makeSnapshotOnTermination
+
+    @Conf
+    String fsType = "ext3"
 
 
     /**
@@ -104,9 +107,9 @@ class EbsVolumeOp {
     private int affectedNodes = 1
 
     /*
-    * Verify Ephemeral storage mapping
-    * Read more http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/InstanceStorage.html#StorageOnInstanceTypes
-    */
+     * Verify Ephemeral storage mapping
+     * Read more http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/InstanceStorage.html#StorageOnInstanceTypes
+     */
     transient private static final ephemeralAvailByType = [
             't1.micro': 0,
             'm1.small': 1,
@@ -176,6 +179,7 @@ class EbsVolumeOp {
             throw new BlowConfigException("Missing 'userName' property in configuration file")
         }
 
+        log.debug "Volume validate -- path: ${path}; device: $device; size: ${size?:'-'}; supply: ${supply?:'-'} "
     }
 
     /**
@@ -197,10 +201,16 @@ class EbsVolumeOp {
             throw new BlowConfigException("The specified device name has been already used")
         }
 
-        device = session.getNextDevice()
+        if( !device ) {
+            device = session.getNextDevice()
+        }
+
         if( !device ) {
             throw new BlowConfigException("Exausted device names. Please specify the device name explicitly in the cluster configuration")
         }
+
+        log.debug "Volume beforeCreate -- path: ${path}; device: $device; size: ${size?:'-'}; supply: ${supply?:'-'} "
+
 
         /*
          * Some sanity check on the specified 'volume-id' or 'snapshot-id'
@@ -215,7 +225,6 @@ class EbsVolumeOp {
         if( volumeId ) {
             checkVolume(volumeId)
             // TO DO checks that 'applyTo' refers to one and only one node
-
         }
 
         if( ephemeralId ) {
@@ -234,7 +243,7 @@ class EbsVolumeOp {
             }
 
             if( size ) {
-                log.warn "Property 'size' is ignored by ephemeral device"
+                log.warn "Property 'size' is ignored by ephemeral device ($size)"
             }
         }
 
@@ -310,6 +319,7 @@ class EbsVolumeOp {
         if( ephemeralId ) {
             opt.mapEphemeralDeviceToDeviceName(device, ephemeralId)
             message = "Mapping EBS '$ephemeralId' to path '$path' for '$applyTo'"
+            needFormatVolume = true  // <-- it turns out that some ephemeral volume for some instance types must be formatted
         }
         else if( snapshotId ) {
             opt.mapEBSSnapshotToDeviceName(device,snapshotId, size, deleteOnTermination)
@@ -361,23 +371,6 @@ class EbsVolumeOp {
     public void beforeClusterTerminate( OnBeforeClusterTerminationEvent event ) {
 
         log.debug("Volume path: ${path}; volume: ${volumeId}; snapshot: ${snapshotId}; device: ${device}; deleteOnTermination: ${deleteOnTermination}; makeSnapshot: ${makeSnapshotOnTermination} ")
-
-//        /*
-//         * ask for the user to confirm the volume deletion
-//         */
-//        if( deleteOnTermination && volumeId ) {
-//            def question = "The volume ${volumeId} is going be DELETED. Do you want to continue?"
-//            def answer = prompt(question,['y','n','c'])
-//            // abort all 'terminate' operation
-//            if( answer == 'c' ) {
-//                throw OperationAbortException("Cluster termination cancelled by user")
-//            }
-//
-//            // clear the volume delete flag
-//            if( answer == 'n' ) {
-//                deleteOnTermination = false
-//            }
-//        }
 
 
         /*
@@ -500,7 +493,7 @@ class EbsVolumeOp {
     protected void mountBlockStore() {
         assert applyTo
 
-        session.runScriptOnNodes( scriptVolumeMount(), applyTo, true )
+        session.runScriptOnNodes( scriptMountVolume(), applyTo, true )
 
     }
 
@@ -509,38 +502,67 @@ class EbsVolumeOp {
     /**
      * @return The BASH script to configure the NSF on the 'master' node
      */
-    protected String scriptVolumeMount( ) {
+    protected String scriptMountVolume( ) {
         assert userName
         assert path
         assert device
 
+        def final PRE='/dev/sd'
+        String altdev = (device ?.startsWith(PRE)) ? '/dev/xvd' + device.substring(PRE.length()) : device
+
         // the format fragment required for new volumes
-        String volumeFormatCommand = needFormatVolume ? "mkfs.ext3 ${device}" : "# --nofmt"
 
         """\
-        # format ebs volume device
-		${volumeFormatCommand}
+        set -e
+        if [ -e '${altdev}' ]; then
+          XDEV='${altdev}'
+        else
+          XDEV='${device}'
+        fi
 
-		#
-		# Check path
-		#
-		[ ! -e ${path} ] && mkdir -p ${path}
-		[ -f ${path} ] && echo "The path to be export must be a directory. Make sure the path is a NOT file: '${path}'" && exit 1
-		mount ${device} ${path}; sleep 1
+        if grep -qs "^\$XDEV" /proc/mounts; then
+          echo "Device \$XDEV already mounted -- create a link ${path}"
 
-		#
-		# Assign the mounted to the current user
-		#
-		chown -R ${userName}:wheel ${path}
-		"""
+          XPATH=`grep -P "^\$XDEV" /proc/mounts | cut -f 2 -d ' '`
+          if [ "\$XPATH" != "${path}" ]; then
+            mkdir -p `dirname ${path}`
+            cd `dirname ${path}`
+            ln -s \$XPATH `basename ${path}`
+            cd \$OLDPWD
+          fi
+
+          chown -R ${userName}:wheel \$XPATH
+
+        else
+          echo "Mounting device \$XDEV to path ${path}"
+
+          ${needFormatVolume ? "mkfs -t ${fsType} \$XDEV" : "# (nofmt)"}
+
+          [ ! -e ${path} ] && mkdir -p ${path}
+          mount -v -t ${fsType} \$XDEV ${path}; sleep 1
+
+          chown -R ${userName}:wheel ${path}
+        fi
+        """
         .stripIndent()
 
     }
 
-    @Deprecated
-    def boolean getIsEphemeral() {
-        ephemeralId != null
+    protected String scriptLinkEphemeral() {
+        """\
+        XPATH=`cat /etc/fstab | grep ${ephemeralId} | cut -f 2`
+        if [ "\$XPATH" != "${path}" ]; then
+          mkdir -p `dirname ${path}`
+          cd `dirname ${path}`
+          ln -s \$XPATH `basename ${path}`
+          cd \$OLDPWD
+        fi
+
+        chown -R ${userName}:wheel \$XPATH
+        """
+        .stripIndent()
     }
+
 
     static private void checkEphemeral( def ephemeralId, String type ) {
         assert ephemeralId != null
