@@ -35,6 +35,7 @@ class SgeOpTest extends Specification {
 		sge.qmasterPort = "1234"
 		sge.execdPort = "4321"
         sge.spool = "/var/sge/spool"
+        sge.user = 'illo'
 		def conf = sge.confTemplate()
 		
 
@@ -44,7 +45,7 @@ class SgeOpTest extends Specification {
 		conf.contains("SGE_QMASTER_PORT=\"1234\"")
 		conf.contains("SGE_EXECD_PORT=\"4321\"")
 		conf.contains("CELL_NAME=\"default\"")
-		conf.contains("ADMIN_USER=\"\"")
+		conf.contains("ADMIN_USER=\"illo\"")
 		conf.contains("QMASTER_SPOOL_DIR=\"/var/sge/spool/qmaster\"")
 		conf.contains("EXECD_SPOOL_DIR=\"/var/sge/spool\"")
         conf.contains("EXECD_SPOOL_DIR_LOCAL=\"/var/sge/spool/execd\"" )

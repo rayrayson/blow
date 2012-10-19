@@ -112,7 +112,6 @@ class SgeOp {
          * Make sure that the 'roles' defined matches the component 'topology'
          */
         assert config.instanceNumFor(config.masterRole) == 1, "The SGE op requires the '${config.masterRole}' role to declare exactly one node"
-        assert config.instanceNumFor(config.workersRole) >= 1, "The SGE op requires the '${config.workersRole}' role to declare at least one node"
 
     }
 
@@ -145,7 +144,7 @@ class SgeOp {
 		TraceHelper.debugTime("SGE copying conf file", { copySgeConfigFileToMaster() })
 		TraceHelper.debugTime("SGE installing '${master}' node", { installMasterNode() })
 		TraceHelper.debugTime("SGE installing '${worker}' nodes", { installWorkersNodes() } )
-		
+
 	} 
 	
 	
@@ -197,6 +196,11 @@ class SgeOp {
      *
      */
 	protected void installWorkersNodes() {
+
+        if( session.conf.instanceNumFor(session.conf.workersRole) < 1 ) {
+            log.debug "No SGE workers required -- skip configuration"
+            return
+        }
 
 		session.runScriptOnNodes(scriptInstallWorker(), worker, true)
 	}
