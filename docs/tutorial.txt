@@ -43,7 +43,7 @@ Create a file named ``blow.conf`` with the content shown below. Save it in the s
 where the ``blow.run`` was downloaded. ::
 
 
-  BlowSimpleCluster {
+  simplecluster {
       accessKey '<replace with your AWS access key>'
       secretKey '<replace with your AWS secret key>'
       regionId 'us-east-1'
@@ -97,13 +97,13 @@ When done you will get the *Blow* prompt as shown below::
    / _  / / _ \ |/|/ /
   /____/_/\___/__,__/  ver: 0.7
 
-  blow [BlowSimpleCluster] $
+  blow [simplecluster] $
 
 Before launching the cluster you may verify the configuration by entering the ``conf`` command on the *Blow* prompt.
 Something similar to example shown below will appear on your screen::
 
-    blow [BlowSimpleCluster] $ conf
-    cluster: BlowSimpleCluster {
+    blow [simplecluster] $ conf
+    cluster: simplecluster {
       accessKey    '...'
       createUser   true
       imageId      'ami-e565ba8c'
@@ -126,7 +126,7 @@ Something similar to example shown below will appear on your screen::
 When ready, launch the cluster by entering the command ``start``::
 
 
-  blow [BlowSimpleCluster] $ start
+  blow [simplecluster] $ start
   
 .. warning::
   Your Amazon AWS account will be charged correspondingly the number of instances launched, their configuration and how
@@ -136,9 +136,9 @@ When ready, launch the cluster by entering the command ``start``::
 It will take a few minutes to start the virtual machines, configure them and install the SGE daemons.
 When it is finished something similar to the following output will appear on your screen::
 
-    blow [BlowSimpleCluster] $ start
+    blow [simplecluster] $ start
     Please confirm that you want to start 5 node(s) cluster [y/n] y
-    Starting cluster: BlowSimpleCluster
+    Starting cluster: simplecluster
     Creating 1 node for role 'master'
     Creating 4 nodes for role 'worker'
     Configuring cluster hostname(s)
@@ -165,7 +165,7 @@ When it is finished something similar to the following output will appear on you
 Use the command ``listnodes`` on the *Blow* prompt to get the list of all running nodes in the cluster.
 A list similar to the one shown below will appear on your screen::
 
-    blow [BlowSimpleCluster] $ listnodes
+    blow [simplecluster] $ listnodes
     master  (i-8c07fcf6); 184.72.69.208 ; RUNNING
     worker1 (i-e404ff9e); 184.73.98.6   ; RUNNING
     worker2 (i-d804ffa2); 50.17.139.31  ; RUNNING

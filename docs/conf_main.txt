@@ -34,7 +34,7 @@ The easiest way to explain the syntax for the *Blow* configuration file is look 
   //
   // Comment: first cluster
   //
-  SimpleCluster {
+  simplecluster {
     instanceType 't1.micro'
     instanceNum 2
   }
@@ -42,7 +42,7 @@ The easiest way to explain the syntax for the *Blow* configuration file is look 
   /*
    * Comment: second cluster
    */
-  SecondCluster {
+  secondcluster {
     imageId 'ami-a66a42d'
     instanceType 'm1.xlarge'
     instanceNum 100
@@ -67,13 +67,16 @@ clusters definitions. They can be overridden by any cluster within the scope of 
 
 The configuration can contain zero, one or multiple cluster definition. Each cluster name must be unique.
 
+.. important::
+    The cluster name string can contain only lowercase characters.
+
 Comments are possible be preceding by the comment by a double slash character: ``//`` or by wrapping the comment
 by a ``/*`` and ``*/`` delimiters.
 
-In the above example are defined two clusters. The first is named ``SimpleCluster``, runs in the region ``us-east-1``
+In the above example are defined two clusters. The first is named ``simplecluster``, runs in the region ``us-east-1``
 and it is made-up of 2 instances of the AMI ``ami-e565ba8c`` of type ``t1.micro``.
 
-The second one, named ``SecondCluster``, runs in the same region, but it is composed by 100 instances of the AMI ``ami-a66a42d``
+The second one, named ``secondcluster``, runs in the same region, but it is composed by 100 instances of the AMI ``ami-a66a42d``
 of type ``m1.xlarge``. Moreover it applies two operations which install the S3cmd_ tool and configure
 an *EBS* volume.
 
@@ -164,7 +167,7 @@ Currently the following attributes can be defined in the ``blow.config`` file (t
         Indentifier Value
 
     Identifier:
-        [A-Za-z0-9]*
+        [a-z0-9]+
 
     Value:
         Bool | Number | SingleQuoteString | DoubleQuoteString

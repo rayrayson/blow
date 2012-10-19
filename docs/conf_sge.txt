@@ -20,7 +20,7 @@ Currently it is required to install the *SGE* binary files in a directory shared
 This directory has to be defined by the parameter ``path`` for the ``sge`` operation definition.
 For example::
 
-  MyCluster {
+  mycluster {
   
     imageId: 'ami-xxx'
     :
@@ -53,7 +53,7 @@ Using *Blow* the SGE spool directory can be specified by simply providing the ``
 definition. For example::
 
 
-  MyCluster {
+  mycluster {
 
     imageId: 'ami-xxx'
     :

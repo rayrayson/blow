@@ -20,7 +20,7 @@ the ``operations`` attribute in the cluster definition. It creates and starts a 
 in the configured cluster. It also starts the Gluster server and export the volume using the *path* specified with the ``path``
 attribute in the *operation* configuration. For example::
 
-  MyCluster {
+  mycluster {
     imageId: '..'
     :
     operations {
@@ -39,7 +39,7 @@ volumes are to be exported.
 
 For example:: 
 
-  MyCluster {
+  mycluster {
     imageId: '..'
     :
     operations {

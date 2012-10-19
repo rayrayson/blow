@@ -73,7 +73,7 @@ to the path where you downloaded Blow.
         secretKey 'xyz...'
         regionId 'us-east-1'
         zoneId 'us-east-1d'
-        imageId 'ami-e565ba8c'
+        imageId '﻿ami-6d555119'
         instanceNum 3
         instanceType 't1.micro'
 

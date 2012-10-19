@@ -17,7 +17,7 @@ The NFS setup is carried out by the Blow *operation* named ``nfs``. This operati
 the ``operations`` attribute in the cluster definition. The path to share needs to be specified as a
 parameter of the ``nfs`` operation. For example::
 
-  MyCluster {
+  mycluster {
     imageId '..'
     :
     operations {
@@ -35,7 +35,7 @@ are to be exported.
 
 For example:: 
 
-  MyCluster {
+  mycluster {
     imageId: ..
     :
     operations {
@@ -64,7 +64,7 @@ Amazon EC2 instance and exposed as a Linux device within the instance.
 Once you have created an EBS volume, to get it configured in your cluster all you need to do is to specify its
 identifier in the ``supply`` parameter for the ``nfs`` operation. For example::
 
-  MyCluster {
+  mycluster {
     imageId: '..'
     :
     operations {
@@ -81,7 +81,7 @@ To create a new empty volume, just provide the value ``new`` for the parameter `
 To specify the size of the new volume, just provide the parameter ``size`` with the number
 of GB required. For example::
 
-  MyCluster {
+  mycluster {
     imageId: ..
     :
     operations {
@@ -104,7 +104,7 @@ next restart.
 It this is not required, you can delete it on the cluster termination,
 adding the parameter ``deleteOnTermination`` as shown below::
 
-  MyCluster {
+  mycluster {
     imageId: '..'
     :
     operations {
