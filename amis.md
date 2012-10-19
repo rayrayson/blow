@@ -37,7 +37,7 @@ Fedora 16
 
 eu-west-1
 ----------
-EBS: ami-9980baed
+EBS: ami-2df4c959
 
 us-east-1
 ---------
