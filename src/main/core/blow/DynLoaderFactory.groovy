@@ -20,6 +20,7 @@
 package blow
 
 import groovy.util.logging.Slf4j
+import blow.shell.BlowShell
 
 /**
  * The default strategy to load external script and dependencies
@@ -90,7 +91,7 @@ class DynLoaderFactory {
 		}
 
 		// add the below path in the user $HOME if exist
-		File userHomeScripts = new File( System.getProperty("user.home"), ".blow/plugins" )
+		File userHomeScripts = new File( BlowShell.homePathBlow, "plugins" )
 		if( userHomeScripts.exists() && userHomeScripts.isDirectory() ) {
 			defaultPaths.add(userHomeScripts);
 		}

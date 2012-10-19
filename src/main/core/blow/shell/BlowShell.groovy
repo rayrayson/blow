@@ -50,9 +50,11 @@ class BlowShell {
 
 	private DynLoader loader;
 
-    static final homePathConfigFile = new File( System.getProperty("user.home"), ".blow/blow.conf" )
+    static final homePathBlow = new File(System.getProperty("user.home"), ".blow")
 
-    static final homePathHistoryFile = new File( System.getProperty("user.home"), ".blow/history" )
+    static final homePathConfigFile = new File( homePathBlow, "blow.conf" )
+
+    static final homePathHistoryFile = new File( homePathBlow, "history" )
 
     private File userConfigFile = new File("./blow.conf")
 
@@ -131,7 +133,7 @@ class BlowShell {
 			def p = buffer.indexOf(' ')
 			if( p >= 0 ) {
                 /*
-                 * Aplit it again, the first part is interpred as the command entered by the user
+                 * Aplit it again, the first part is interpreted as the command entered by the user
                  * the second part is/are the option(s) for this command
                  *
                  * So here it will delegate the command itself to propose some options to display
@@ -193,7 +195,13 @@ class BlowShell {
 		console = new ConsoleReader()
 		console.setBellEnabled(false)
         console.useHistory=false
-        console.history.setHistoryFile(homePathHistoryFile)
+
+        def home = homePathHistoryFile .parentFile
+        if( home.exists() || home.mkdirs() ) {
+            console.history.setHistoryFile(homePathHistoryFile)
+        } else {
+            log.warn "Cannot create Blow home path: $home -- shell history feature will not work"
+        }
 		console.addCompletor( new ShellCompletor() )
 		
 	}
@@ -365,6 +373,7 @@ class BlowShell {
 
         if( serialized ) {
             def newConfig = getConfigBuilder().buildConfig( clusterName )
+            log.debug "HashCode check -- saved: ${serialized.confHashCode} - ${serialized.conf.hashCode()}; new: ${newConfig.hashCode()}  "
             if( serialized.confHashCode != newConfig.hashCode() ) {
                 def answer = prompt("The configuration has changed. Do you want to C)ontinue previous session, load the N)ew configuration file or E)exit?", ['c','n','e'])
                 if( 'e' == answer ) {
@@ -659,7 +668,7 @@ class BlowShell {
         def value
         while( true ) {
             print "Enter the AWS Access key${strAccessKey}: "
-            value = console.readLine() ?: defAccessKey
+            value = (console.readLine() ?: defAccessKey) ?.trim()
             if ( value ) break
         }
         defAccessKey = value
@@ -667,21 +676,31 @@ class BlowShell {
 
         while( true ) {
             print "Enter the AWS Secret key${strSecretKey}: "
-            value = console.readLine() ?: defSecretKey
+            value = (console.readLine() ?: defSecretKey) ?.trim()
             if (value) break
         }
         defSecretKey = value
 
 
         print "Enter the AWS Account id${strAccountId}: "
-        defAccountId = console.readLine() ?: defAccountId
+        defAccountId = (console.readLine() ?: defAccountId) ?.trim()
 
 
-        def text = homePathConfigFile.getText()
-        text = addOrReplaceAccessProperties(text, defAccessKey,defSecretKey,defAccountId)
-        homePathConfigFile.setText(text)
+        try {
+            if( !homePathConfigFile.exists() && !homePathConfigFile.createNewFile() ) {
+                throw new BlowException("Unable to create Blow config file: ${homePathConfigFile}")
+            }
 
-        log.info "Note: credential store in the following file: ${homePathConfigFile}"
+            def text = homePathConfigFile.getText()
+            text = addOrReplaceAccessProperties(text, defAccessKey,defSecretKey,defAccountId)
+            homePathConfigFile.setText(text)
+
+            log.info "Note: credential stored in the following file: ${homePathConfigFile}"
+        }
+        catch ( IOException e ) {
+            log.warn("Unable to save credentials -- see log file for more details", e)
+        }
+
     }
 
     static String addOrReplaceAccessProperties(String text, String accessKey, String secretKey, String accountId) {
@@ -800,7 +819,7 @@ class BlowShell {
         Guice.createInjector();
 		BlowShell shell = new BlowShell();
         // trace the command line
-        log.debug ">>>>> Launching ${Project.name} - ver ${Project.version} <<<<<"
+        log.debug "++++ Launching ${Project.name} - ver ${Project.version} ++++"
         log.debug "cmdline: \"${args?.join(' ') ?: ''}\""
 
         /*

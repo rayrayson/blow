@@ -42,8 +42,8 @@ class AwsCredentialsOp extends GenericScriptOp {
 
         """\
         cat >> ~/.bash_profile << 'EOF'
-        export AWS_ACCESS_KEY_ID=${session.conf.accessKey}
-        export AWS_SECRET_ACCESS_KEY=${session.conf.secretKey}
+        export AWS_ACCESS_KEY=${session.conf.accessKey}
+        export AWS_SECRET_KEY=${session.conf.secretKey}
         export AWS_CREDENTIALS_FILE=\$HOME/.aws-credentials
         EOF
 

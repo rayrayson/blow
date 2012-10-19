@@ -63,12 +63,13 @@ class BlowConfig  {
 
     def Boolean createUser
     def securityId
+    def placementGroup
 
     /** Port used by Fast Data Transport (FDT) protocol */
     def int fdtPort = 9000
 
     /** Which port to open using the syntax: n,m,from-to */
-    def List<Integer> inboundPorts
+    def List<Integer> inboundPorts = []
 
     def List<Integer> roles = ['master','worker']
 
@@ -94,7 +95,6 @@ class BlowConfig  {
 
     /** Protected constructor used only for testing purpose */
     protected BlowConfig () {
-
 
 	}
 
@@ -507,12 +507,13 @@ class BlowConfig  {
         def hash = HashCodeHelper.initHash()
 
         def excludes = ['class','metaClass', 'operations', 'defaultKeyFile']
-        metaPropertyValues.each { PropertyValue prop ->
+        def list = metaPropertyValues .sort(false, {PropertyValue prop -> prop.getName()})
+        list.each { PropertyValue prop ->
             if( prop.name in excludes ) return
             hash = HashCodeHelper.updateHash(hash,prop.value)
         }
 
-        operations?.each { Object op ->
+        operations .each { Object op ->
             def opHash = OperationHelper.opHashCode( op )
             hash = HashCodeHelper.updateHash(hash,opHash)
         }

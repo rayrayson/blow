@@ -20,6 +20,12 @@
 package blow
 
 import blow.eventbus.OrderedEventBus
+import blow.events.OnAfterClusterStartedEvent
+import blow.events.OnAfterClusterTerminationEvent
+import blow.events.OnAfterNodeLaunchEvent
+import blow.events.OnBeforeClusterStartEvent
+import blow.events.OnBeforeClusterTerminationEvent
+import blow.events.OnBeforeNodeLaunchEvent
 import blow.exception.BlowConfigException
 import blow.exception.BlowException
 import blow.exception.DirtySessionException
@@ -33,16 +39,29 @@ import blow.util.InjectorHelper
 import blow.util.PromptHelper
 import com.google.common.base.Predicate
 import com.google.common.base.Predicates
+import com.google.common.collect.ArrayListMultimap
+import com.google.common.collect.BiMap
+import com.google.common.collect.HashBiMap
+import com.google.common.collect.ImmutableSet
+import com.google.common.collect.Multimap
 import com.google.inject.Module
 import com.thoughtworks.xstream.XStream
 import com.thoughtworks.xstream.io.xml.PrettyPrintWriter
 import com.thoughtworks.xstream.io.xml.StaxDriver
 import groovy.util.logging.Slf4j
 import org.jclouds.Constants
+import org.jclouds.ContextBuilder
+import org.jclouds.aws.ec2.AWSEC2Client
 import org.jclouds.aws.ec2.compute.AWSEC2TemplateOptions
+import org.jclouds.aws.ec2.services.PlacementGroupClient
 import org.jclouds.compute.ComputeService
 import org.jclouds.compute.ComputeServiceContext
-import org.jclouds.compute.ComputeServiceContextFactory
+import org.jclouds.compute.domain.ComputeType
+import org.jclouds.compute.domain.ExecResponse
+import org.jclouds.compute.domain.NodeMetadata
+import org.jclouds.compute.domain.NodeState
+import org.jclouds.compute.domain.Template
+import org.jclouds.compute.domain.TemplateBuilder
 import org.jclouds.compute.options.TemplateOptions
 import org.jclouds.compute.reference.ComputeServiceConstants
 import org.jclouds.ec2.EC2Client
@@ -56,12 +75,11 @@ import org.jclouds.scriptbuilder.statements.login.AdminAccess
 import org.jclouds.sshj.config.SshjSshClientModule
 
 import java.lang.reflect.InvocationTargetException
-
-import blow.events.*
-import com.google.common.collect.*
-import org.jclouds.compute.domain.*
-
-import java.util.concurrent.*
+import java.util.concurrent.Callable
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 
 import static com.google.common.base.Predicates.not
 import static org.jclouds.compute.predicates.NodePredicates.TERMINATED
@@ -108,6 +126,11 @@ class BlowSession {
     @Lazy
     transient private KeyPairClient keyPairClient = {
         (context.getProviderSpecificContext().getApi() as EC2Client) .getKeyPairServices()
+    } ()
+
+    @Lazy
+    transient private PlacementGroupClient placementGroupClient = {
+        (context.getProviderSpecificContext().getApi() as AWSEC2Client) .getPlacementGroupServices()
     } ()
 
 
@@ -216,6 +239,7 @@ class BlowSession {
 
         // store the config object
         this.confHashCode = conf.hashCode()
+        log.debug "NewSession ConfHashCode: ${confHashCode}"
 	}
 
     /**
@@ -249,7 +273,8 @@ class BlowSession {
 	   def props = new Properties();
 	   props.setProperty("jclouds.ec2.ami-query", "")
 	   props.setProperty("jclouds.ec2.cc-ami-query", "")
-	   props.setProperty("jclouds.regions", conf.regionId)
+       // Removed since it will raise a bug. See http://code.google.com/p/jclouds/issues/detail?id=1105
+	   // props.setProperty("jclouds.regions", conf.regionId)
 	   
 	   //props.setProperty( Constants.PROPERTY_USER_THREADS, "25" )
 	   //props.setProperty( Constants.PROPERTY_RETRY_DELAY_START, "500" );
@@ -257,15 +282,15 @@ class BlowSession {
 	   props.setProperty( ComputeServiceConstants.PROPERTY_TIMEOUT_NODE_RUNNING, 5 * 60 * 1000 + "" )
 	   props.setProperty( ComputeServiceConstants.PROPERTY_TIMEOUT_PORT_OPEN, 5 * 60 * 1000 + ""  )
 	   props.setProperty( ComputeServiceConstants.PROPERTY_TIMEOUT_SCRIPT_COMPLETE, 5 * 60 * 1000 + ""  )
-	   
 
-	   ComputeServiceContext result = new ComputeServiceContextFactory()
-				  .createContext("aws-ec2",
-								  conf.accessKey,
-								  conf.secretKey,
-								  ImmutableSet.<Module> of(new SLF4JLoggingModule(), new SshjSshClientModule(), new EnterpriseConfigurationModule()),
-								  props
-								  );
+       def modules = ImmutableSet.<Module>of(new SLF4JLoggingModule(), new SshjSshClientModule(), new EnterpriseConfigurationModule())
+
+       ComputeServiceContext result = ContextBuilder.newBuilder("aws-ec2")
+                .credentials(conf.accessKey, conf.secretKey)
+                .modules(modules)
+                .overrides(props)
+                .build(ComputeServiceContext.class);
+
 							  
 		return result;
 	} 
@@ -314,6 +339,10 @@ class BlowSession {
         dirty = true
 
         /*
+         * Check that cc1.4xlarge can run only in region 'us-east-1'
+         */
+
+        /*
          * Verify the specified key-pair exists (if any)
          */
         if( conf.keyPair ) {
@@ -322,6 +351,21 @@ class BlowSession {
             if( !result ) {
                 throw new BlowConfigException("The specified key-pair '${conf.keyPair}' does not exist in region '${conf.regionId}'")
             }
+        }
+
+        if( !conf.placementGroup ) {
+            def defPlacementGroup = "jclouds#${clusterName}#${conf.regionId}"
+            // make sure to delete the default placementGroup is exist
+            log.debug "Check placement-group '${defPlacementGroup}' existance"
+            def groups = placementGroupClient.describePlacementGroupsInRegion(conf.regionId, defPlacementGroup)
+            if( groups && groups.size() == 1 ) {
+                try {
+                    placementGroupClient.deletePlacementGroupInRegion(conf.regionId, defPlacementGroup)
+                } catch( Exception e ) {
+                    throw new BlowConfigException("Unable to delete the placement-group '${conf.keyPair}' -- make sure to delete it before continue", e)
+                }
+            }
+
         }
 
         /*
@@ -434,6 +478,11 @@ class BlowSession {
         else {
             int[] ports = conf.inboundPorts.flatten() as int[]
             template.getOptions().inboundPorts(ports)
+        }
+
+        // set the placement group
+        if ( conf.placementGroup ) {
+            template.getOptions().as(AWSEC2TemplateOptions).placementGroup(conf.placementGroup)
         }
 
 		/*
@@ -1300,7 +1349,7 @@ class BlowSession {
     protected boolean markDevice( String device ) {
 
         synchronized (devicesMap) {
-            // normalize to the device '/dev/xvd?' to '/dev/sd?'
+            //normalize to the device '/dev/xvd?' to '/dev/sd?'
             if( device =~ /\/dev\/xvd([f-p])/) {
                 device = '/dev/sd' + device[-1]
             }
@@ -1397,8 +1446,7 @@ class BlowSession {
      * Define the file where read/store the session object
      */
     def private static File sessionFile( String clusterName ) {
-        def home = new File(System.properties['user.home'], '.blow')
-        new File( home, "blow_session.${clusterName}")
+        new File(".blow_session.${clusterName}")
     }
 
     @Lazy
@@ -1437,6 +1485,7 @@ class BlowSession {
             throw new BlowException("Invalid save session target class: ${target.getClass()}")
         }
 
+        log.debug "Session confHashCode: ${this.confHashCode}"
 
         /*
          * serialize and save the session
@@ -1528,14 +1577,14 @@ class BlowSession {
         }
 
         @Override
-        public ComputeType getType() {
-            node.getType()
-        }
+        public ComputeType getType() { node.getType() }
 
         @Override
-        String getAdminPassword() {
-            node.getAdminPassword()
-        }
+        String getAdminPassword() { node.getAdminPassword() }
+
+        @Deprecated
+        @Override
+        NodeState getState() { node.getState() }
     }
 }
 

@@ -35,7 +35,7 @@ class WebHelper {
      */
     static boolean checkURLExists( String sUrl ) {
         try {
-            HttpURLConnection.setFollowRedirects(false);
+            //HttpURLConnection.setFollowRedirects(false);
             // note : you may also need
             //        HttpURLConnection.setInstanceFollowRedirects(false)
             def con = new URL(sUrl).openConnection() as HttpURLConnection;
@@ -43,7 +43,7 @@ class WebHelper {
             return con.getResponseCode() == HttpURLConnection.HTTP_OK;
         }
         catch (Exception e) {
-            blow.util.WebHelper.log.warn "Cannot verify URL: '${sUrl}' -- ${e.getMessage()}"
+            log.warn "Cannot verify URL: '${sUrl}' -- ${e.getMessage()}"
             return false
         }
     }

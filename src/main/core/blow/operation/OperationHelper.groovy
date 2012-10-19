@@ -55,10 +55,10 @@ class OperationHelper {
      */
     def static int opHashCode( def op ) {
         Class clazz = op.getClass();
-        List<Field> fields = getConfFields(clazz)
+        List<Field> fields = getConfFields(clazz) ?.sort { Field field -> field.name }
 
         def hash = HashCodeHelper.initHash()
-        fields.each { Field field ->
+        fields .each { Field field ->
             field.setAccessible(true)
             hash = HashCodeHelper.updateHash(hash, field.get(op) )
         }
