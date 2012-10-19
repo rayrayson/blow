@@ -25,6 +25,7 @@ import blow.events.OnAfterClusterStartedEvent
 import blow.util.TraceHelper
 import com.google.common.eventbus.Subscribe
 import groovy.util.logging.Slf4j
+import blow.util.WebHelper
 
 /**
  * Handles Sun Grid Engine deployment and configuration 
@@ -112,6 +113,19 @@ class SgeOp {
          * Make sure that the 'roles' defined matches the component 'topology'
          */
         assert config.instanceNumFor(config.masterRole) == 1, "The SGE op requires the '${config.masterRole}' role to declare exactly one node"
+
+
+        /*
+         * Check availability of downloadable stuff
+         */
+        if( installationMode == "compile" ) {
+            def message="Cannot access SGE sources distribution at URL: ${sourcesTarball} -- please provide a valid web location by providing the attribute 'sourcesTarball' in the Hadoop operation"
+            assert WebHelper.checkURLExists(sourcesTarball), message
+        }
+        else if( installationMode == "deploy" ) {
+            def message="Cannot access SGE binaries distribution at URL: ${binaryZipFile} -- please provide a valid web location by providing the attribute 'binaryZipFile' in the Hadoop operation"
+            assert WebHelper.checkURLExists(binaryZipFile), message
+        }
 
     }
 
