@@ -28,6 +28,8 @@ import groovy.util.logging.Slf4j
 import org.jclouds.scriptbuilder.domain.Statement
 import org.jclouds.scriptbuilder.domain.Statements
 import blow.events.OnBeforeClusterTerminationEvent
+import blow.util.WebHelper
+import blow.exception.BlowConfigException
 
 /**
  * Install an Hadoop cluster
@@ -59,11 +61,15 @@ import blow.events.OnBeforeClusterTerminationEvent
 @Operation('hadoop')
 class HadoopOp {
 
-    @Conf
-    def version = 'hadoop-1.0.3'
+    static final defVersion = "hadoop-1.0.4"
+
+    static final defTarball = "http://archive.apache.org/dist/hadoop/core/${defVersion}/${defVersion}.tar.gz"
 
     @Conf
-    def tarball = "http://apache.rediris.es/hadoop/common/${version}/${version}.tar.gz"
+    def version = defVersion
+
+    @Conf
+    def tarball = defTarball
 
     /**
      * Installation path
@@ -99,11 +105,8 @@ class HadoopOp {
     @Conf
     primaryNodePort = 54310
 
-
     @Conf
     jobTrackerNodePort = 54311
-
-
 
 
 
@@ -157,6 +160,23 @@ class HadoopOp {
         assert config.instanceNumFor(config.masterRole) >0, "The Hadoop op requires ar least one node for the '${config.masterRole}' role"
         assert config.instanceNumFor(config.workersRole) >0, "The Hadoop op requires ar least one node for the '${config.masterRole}' role"
         assert javaHome, 'The Hadoop op requires to specifify the Java installation path (JAVA_HOME) property'
+
+
+        /*
+         * Verify the Hadoop distribution
+         *
+         * IF the user specify an updated version, make sure to use the correspondant link
+         * IF the user has specified a custom link as well do NOTHING
+         */
+        if( version != defVersion && tarball==defTarball ) {
+            tarball =  "http://archive.apache.org/dist/hadoop/core/${version}/${version}.tar.gz"
+        }
+
+
+        if( !WebHelper.checkURLExists(tarball) ) {
+            def message = "Unable to verify the Hadoop tarball: ${tarball}\n-- provide a web location from where Blow can download Hadoop using the 'tarball' attribute"
+            throw new BlowConfigException(message)
+        }
 
         /*
          * Opens the Web console ports used by Hadoop
@@ -434,6 +454,10 @@ class HadoopOp {
 
     /**
      * Download the Hadoop tarball and unpack it
+     * <p>
+     * It assumes the tarball is 'tar.gz' compressed and all files
+     * are under a folder 'hadoop-xxx'
+     *
      * @return
      */
     private String download() {
@@ -441,10 +465,9 @@ class HadoopOp {
         assert version
 
         """\
-        wget -q ${tarball}
-        tar xvf ${version}.tar.gz
-        mv ${version} ${path}
-
+        wget -q ${tarball} -O hadoop.tar.gz
+        tar xzf hadoop.tar.gz
+        mv hadoop-* ${path}
         """
         .stripIndent()
     }
@@ -572,5 +595,6 @@ class HadoopOp {
 		'''
                 .stripIndent()
     }
+
 
 }
