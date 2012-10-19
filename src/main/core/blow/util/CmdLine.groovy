@@ -55,8 +55,7 @@ class CmdLine {
     def List<String> args
 
     public CmdLine( String cmdLineToBeParsed ) {
-        assert cmdLineToBeParsed
-        args = splitter(cmdLineToBeParsed)
+        args = splitter(cmdLineToBeParsed ?: '')
     }
 
     def boolean contains(String argument) {
