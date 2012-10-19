@@ -25,11 +25,11 @@ import blow.events.OnAfterClusterStartedEvent
 import blow.events.OnAfterClusterTerminationEvent
 import blow.events.OnBeforeClusterStartEvent
 import blow.events.OnBeforeClusterTerminationEvent
+import blow.events.OnBeforeNodeLaunchEvent
 import blow.util.PromptHelper
 import blow.util.TraceHelper
 import com.google.common.eventbus.Subscribe
 import groovy.util.logging.Slf4j
-import blow.events.OnBeforeNodeLaunchEvent
 
 /**
  * Manage NFS configuration 
@@ -42,10 +42,12 @@ import blow.events.OnBeforeNodeLaunchEvent
 @Operation("nfs")
 class NfsOp  {
 
-	/**
-	 * The NFS path to be used to export the mounted volume	
-	 */
-	@Conf def path
+    /**
+     * The NFS path to be used to export the mounted volume
+     */
+    @Conf def path
+
+    @Conf def export
 
     /**
      *  Defines the storage property for the attached volume
@@ -53,17 +55,17 @@ class NfsOp  {
     @Conf def supply
 
     /**
-	 * Linux device name to be used to mount the volume
-	 */
-	@Conf def device
+     * Linux device name to be used to mount the volume
+     */
+    @Conf def device
 
-	/**
-	 * Size of 
-	 */
-	@Conf Integer size = 10
-	
-	@Conf
-	def boolean deleteOnTermination
+    /**
+     * Size of
+     */
+    @Conf Integer size = 10
+
+    @Conf
+    def boolean deleteOnTermination
 
     @Conf
     def boolean makeSnapshotOnTermination
@@ -168,9 +170,9 @@ class NfsOp  {
      *
      * @param event The {@link OnAfterClusterStartedEvent} notified when the cluster has started
      */
-	@Subscribe
-	public void afterClusterStarted( OnAfterClusterStartedEvent event ) {
-		log.info "Configuring NFS file system for shared path '${path}'"
+    @Subscribe
+    public void afterClusterStarted( OnAfterClusterStartedEvent event ) {
+        log.info "Configuring NFS file system for shared path '${path}'"
 
         /* mount the volume if required */
         if( volume ) {
@@ -204,9 +206,8 @@ class NfsOp  {
     /**
      * Apply the 'master' configuration script
      */
-	protected void configureMaster() {
+    protected void configureMaster() {
 
-		def runAsRoot = true
         def script = scriptMaster()
 
         // prepend the script fragment for path creation
@@ -214,19 +215,18 @@ class NfsOp  {
             script = makePath() + script
         }
 
-		session.runScriptOnNodes( script, master, runAsRoot )
+        session.runScriptOnNodes( script, master, true )
 
-	}
+    }
 
     /**
      * Apply the client configuration script to each 'worker'
      */
-	protected void configureWorkers() {
+    protected void configureWorkers() {
 
-		if( session.conf.size < 2 ) { /* nothing to do */ return }
-		
-		session.runScriptOnNodes(scriptWorker(), worker, true)
-	}
+        if( session.conf.size < 2 ) { /* nothing to do */ return }
+        session.runScriptOnNodes(scriptWorker(), worker, true)
+    }
 
 
     protected String makePath () {
@@ -234,17 +234,18 @@ class NfsOp  {
         assert userName
 
         """\
-		#
-		# Check the path
-		#
-		[ ! -e ${path} ] && mkdir -p ${path}
-		[ -f ${path} ] && echo "The path to be export must be a directory. Make sure the path is a NOT file: '${path}'" && exit 1
+        #
+        # Check the path
+        #
+        [ ! -e ${path} ] && mkdir -p ${path}
+        [ -f ${path} ] && echo "The path to be export must be a directory. Make sure the path is a NOT file: '${path}'" && exit 1
 
-		#
-		# Assign the mounted to the current user
-		#
-		chown -R ${userName}:wheel ${path}
+        #
+        # Assign the mounted to the current user
+        #
+        chown -R ${userName}:wheel ${path}
         """
+        .stripIndent()
     }
 
     /**
@@ -254,83 +255,74 @@ class NfsOp  {
      *
      * @return The BASH script to configure the NSF on the 'master' node
      */
-	protected String scriptMaster( ) {
+    protected String scriptMaster( ) {
         assert path
 
-		"""\
-		# Installing nfs components 
-		blowpkg install -y nfs-utils rpcbind
-		
-		# disable selinux 
-		setenforce 0
+        """\
+        # Installing nfs components
+        blowpkg install -y nfs-utils rpcbind
 
-		#
-		# Exporting the shared FS
-		#
-		echo "${path}	*(rw,async,no_root_squash,no_subtree_check)" >> /etc/exports
-		exportfs -ra 
-		
-		#
-		# Configuring services
-		#
-		if command -v systemctl &>/dev/null; then
-		  systemctl stop iptables.service
-          systemctl stop ip6tables.service
-          systemctl disable iptables.service
-          systemctl disable ip6tables.service
-		  systemctl start rpcbind.service
-		  systemctl start nfs-server.service
-		  systemctl start nfs-lock.service
-		else
-		  service rpcbind start
-		  service nfs start
-		  service nfslock start
-		  chkconfig --level 2345 rpcbind on
-		  chkconfig --level 2345 nfs on
-		  chkconfig --level 2345 nfslock on
-		fi
-		""" 
-		.stripIndent()
-		
-	}
+        #
+        # Exporting the shared FS
+        #
+        echo "${path}	*(rw,async,no_root_squash,no_subtree_check)" >> /etc/exports
+        echo "rpcbind : ALL : allow" >> /etc/hosts.allow
+        echo "portmap : AL: : allow" >> /etc/hosts.allow
+
+        #
+        # Configuring services
+        #
+        if command -v systemctl &>/dev/null; then
+          systemctl start rpcbind.service
+          systemctl start nfs-server.service
+          systemctl start nfs-lock.service
+        else
+          service rpcbind start
+          service nfslock start
+          service nfs start
+          service nfs restart
+          chkconfig --level 2345 rpcbind on
+          chkconfig --level 2345 nfslock on
+          chkconfig --level 2345 nfs on
+        fi
+
+        """
+        .stripIndent()
+    }
 
     /**
      * @return The NFS configuration script to be executed on the 'worker' nodes
      */
-	protected String scriptWorker() {
+    protected String scriptWorker() {
         assert path
         assert master
 
-	
-		"""\
-		# Installing nfs components 
-		blowpkg install -y nfs-utils rpcbind
-		
-		# disable selinux 
-		setenforce 0
-		
-		
-		#
-		# Configuring services
-		#
-		if command -v systemctl &>/dev/null; then
-		  systemctl start rpcbind.service
-		  systemctl start nfs-lock.service
-		else
-		  service rpcbind start
-		  service nfslock start
-		  chkconfig --level 2345 rpcbind on
-		  chkconfig --level 2345 nfslock on
-		fi
 
-		#
-		# Create mount point and mount it 
-		# 
-		mkdir -p ${path}
-		echo "${master}:${path}      ${path}      nfs     rw,hard,intr    0 0" >> /etc/fstab
-		mount -a
-		"""	
-		.stripIndent()
-		
-	} 
+        """\
+        # Installing nfs components
+        blowpkg install -y nfs-utils rpcbind
+
+        #
+        # Configuring services
+        #
+        if command -v systemctl &>/dev/null; then
+          systemctl start rpcbind.service
+          systemctl start nfs-lock.service
+        else
+          service rpcbind start
+          service nfslock start
+          chkconfig --level 2345 rpcbind on
+          chkconfig --level 2345 nfslock on
+        fi
+
+        #
+        # Create mount point and mount it
+        #
+        mkdir -p ${path}
+        echo "${master}:${path}      ${path}      nfs     rw,hard,intr    0 0" >> /etc/fstab
+        mount -av
+        """
+        .stripIndent()
+
+    }
 }
