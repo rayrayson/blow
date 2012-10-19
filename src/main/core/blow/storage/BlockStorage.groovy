@@ -111,14 +111,14 @@ class BlockStorage {
 	   * create a volume from the specified 'snapshot' and the specified 'size' 
 	   */
 	  if( snapshotId && size ) {
-          log.debug "Creating volume from snapshot ${snapshotId} with size $size GB"
+          log.debug "Creating volume from snapshot: '${snapshotId}' with size: '$size GB' in zone: '${conf.zoneId}'"
 		  vol = ebs.createVolumeFromSnapshotInAvailabilityZone( conf.zoneId, size, snapshotId )
 	  }
 	  /*
 	   * create a volume from the specified 
 	   */
 	  else if( snapshotId ) {
-          log.debug "Creating volume from snapshot ${snapshotId} with default size"
+          log.debug "Creating volume from snapshot: '${snapshotId}; with default size in zone: '${conf.zoneId}'"
 		  vol = ebs.createVolumeFromSnapshotInAvailabilityZone( conf.zoneId, snapshotId )
 	  }
 	  
@@ -129,7 +129,7 @@ class BlockStorage {
 		  	  size = 10
 		  }
 
-          log.debug "Creating new volume with size $size GB"
+          log.debug "Creating new volume with size: '$size GB' in zone: '${conf.zoneId}'"
 		  vol = ebs.createVolumeInAvailabilityZone( conf.zoneId, size )
 	  }
 
