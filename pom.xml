@@ -2,47 +2,47 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>blow</groupId>
   <artifactId>blow</artifactId>
-  <version>0.7.2</version>
+  <version>0.7.3</version>
 
   <dependencies>
 
   	<dependency>
   		<groupId>org.jclouds.provider</groupId>
   		<artifactId>aws-s3</artifactId>
-  		<version>1.4.2</version>
+  		<version>1.5.2</version>
   	</dependency>
   	<dependency>
   		<groupId>org.jclouds.provider</groupId>
   		<artifactId>aws-ec2</artifactId>
-  		<version>1.4.2</version>
+  		<version>1.5.2</version>
   	</dependency>
 
   	<dependency>
   		<groupId>org.jclouds.driver</groupId>
   		<artifactId>jclouds-slf4j</artifactId>
-  		<version>1.4.2</version>
+  		<version>1.5.2</version>
   	</dependency>
   	<dependency>
   		<groupId>org.jclouds.driver</groupId>
   		<artifactId>jclouds-sshj</artifactId>
-  		<version>1.4.2</version>
+  		<version>1.5.2</version>
   	</dependency>
   	<dependency>
   		<groupId>org.jclouds.driver</groupId>
   		<artifactId>jclouds-enterprise</artifactId>
-       <version>1.4.2</version>
+       <version>1.5.2</version>
   	</dependency>
 
     <!-- s3 support -->
     <dependency>
         <groupId>org.jclouds.driver</groupId>
         <artifactId>jclouds-netty</artifactId>
-        <version>1.4.2</version>
+        <version>1.5.2</version>
     </dependency>
     <dependency>
         <groupId>org.jclouds.driver</groupId>
         <artifactId>jclouds-apachehc</artifactId>
-        <version>1.4.2</version>
+        <version>1.5.2</version>
     </dependency>
     <!-- required by JClouds as discussed here https://groups.google.com/d/topic/jclouds/isDdPi_KqF0/discussion -->
     <dependency>
