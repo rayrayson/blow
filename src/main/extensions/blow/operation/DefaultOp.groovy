@@ -74,21 +74,21 @@ class DefaultOp {
         String createPackageManagerAlias = '''\
         
         if command -v zypper &>/dev/null; then
-          FILENAME=`which zypper`
+            FILENAME=`which zypper`
         elif command -v yum &>/dev/null; then
-          FILENAME=`which yum`
+            FILENAME=`which yum`
         elif command -v apt-get &>/dev/null; then
-          FILENAME=`which apt-get`
+            FILENAME=`which apt-get`
         else
-          FILENAME=''
+            FILENAME=''
         fi
 
         if [ -z $FILENAME ]; then
-          echo 'Cannot find any package manager'
+            echo 'Cannot find any package manager'
         else
-          FOLDER=`dirname $FILENAME`; cd $FOLDER
-          ln -s "$FILENAME" blowpkg
-          cd -
+            FOLDER=`dirname $FILENAME`; cd $FOLDER
+            ln -s "$FILENAME" blowpkg
+            cd -
         fi
 
         '''
@@ -116,10 +116,33 @@ class DefaultOp {
         .stripIndent()
 
 
+        /*
+         * Disable the firewall (Fedora 16)
+         */
+        def disableFirewall = """\
+        if command -v systemctl &>/dev/null; then
+            systemctl stop iptables.service
+            systemctl stop ip6tables.service
+            systemctl disable iptables.service
+            systemctl disable ip6tables.service
+        fi
+        """
+        .stripIndent()
+
+        def disableSELinux = """\
+        # disable selinux
+        if command -v setenforce &>/dev/null; then
+            setenforce 0
+        fi
+        """
+        .stripIndent()
+
         def statementsToRun = Statements.newStatementList(
                Statements.exec(createPackageManagerAlias),
                Statements.appendFile("/etc/hosts", hostnameList),
-               Statements.exec(setHostname) )
+               Statements.exec(setHostname),
+               Statements.exec(disableFirewall),
+               Statements.exec(disableSELinux))
 
         session.runStatementOnNodes(statementsToRun, null, true)
 
