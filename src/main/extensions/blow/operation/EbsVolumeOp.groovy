@@ -520,47 +520,29 @@ class EbsVolumeOp {
           XDEV='${device}'
         fi
 
+        XPATH=''
+        XTYPE=''
         if grep -qs "^\$XDEV" /proc/mounts; then
-          echo "Device \$XDEV already mounted -- create a link ${path}"
-
           XPATH=`grep -P "^\$XDEV" /proc/mounts | cut -f 2 -d ' '`
-          if [ "\$XPATH" != "${path}" ]; then
-            mkdir -p `dirname ${path}`
-            cd `dirname ${path}`
-            ln -s \$XPATH `basename ${path}`
-            cd \$OLDPWD
-          fi
+          XTYPE=`grep -P "^\$XDEV" /proc/mounts | cut -f 3 -d ' '`
 
-          chown -R ${userName}:wheel \$XPATH
-
-        else
-          echo "Mounting device \$XDEV to path ${path}"
-
-          ${needFormatVolume ? "mkfs -t ${fsType} \$XDEV" : "# (nofmt)"}
-
-          [ ! -e ${path} ] && mkdir -p ${path}
-          mount -v -t ${fsType} \$XDEV ${path}; sleep 1
-
-          chown -R ${userName}:wheel ${path}
+          echo "Device \$XDEV already mounted at path \$XPATH -- umount it to remount at ${path}"
+          umount -v \$XPATH
         fi
+
+        if [[ ${needFormatVolume} = true && \$XTYPE != ${fsType} ]]; then
+          echo "Formatting device \$XDEV using fstype ${fsType}"
+          mkfs -t ${fsType} \$XDEV
+        fi
+
+        echo "Mounting device \$XDEV to path ${path}"
+        [ ! -e ${path} ] && mkdir -p ${path}
+        mount -v -t ${fsType} \$XDEV ${path}; sleep 1
+
+        chown -R ${userName}:wheel ${path}
         """
         .stripIndent()
 
-    }
-
-    protected String scriptLinkEphemeral() {
-        """\
-        XPATH=`cat /etc/fstab | grep ${ephemeralId} | cut -f 2`
-        if [ "\$XPATH" != "${path}" ]; then
-          mkdir -p `dirname ${path}`
-          cd `dirname ${path}`
-          ln -s \$XPATH `basename ${path}`
-          cd \$OLDPWD
-        fi
-
-        chown -R ${userName}:wheel \$XPATH
-        """
-        .stripIndent()
     }
 
 
