@@ -60,9 +60,9 @@ class NfsOp  {
     @Conf def device
 
     /**
-     * Size of
+     * Specify the new size when mounting a new EBS volume
      */
-    @Conf Integer size = 10
+    @Conf Integer size
 
     @Conf
     def boolean deleteOnTermination
