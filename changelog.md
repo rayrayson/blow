@@ -1,3 +1,7 @@
+2012-11-06 = Version 0.7.4
+- Fix problem mounting ephemeral vols
+- Fix warning sharing ephemerala vols
+
 2012-10-16, Version 0.7.3
 - Upgrate JClouds to version 1.5.2 (to support EC2 instance hi1_4xlarge)
 - Added support for EC2 placement-groups (see BlowConfig#placementGroup)
