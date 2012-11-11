@@ -29,6 +29,7 @@ import jline.Completor
 import jline.ConsoleReader
 import blow.*
 import blow.exception.*
+import org.apache.commons.lang3.StringUtils
 
 /**
  * The Pilot shell runner 
@@ -393,8 +394,9 @@ class BlowShell {
 
         else {
             /*
-            * read and validate the configuration
-            */
+             * read and validate the configuration
+             */
+            checkName(clusterName, getConfigBuilder().getClusterNames())
 
             while( true ) {
                 try {
@@ -731,6 +733,42 @@ class BlowShell {
 
         return text
 
+    }
+
+    void checkName( String name, def allNames ) {
+        assert name
+        log.debug "Checking cluster name: $name -- allNames: $allNames"
+
+        if( name in allNames ) { return }  // The name exists in the list -- OK
+
+        if( !allNames ) {
+            throw new BlowConfigException("The configuration file does not contain any cluster definition -- check the file: ${userConfigFile}")
+        }
+
+        // Otherwise look for the most similar
+        def diffs = [:]
+        allNames.each {
+            diffs[it] = StringUtils.getLevenshteinDistance(name, it)
+        }
+
+        // sort the LevenshteinDistance and get the fist entry
+        def sorted = diffs.sort { it.value }
+        def nearest = sorted.find()
+        def min = nearest.value
+        def len = name.length()
+
+        def threshold = len<=3 ? 1 : ( len > 10 ? 5 : Math.floor(len/2))
+
+        def message = "Cannot find any cluster definition for '$name' -- check the configuration file: ${userConfigFile}"
+        if( min <= threshold ) {
+            message += "\n\nDid you mean this?\n"
+
+            sorted.findAll { it.value==min } .each {
+                message += "   ${it.key}\n"
+            }
+        }
+
+        throw new BlowConfigException(message)
     }
 
     /**
