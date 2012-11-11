@@ -82,6 +82,9 @@ class SgeOp {
     @Conf
     String spool
 
+    @Conf
+    String scheduler = 'normal'
+
 
     /** The current {@link BlowSession} */
     private BlowSession session
@@ -98,6 +101,7 @@ class SgeOp {
 
     private String master
 
+    private static SCHED_VALUES = ["normal":1, "high":2, "max":3]
 
     @Validate
     def validation( BlowConfig config ) {
@@ -108,6 +112,7 @@ class SgeOp {
         assert execdPort
         assert execdPort.isInteger()
         assert cell
+        assert scheduler in SCHED_VALUES.keySet()
 
         /*
          * Make sure that the 'roles' defined matches the component 'topology'
@@ -371,6 +376,9 @@ class SgeOp {
         assert user
         assert spool
 		assert adminEmail
+        assert scheduler
+
+        def schedConf = SCHED_VALUES[scheduler]
 
 		"""\
 		SGE_CLUSTER_NAME="${clusterName}"
@@ -402,7 +410,7 @@ class SgeOp {
 		ADD_TO_RC="false"
 		SET_FILE_PERMS="true"
 		RESCHEDULE_JOBS="wait"
-		SCHEDD_CONF="1"
+		SCHEDD_CONF="${schedConf}"
 		SHADOW_HOST=""
 		EXEC_HOST_LIST_RM=""
 		REMOVE_RC="true"
