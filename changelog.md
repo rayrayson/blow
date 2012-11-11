@@ -1,3 +1,10 @@
+2012-12-10, Version 0.7.5
+- Added support for Ubuntu + Cloud BioLinux (ami-46d4792f) 
+- Enabling SSH password-less access by default
+- Setting 'bash' as default shell for the SGE main queue (all.q)
+- Added configurable SGE 'scheduler' strategy (normal,high,max)
+- Better cluster name error handling
+
 2012-11-06 = Version 0.7.4
 - Fix problem mounting ephemeral vols
 - Fix warning sharing ephemerala vols

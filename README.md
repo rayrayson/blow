@@ -144,6 +144,19 @@ When you have done, remember to stop you cluster nodes using the command `termin
 
 That's all!
 
+Development status
+------------------
+Blow is in early stages of development. It has been tested with the following AMIs:
+
+* Amazon Linux 2012.03
+* Amazon Linux 2012.09
+* Fedora 16
+* Cloud BioLinux (Ubuntu 12.04)
+
+It may not work properly using a different Linux distribution/ami.
+
+Our commitment is to support the most commonly used Linux distributions (RedHat, Ubuntu and Suse) in future releases.
+
 Documentation
 -------------
 

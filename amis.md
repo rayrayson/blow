@@ -45,3 +45,14 @@ EBS: ami-0316d86a
 
 
 https://fedoraproject.org/wiki/Cloud_images
+
+
+Cloud BioLinux
+==============
+
+us-east-1
+---------
+EBS: ami-46d4792f
+
+
+http://http://cloudbiolinux.org
