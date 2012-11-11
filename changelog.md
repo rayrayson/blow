@@ -1,3 +1,7 @@
+2012-12-10, Version 0.7.5.1
+- Disable firewall by default in DefaultOp
+- Tested against Scientific Linux 6.2
+
 2012-12-10, Version 0.7.5
 - Added support for Ubuntu + Cloud BioLinux (ami-46d4792f) 
 - Enabling SSH password-less access by default

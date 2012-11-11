@@ -150,8 +150,9 @@ Blow is in early stages of development. It has been tested with the following AM
 
 * Amazon Linux 2012.03
 * Amazon Linux 2012.09
-* Fedora 16
 * Cloud BioLinux (Ubuntu 12.04)
+* Scientific Linux 6.3
+* Fedora 16
 
 It may not work properly using a different Linux distribution/ami.
 
