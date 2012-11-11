@@ -243,7 +243,7 @@ class NfsOp  {
         #
         # Assign the mounted to the current user
         #
-        chown -R ${userName}:wheel ${path}
+        chown -R ${userName} ${path}
         """
         .stripIndent()
     }

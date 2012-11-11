@@ -65,7 +65,7 @@ class SgeOpTest extends Specification {
 
         then:
         script .contains( "[ -d '${sge.spool}' ] || mkdir -p '${sge.spool}'")
-        script .contains( "chown -R ${sge.user}:wheel '${sge.spool}'" )
+        script .contains( "chown -R ${sge.user} '${sge.spool}'" )
         script .contains( './inst_sge -m -x -auto ./sge.conf' )
         script .contains( '/some/path/alpha/common/settings.sh' )
 	}
@@ -171,7 +171,7 @@ class SgeOpTest extends Specification {
         then:
 		script .contains( '/some/path/beta/common/settings.sh' )
         script .contains( "[ -d '${sge.spool}' ] || mkdir -p '${sge.spool}'" )
-        script .contains( "[ `stat -f -c %T '${sge.spool}'` != \"nfs\" ] && chown -R ${sge.user}:wheel '${sge.spool}'" )
+        script .contains( "[ `stat -f -c %T '${sge.spool}'` != \"nfs\" ] && chown -R ${sge.user} '${sge.spool}'" )
         script .contains( "./inst_sge -x -auto ${sge.path}/sge.conf" )
 	}
 

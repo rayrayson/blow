@@ -539,7 +539,7 @@ class EbsVolumeOp {
         [ ! -e ${path} ] && mkdir -p ${path}
         mount -v -t ${fsType} \$XDEV ${path}; sleep 1
 
-        chown -R ${userName}:wheel ${path}
+        chown -R $userName ${path}
         """
         .stripIndent()
 

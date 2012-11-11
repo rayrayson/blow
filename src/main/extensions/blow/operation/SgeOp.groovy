@@ -296,7 +296,7 @@ class SgeOp {
 		mkdir -p ${path}
 		mv ./sge6/* ${path}
 		rm -rf ./sge6
-		chown -R ${user}:wheel ${path}
+		chown -R $user ${path}
 
 		""" 
 		.stripIndent()	
@@ -316,7 +316,7 @@ class SgeOp {
 
 		# Create the spool directory
 		[ -d '${spool}' ] || mkdir -p '${spool}'
-		chown -R ${user}:wheel '${spool}'
+		chown -R $user '${spool}'
 
 		#
 		# Run the SGE the master node and the execd daemons 
@@ -352,7 +352,7 @@ class SgeOp {
 
 		# Create the spool directory
 		[ -d '${spool}' ] || mkdir -p '${spool}'
-		[ `stat -f -c %T '${spool}'` != "nfs" ] && chown -R ${user}:wheel '${spool}'
+		[ `stat -f -c %T '${spool}'` != "nfs" ] && chown -R $user '${spool}'
 
 		#
 		#  Install the 'execd' on worker nodes

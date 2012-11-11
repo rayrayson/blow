@@ -185,7 +185,7 @@ class GlusterFSOp  {
 
             def script = """\
             mkdir -p $dir
-            chown -R ${userName}:wheel ${dir}
+            chown -R $userName ${dir}
             """
             .stripIndent()
 
