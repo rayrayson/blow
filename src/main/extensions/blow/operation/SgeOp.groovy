@@ -327,7 +327,9 @@ class SgeOp {
 		source ${path}/${cell}/common/settings.sh
 		echo "source ${path}/${cell}/common/settings.sh" >> ~${user}/.bash_profile
 		
-		"""	
+		# define 'bash' as the default shel
+		qconf -rattr queue shell /bin/bash all.q
+		"""
 		.stripIndent()
 		
 	} 
