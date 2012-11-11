@@ -407,7 +407,7 @@ class SgeOp {
 		ADMIN_MAIL="${adminEmail}"
 		# If true, the rc scripts (sgemaster, sgeexecd, sgebdb) will be added, 
 		# to start automatically during boottime
-		ADD_TO_RC="false"
+		ADD_TO_RC="true"
 		SET_FILE_PERMS="true"
 		RESCHEDULE_JOBS="wait"
 		SCHEDD_CONF="${schedConf}"
