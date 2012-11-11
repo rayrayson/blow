@@ -125,6 +125,11 @@ class DefaultOp {
             systemctl stop ip6tables.service
             systemctl disable iptables.service
             systemctl disable ip6tables.service
+        else
+            service iptables stop
+            service ip6tables stop
+            chkconfig iptables off
+            chkconfig ip6tables off
         fi
         """
         .stripIndent()
