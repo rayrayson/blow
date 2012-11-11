@@ -272,7 +272,8 @@ class HadoopOp {
                 Statements.exec(xmlCoreSite()),
                 Statements.exec(xmlHdfsSite()),
                 Statements.exec(xmlMapredSite()),
-                Statements.exec(setJavaHome())
+                Statements.exec(setJavaHome()),
+                updateBinPath()
         )
 
         session.runStatementOnNodes(statementsToRun, primaryNode)
@@ -287,11 +288,6 @@ class HadoopOp {
          * Run on *ALL* nodes
          */
         log.info "Finalizing Hadoop deployment"
-
-        def list = Statements.newStatementList(
-                statementUpdatePath()
-        )
-        session.runStatementOnNodes( list )
 
 
         /*
@@ -426,8 +422,8 @@ class HadoopOp {
      * Update the system {@code PATH} variable adding the Hadoop bin directory
      *
      */
-    private Statement statementUpdatePath() {
-        def update = "export PATH=\"\$PATH:${path}/bin\"" .toString()   // <-- note: without .toString will fail with a cast exception for GString
+    private Statement updateBinPath() {
+        def update = "export PATH=\"${path}/bin:\$PATH\"" .toString()   // <-- note: without .toString will fail with a cast exception for GString
         Statements.appendFile('~/.bash_profile', [ update ])
     }
 
