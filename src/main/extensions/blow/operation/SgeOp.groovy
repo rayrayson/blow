@@ -154,24 +154,13 @@ class SgeOp {
 		/*
 		 * start the installation
 		 */
-		TraceHelper.debugTime("SGE configure ssh", { configureSsh() })
 		TraceHelper.debugTime("SGE copying conf file", { copySgeConfigFileToMaster() })
 		TraceHelper.debugTime("SGE installing '${master}' node", { installMasterNode() })
 		TraceHelper.debugTime("SGE installing '${worker}' nodes", { installWorkersNodes() } )
 
 	} 
 	
-	
-	/**
-	 * Configure the SSH on all nodes 
-	 * 1) create private/public key-pair
-	 * 2) add the public key to the 'authorized_keys' file
-	 * 3) disable the 'StrictHostKeyChecking' checking
-	 * 
-	 */
-	protected void configureSsh() {
-		session.runScriptOnNodes(scriptSshConf())
-	} 
+
 	
 	protected copySgeConfigFileToMaster() {
         assert master, "Missing 'master' node in SGE configuration"
@@ -220,7 +209,7 @@ class SgeOp {
 	}
 	
 	
-	protected String scriptSshConf() {
+	private String scriptSshConf() {
 		"""\
 		#
 		# Create password-less login

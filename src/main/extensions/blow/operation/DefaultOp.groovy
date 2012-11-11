@@ -142,12 +142,60 @@ class DefaultOp {
                Statements.appendFile("/etc/hosts", hostnameList),
                Statements.exec(setHostname),
                Statements.exec(disableFirewall),
-               Statements.exec(disableSELinux))
+               Statements.exec(disableSELinux),
+               Statements.exec(disableStrictHostChecking()),
+               Statements.exec(installPrivateKey())
+        )
 
         session.runStatementOnNodes(statementsToRun, null, true)
 
 
 	}
 
-	
+    /**
+     * Disable the SSH strict host checking
+     *
+     * @return
+     */
+    private String disableStrictHostChecking() {
+
+        def user = session.conf.userName
+        def config = "~$user/.ssh/config"
+
+        """\
+        echo "Host *" >> ~/.ssh/config
+        echo "  StrictHostKeyChecking no" >> $config
+        echo "  UserKnownHostsFile /dev/null" >> $config
+        chmod 600 $config
+        chown $user $config
+        """
+         .stripIndent()
+    }
+
+
+
+    /**
+     * Install the private key, this is make it possible to
+     * access slaves node via SSH without password (required by some components like SGE and Hadoop)
+     *
+     */
+    private String installPrivateKey() {
+
+        def user = session.conf.userName
+        def keyFile =  session.conf.privateKey.text.contains('DSA PRIVATE KEY') ? 'id_dsa' : 'id_rsa'
+        keyFile = "~$user/.ssh/" + keyFile
+
+        def lines = []
+        lines << "cat > ${keyFile} << 'EOF'"
+        lines << session.conf.privateKey.text
+        lines << "EOF"
+        lines << "chmod 600 ${keyFile}"
+        lines << "chown $user ${keyFile}"
+
+        return lines.join("\n")
+
+    }
+
+
+
 }

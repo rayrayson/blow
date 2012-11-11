@@ -289,8 +289,6 @@ class HadoopOp {
         log.info "Finalizing Hadoop deployment"
 
         def list = Statements.newStatementList(
-                Statements.exec(disableStrictHostChecking()),
-                Statements.exec(installPrivateKey()),
                 statementUpdatePath()
         )
         session.runStatementOnNodes( list )
@@ -423,25 +421,6 @@ class HadoopOp {
 
     }
 
-    /**
-     * Install teh private key, this is requires since hadoop script files need to
-     * access slaves node via SSH
-     *
-     */
-    private String installPrivateKey() {
-        
-        def keyFile =  session.conf.privateKey.text.contains('DSA PRIVATE KEY') ? 'id_dsa' : 'id_rsa'
-        keyFile = "~/.ssh/" + keyFile 
-        
-        def lines = []
-        lines << "cat > ${keyFile} << 'EOF'"
-        lines << session.conf.privateKey.text
-        lines << "EOF"
-        lines << "chmod 600 ${keyFile}"
-
-        return lines.join("\n")
-        
-    }
 
     /**
      * Update the system {@code PATH} variable adding the Hadoop bin directory
@@ -581,20 +560,6 @@ class HadoopOp {
                 .stripIndent()
     }
 
-    /**
-     * Disable the SSH strict host checking
-     *
-     * @return
-     */
-    private String disableStrictHostChecking() {
-        '''\
-		echo "Host *" >> ~/.ssh/config
-		echo "  StrictHostKeyChecking no" >> ~/.ssh/config
-		echo "  UserKnownHostsFile /dev/null" >> ~/.ssh/config
-		chmod 600 ~/.ssh/config
-		'''
-                .stripIndent()
-    }
 
 
 }
