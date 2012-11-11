@@ -253,14 +253,24 @@ class NfsOp  {
      * Fedora 16 has changed
      * http://raman-kumar.blogspot.com.es/2011/12/nfs-setup-in-fedora16.html
      *
+     * Ubuntu NFS configuration
+     * https://help.ubuntu.com/community/SettingUpNFSHowTo
+     *
      * @return The BASH script to configure the NSF on the 'master' node
      */
     protected String scriptMaster( ) {
         assert path
 
         """\
-        # Installing nfs components
-        blowpkg install -y nfs-utils rpcbind
+        XDIST=`cat /etc/*-release | grep DISTRIB_ID | cut -f 2 -d '='`
+
+        # Installing NFS components
+        if [ "\$XDIST" = "Ubuntu" ]; then
+          apt-get install -y rpcbind nfs-kernel-server
+
+        else
+          blowpkg install -y rpcbind nfs-utils
+        fi
 
         #
         # Exporting the shared FS
@@ -272,18 +282,28 @@ class NfsOp  {
         #
         # Configuring services
         #
-        if command -v systemctl &>/dev/null; then
-          systemctl start rpcbind.service
-          systemctl start nfs-server.service
-          systemctl start nfs-lock.service
+        if [ "\$XDIST" = "Ubuntu" ]; then
+          sed -i -e 's/NEED_SVCGSSD=.*/NEED_SVCGSSD=no/' /etc/default/nfs-kernel-server
+          sed -i -e 's/NEED_GSSD=.*/NEED_GSSD=no/' /etc/default/nfs-common
+          echo 'NEED_IDMAPD=yes' >> /etc/default/nfs-common
+
+          /etc/init.d/portmap restart
+          /etc/init.d/nfs-kernel-server restart
+
         else
-          service rpcbind start
-          service nfslock start
-          service nfs start
-          service nfs restart
-          chkconfig --level 2345 rpcbind on
-          chkconfig --level 2345 nfslock on
-          chkconfig --level 2345 nfs on
+          if command -v systemctl &>/dev/null; then
+            systemctl start rpcbind.service
+            systemctl start nfs-server.service
+            systemctl start nfs-lock.service
+          else
+            service rpcbind start
+            service nfslock start
+            service nfs start
+            service nfs restart
+            chkconfig --level 2345 rpcbind on
+            chkconfig --level 2345 nfslock on
+            chkconfig --level 2345 nfs on
+          fi
         fi
 
         """
@@ -299,20 +319,29 @@ class NfsOp  {
 
 
         """\
-        # Installing nfs components
-        blowpkg install -y nfs-utils rpcbind
+        XDIST=`cat /etc/*-release | grep DISTRIB_ID | cut -f 2 -d '='`
 
-        #
-        # Configuring services
-        #
-        if command -v systemctl &>/dev/null; then
-          systemctl start rpcbind.service
-          systemctl start nfs-lock.service
+        # Installing NFS components
+        if [ "\$XDIST" = "Ubuntu" ]; then
+          apt-get install -y rpcbind nfs-common
+
+          sed -i -e 's/NEED_GSSD=.*/NEED_GSSD=no/' /etc/default/nfs-common
+          echo 'NEED_IDMAPD=yes' >> /etc/default/nfs-common
+
+          modprobe nfs
+
         else
-          service rpcbind start
-          service nfslock start
-          chkconfig --level 2345 rpcbind on
-          chkconfig --level 2345 nfslock on
+          blowpkg install -y rpcbind nfs-utils
+
+          if command -v systemctl &>/dev/null; then
+            systemctl start rpcbind.service
+            systemctl start nfs-lock.service
+          else
+            service rpcbind start
+            service nfslock start
+            chkconfig --level 2345 rpcbind on
+            chkconfig --level 2345 nfslock on
+          fi
         fi
 
         #
