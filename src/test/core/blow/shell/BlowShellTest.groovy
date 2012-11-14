@@ -164,4 +164,12 @@ class BlowShellTest extends Specification {
     }
 
 
+    def "test findMatches" (){
+
+        expect:
+        BlowShell.findBestMatchesFor('hola', ['alpha','beta','gamma']) == []
+        BlowShell.findBestMatchesFor('halo', ['goodbye','hola','ciao']) == ['hola']
+    }
+
+
 }

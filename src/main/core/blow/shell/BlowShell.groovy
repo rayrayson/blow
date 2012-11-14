@@ -393,11 +393,11 @@ class BlowShell {
         }
 
         else {
-            /*
-             * read and validate the configuration
-             */
-            checkName(clusterName, getConfigBuilder().getClusterNames())
+            // -- check the name specify exists in the configuration file
+            //    otherwise raise an exception, showing some alternatives
+            verifyClusterNameExists(clusterName, getConfigBuilder().getClusterNames())
 
+            // -- read and validate the configuration
             while( true ) {
                 try {
                     config = getConfigBuilder().buildConfig( clusterName )
@@ -510,6 +510,14 @@ class BlowShell {
          */
         else {
             println "Unknown command: '${command}'"
+
+            // -- check for any command alternatives
+            def found = findBestMatchesFor(command, availableCommands.keySet())
+            if ( found ) {
+                println "\nDid you mean this?"
+                found.each { println "   ${it}" }
+            }
+
         }
 
 	}
@@ -735,7 +743,16 @@ class BlowShell {
 
     }
 
-    void checkName( String name, def allNames ) {
+    /**
+     * Verify the specified (cluster) name is contained in the list of all the available configurations
+     * <p>
+     * If not exist, an exception is raised a, eventually showing a list of possible alternative names
+     *
+     * @param name The cluster name to check
+     * @param allNames The list of names against which should contain the specified name
+     * @throws BlowConfigException When the {@code name} is not included in the list
+     */
+    void verifyClusterNameExists( String name, def allNames ) {
         assert name
         log.debug "Checking cluster name: $name -- allNames: $allNames"
 
@@ -745,30 +762,54 @@ class BlowShell {
             throw new BlowConfigException("The configuration file does not contain any cluster definition -- check the file: ${userConfigFile}")
         }
 
-        // Otherwise look for the most similar
-        def diffs = [:]
-        allNames.each {
-            diffs[it] = StringUtils.getLevenshteinDistance(name, it)
-        }
-
-        // sort the LevenshteinDistance and get the fist entry
-        def sorted = diffs.sort { it.value }
-        def nearest = sorted.find()
-        def min = nearest.value
-        def len = name.length()
-
-        def threshold = len<=3 ? 1 : ( len > 10 ? 5 : Math.floor(len/2))
-
         def message = "Cannot find any cluster definition for '$name' -- check the configuration file: ${userConfigFile}"
-        if( min <= threshold ) {
-            message += "\n\nDid you mean this?\n"
 
-            sorted.findAll { it.value==min } .each {
-                message += "   ${it.key}\n"
+        def alternatives = findBestMatchesFor(name,allNames)
+        if( alternatives ) {
+            message += "\n\nDid you mean this?\n"
+            alternatives.each {
+                message += "   ${it}\n"
             }
         }
 
         throw new BlowConfigException(message)
+    }
+
+    /**
+     * Find all the best matches for the given example string in a list of values
+     *
+     * @param sample The example string -- cannot be empty
+     * @param options A list of string
+     * @return The list of options that best matches to the specified example -- return an empty list if none match
+     */
+    static List findBestMatchesFor( String sample, Collection options ) {
+        assert sample
+        assert options, "You must specify a not empty list of alternatives to 'findBestMatchesFor' method"
+
+        // Otherwise look for the most similar
+        def diffs = [:]
+        options.each {
+            diffs[it] = StringUtils.getLevenshteinDistance(sample, it)
+        }
+
+        // sort the Levenshtein Distance and get the fist entry
+        def sorted = diffs.sort { it.value }
+        def nearest = sorted.find()
+        def min = nearest.value
+        def len = sample.length()
+
+        def threshold = len<=3 ? 1 : ( len > 10 ? 5 : Math.floor(len/2))
+
+        def result
+        if( min <= threshold ) {
+            result = sorted.findAll { it.value==min } .collect { it.key }
+        }
+        else {
+            result = []
+        }
+
+        return result
+
     }
 
     /**
@@ -788,7 +829,11 @@ class BlowShell {
         printCommandsList()
 	}
 
-    def printCommandsList() {
+    /**
+     * Print the list of available commands
+     *
+     */
+    def void printCommandsList() {
         // get the longest command string
         def max = availableCommands.keySet().max { it.length() }
         max = max.length() // <-- note: the above returns the longest item, so now we get the real max value
