@@ -63,7 +63,7 @@ class HadoopOp {
 
     static final defVersion = "hadoop-1.0.4"
 
-    static final defTarball = "http://archive.apache.org/dist/hadoop/core/${defVersion}/${defVersion}.tar.gz"
+    static final defTarball = "http://apache.rediris.es/hadoop/common/${defVersion}/${defVersion}.tar.gz"
 
     @Conf
     def version = defVersion
@@ -100,7 +100,7 @@ class HadoopOp {
     List slaveNodes
 
     @Conf
-    String javaHome = '$JAVA_HOME'
+    String javaHome
 
     @Conf
     primaryNodePort = 54310
@@ -159,7 +159,6 @@ class HadoopOp {
 
         assert config.instanceNumFor(config.masterRole) >0, "The Hadoop op requires ar least one node for the '${config.masterRole}' role"
         assert config.instanceNumFor(config.workersRole) >0, "The Hadoop op requires ar least one node for the '${config.masterRole}' role"
-        assert javaHome, 'The Hadoop op requires to specifify the Java installation path (JAVA_HOME) property'
 
 
         /*
@@ -376,11 +375,19 @@ class HadoopOp {
     private String setJavaHome() {
 
         /*
-         * Prepende the current JAVA_HOME in the file 'conf/hadoop-env.sh'
+         * Prepend the current JAVA_HOME in the file 'conf/hadoop-env.sh'
          */
         """\
-        CONF="${path}/conf/hadoop-env.sh"
-        echo "export JAVA_HOME='${javaHome}'" | cat - \$CONF > __temp  && mv __temp \$CONF
+        XCONF="${path}/conf/hadoop-env.sh"
+        XHOME="${javaHome?:''}"
+        if [ "\$XHOME" == "" ]; then XHOME=\$JAVA_HOME; fi
+        if [ "\$XHOME" == "" ]; then XHOME=\$(readlink -f `which java`) && XHOME=\$(dirname \$XHOME) && XHOME=\$(dirname \$XHOME); fi
+        if [ "\$XHOME" == "" ]; then
+            echo "Cannot infer the Java home path -- Hadoop installation cannot continue"
+            exit 1
+        fi
+        echo "Defining Hadoop JAVA_HOME=\$XHOME"
+        echo "export JAVA_HOME=\"\$XHOME\"" | cat - \$XCONF > conf.tmp  && mv conf.tmp \$XCONF
         """
         .stripIndent()
     }
