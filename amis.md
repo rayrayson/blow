@@ -84,3 +84,19 @@ Java: /usr/lib/jvm/jre-1.6.0-openjdk.x86_64/
 Read more:
 https://aws.amazon.com/amis/scientific-linux-6-3-x86-64
 https://aws.amazon.com/amis/scientific-linux-6-3-x86-64-hvm
+
+Ubuntu 12.04 (precise)
+======================
+
+    | eu-west-1    | us-east-1    |
+----|--------------|--------------|
+EBS | ami-f5272581 | ami-40ff7829 |
+----|--------------|--------------|
+HVM | ami-e3272597 | ami-26ff784f |
+----|--------------|--------------|
+
+User: ubuntu
+
+Read more
+http://cloud-images.ubuntu.com/precise/current/
+http://cloud-images.ubuntu.com/locator/ec2/
