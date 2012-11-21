@@ -65,7 +65,7 @@ User: ubuntu
 Java: /usr/lib/jvm/java-6-openjdk-amd64
 
 Read more:
-http://http://cloudbiolinux.org
+http://cloudbiolinux.org
 
 
 Scientific Linux 6.3 x86_64
